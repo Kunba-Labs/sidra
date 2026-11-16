@@ -15,7 +15,7 @@ Run every step as the user that Sidra signs in as over SSH.
 herdr --version && git --version && cargo --version && curl --version | head -1
 ```
 
-All four must print a version. herdr's build also needs the Zig version that herdr asks for.
+All four must print a version. herdr's build also needs the Zig version from herdr's build instructions.
 If `zig` is not on `PATH`, set it for the build:
 
 ```sh
@@ -58,7 +58,7 @@ two or more tabs. herdr's own tab row is gone. (A space with one tab never shows
 ## 4. If a step fails
 
 Report the herdr version and the full error to the user. Do not report success.
-Sidra keeps using the stock herdr client, so nothing breaks.
+Sidra then uses the stock herdr client, so nothing breaks.
 
 | Error | Cause and fix |
 | --- | --- |
