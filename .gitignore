@@ -23,3 +23,6 @@ slopo.db
 slopo-report/
 slopo.ignore.txt
 slopo.agent.log
+
+# local agent state, never public
+.claude/
