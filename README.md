@@ -54,7 +54,7 @@ tabs. A one-line patch to the herdr client hides that row. Point your coding age
 Codex turns and writes a summary of each. Run it on the same machine as herdr, then tap the Theasa
 pill in Sidra's title bar and enter its address and token. Its README has the setup, with Tailscale.
 
-## What you can open
+## Features
 
 | Tab | What you get |
 | --- | --- |
