@@ -1,0 +1,952 @@
+import SwiftUI
+import SidraDesign
+import SidraWorkspace
+
+/// A multiplexer's own client in a terminal, over SSH, under Sidra's spaces bar. The client's sidebar
+/// is hidden (see herdr-attach.sh); the bar and the title bar's agent menu replace it.
+struct HerdrPane: View {
+    let pane: Pane
+    let target: TerminalTarget
+    let session: String?
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        let adapter = pane.kind.multiplexer?.adapter ?? HerdrAdapter()
+        VStack(spacing: 0) {
+            MuxSpacesBar(pane: pane)
+            TerminalPane(pane: pane, target: target, command: adapter.attachCommand(session: session),
+                         prepare: adapter.prepareCommand().map { cmd in { [app, target] in try await app.herdrPrepare(target, cmd) } })
+        }
+        .task { _ = MuxMonitors.shared.monitor(for: pane, app: app) }
+        .onDisappear {
+            if !app.allWorkspaces.contains(where: { $0.tabs.contains { $0.panes.contains { $0.id == pane.id } } }) { MuxMonitors.shared.remove(pane.id) }
+        }
+    }
+}
+
+/// The spaces as flat tabs: logo, name and status, a gradient underline on the one shown. Lighter than
+/// the title bar's pill tabs on purpose; it switches what one pane shows, not the window.
+struct MuxSpacesBar: View {
+    let pane: Pane
+    @Environment(AppModel.self) private var app
+    /// The order shown while a space is dragged, until herdr's next snapshot has the move.
+    @State private var order: [String]?
+    @State private var dragging: String?
+    /// The New space prompt: a name and a folder; `moving` moves the focused pane there instead of a fresh shell.
+    @State private var newSpaceShown = false
+    @State private var newSpaceMoving = false
+    @State private var newSpaceLabel = ""
+    @State private var newSpaceFolder = ""
+    /// New space: pick an existing folder first (the usual case); a new folder is the picker's secondary action.
+    @State private var pickerShown = false
+    @State private var broadcastShown = false
+    @State private var promptsShown = false
+    /// The space whose tabs dropdown is open.
+    @State private var tabsOpen: String?
+
+    var body: some View {
+        if let m = MuxMonitors.shared.byPane[pane.id], let s = m.snapshot {
+            HStack(spacing: 0) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 2) {
+                        // One chip per space; a space with several tabs opens a dropdown of them (2026-11-16).
+                        ForEach(shown(s)) { ws in reorder(tab(ws, on: ws.id == s.focused_workspace_id, m: m, s: s), ws, m, s) }
+                        // The space's tabs scroll with the spaces, so a narrow pane never pushes them off its edge.
+                        if let ws = s.focused_workspace_id { tabsBar(m, s, space: ws) }
+                    }
+                    .padding(.horizontal, 6)
+                    .sheet(isPresented: $promptsShown) { QuickPromptsSheet(pane: pane.id) }
+                }
+                .sheet(isPresented: $broadcastShown) { BroadcastSheet(monitor: m) }   // its own view: two sheets on one view clash
+                if s.focused_workspace_id == nil {
+                    // No space yet (a fresh herdr): the first one is made here.
+                    Button { pickerShown = true } label: {
+                        Label("New space", systemImage: "rectangle.stack.badge.plus").font(SidraFont.ui(12.5))
+                    }
+                    .buttonStyle(.sidraSecondary).padding(.horizontal, 10)
+                }
+                if !s.workspaces.isEmpty {
+                    Button { promptsShown = true } label: {
+                        Image(systemName: "text.bubble").font(.system(size: 13, weight: .semibold)).foregroundStyle(SidraColor.muted)
+                            .frame(width: 28, height: 24).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain).padding(.horizontal, 8)
+                    .accessibilityLabel("Prompts").accessibilityIdentifier("herdr-quick-prompts")
+                }
+            }
+            .frame(height: 36)
+            .background(SidraColor.ground2)
+            .overlay(alignment: .top) { Rectangle().fill(SidraColor.hairline).frame(height: 1) }
+            .overlay(alignment: .bottom) { Rectangle().fill(SidraColor.hairline).frame(height: 1) }
+            .background { spaceShortcuts(m, s) }
+            .sheet(isPresented: $pickerShown) {
+                NewSpacePicker(monitor: m, snapshot: s) { newSpaceMoving = false; newSpaceLabel = ""; newSpaceFolder = "~/Development/"; newSpaceShown = true }
+            }
+            .alert(newSpaceMoving ? "Move to space" : "New space", isPresented: $newSpaceShown) {
+            TextField("Name", text: Binding(get: { newSpaceLabel }, set: { v in
+                // The folder follows the name until it is edited: ~/Development/<name>.
+                if !newSpaceMoving, newSpaceFolder == "~/Development/" + newSpaceLabel { newSpaceFolder = "~/Development/" + v }
+                newSpaceLabel = v
+            }))
+            .textInputAutocapitalization(.never).autocorrectionDisabled()
+            if !newSpaceMoving {
+                TextField("Folder", text: $newSpaceFolder).textInputAutocapitalization(.never).autocorrectionDisabled()
+            }
+            Button("Create") {
+                guard let mon = MuxMonitors.shared.byPane[pane.id] else { return }
+                let label = newSpaceLabel.trimmingCharacters(in: .whitespaces), folder = newSpaceFolder, moving = newSpaceMoving
+                guard !label.isEmpty else { return }
+                Task {
+                    let ok = moving ? await mon.moveFocusedPaneToNewSpace(app, label: label) : await mon.newSpace(app, label: label, folder: folder)
+                    if !ok { app.toast("herdr did not make the space") }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(newSpaceMoving ? "herdr's focused pane moves into a space of its own."
+                 : "herdr opens a shell in that folder; it is made if missing." + (CodingAgent.startOnNewSpace.map { k in " Then it starts \(CodingAgent.all.first { $0.id == k }?.name ?? k)." } ?? ""))
+        }
+        } else {
+            // Same height before the first snapshot and when herdr can't be read, so the terminal doesn't jump.
+            let m = MuxMonitors.shared.byPane[pane.id]
+            HStack(spacing: 8) {
+                if let e = m?.error {
+                    Image(systemName: "exclamationmark.triangle").font(.system(size: 11)).foregroundStyle(SidraColor.yellow)
+                    Text(e).font(SidraFont.ui(12)).foregroundStyle(SidraColor.yellow).lineLimit(1)
+                } else {
+                    GradientSpinner(size: 11)
+                    Text("Reading spaces…").font(SidraFont.ui(12)).foregroundStyle(SidraColor.muted)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .frame(height: 36)
+            .background(SidraColor.ground2)
+            .overlay(alignment: .top) { Rectangle().fill(SidraColor.hairline).frame(height: 1) }
+            .overlay(alignment: .bottom) { Rectangle().fill(SidraColor.hairline).frame(height: 1) }
+        }
+    }
+
+    /// The + for a new tab, a split, a space or a prompt. The tabs themselves are chips in the spaces row.
+    private func tabsBar(_ m: MuxMonitor, _ s: MuxSnapshot, space: String) -> some View {
+        HStack(spacing: 4) {
+            Rectangle().fill(SidraColor.hairline2).frame(width: 1, height: 18).padding(.horizontal, 6)
+            Menu {
+                Section("Tab") {
+                    Button { Task { await m.newTab(app, in: space) } } label: { Label("New tab", systemImage: "plus.rectangle.on.rectangle") }
+                    Button { Task { if await !m.splitFocusedPane(app, down: false) { app.toast("herdr did not split the pane") } } } label: { Label("Split right", systemImage: "rectangle.split.2x1") }
+                        .accessibilityIdentifier("herdr-split-right")
+                    Button { Task { if await !m.splitFocusedPane(app, down: true) { app.toast("herdr did not split the pane") } } } label: { Label("Split down", systemImage: "rectangle.split.1x2") }
+                        .accessibilityIdentifier("herdr-split-down")
+                    Button { Task { if await !m.moveFocusedPane(app, to: nil) { app.toast("herdr did not move the pane") } } } label: { Label("Move to tab", systemImage: "rectangle.portrait.and.arrow.forward") }
+                }
+                Section("Space") {
+                    Button { pickerShown = true } label: { Label("New space", systemImage: "rectangle.stack.badge.plus") }
+                    Button { newSpaceMoving = true; newSpaceLabel = ""; newSpaceShown = true } label: { Label("Move to space", systemImage: "arrow.up.right.square") }
+                }
+                Section("Agents") {
+                    Button { broadcastShown = true } label: { Label("Broadcast", systemImage: "dot.radiowaves.left.and.right") }
+                        .accessibilityIdentifier("herdr-broadcast")
+                }
+            } label: {
+                Image(systemName: "plus").font(.system(size: 12, weight: .semibold)).foregroundStyle(SidraColor.muted).frame(width: 28, height: 24).contentShape(Rectangle())
+            }
+            .accessibilityLabel("New herdr tab or space")
+            .accessibilityIdentifier("herdr-new-tab")
+        }
+        .fixedSize()
+
+    }
+
+    private func shown(_ s: MuxSnapshot) -> [MuxSnapshot.Workspace] {
+        guard let order else { return s.workspaces }
+        return s.workspaces.sorted { (order.firstIndex(of: $0.id) ?? .max) < (order.firstIndex(of: $1.id) ?? .max) }
+    }
+
+    /// Dragging any of a space's chips moves the whole space.
+    private func reorder(_ chip: some View, _ ws: MuxSnapshot.Workspace, _ m: MuxMonitor, _ s: MuxSnapshot) -> some View {
+        chip.reorderable(ws.id, dragging: $dragging) { dragged, over in
+            var ids = shown(s).map(\.id)
+            guard let from = ids.firstIndex(of: dragged), let to = ids.firstIndex(of: over) else { return }
+            ids.move(fromOffsets: [from], toOffset: to > from ? to + 1 : to)
+            order = ids
+        } commit: { dragged in
+            guard let index = order?.firstIndex(of: dragged) else { return }
+            Task {
+                if await !m.moveSpace(app, dragged, to: index) { app.toast("herdr did not move the space") }
+                order = nil
+            }
+        }
+    }
+
+    /// A space's chip. With several tabs it shows their count and opens a dropdown: each tab, its stage, and Move here.
+    @ViewBuilder private func tab(_ ws: MuxSnapshot.Workspace, on: Bool, m: MuxMonitor, s: MuxSnapshot) -> some View {
+        let hasAgents = !s.agents(in: ws.id).isEmpty
+        let tabs = s.tabs(in: ws.id)
+        // The pill is always the tab count, so the chip keeps its width when picked (2026-11-16); VoiceOver names the tab up.
+        let up = on ? tabs.first(where: \.focused) : nil
+        let pill = tabs.count < 2 ? nil : "\(tabs.count)"
+        let label = chip(ws, pill: pill, on: on, status: hasAgents ? ws.agent_status : nil, m: m)
+        Group {
+            if tabs.count > 1 {
+                Button { tabsOpen = ws.id } label: { label }
+                    .buttonStyle(.plain)
+                    .popover(isPresented: Binding(get: { tabsOpen == ws.id }, set: { if !$0 { tabsOpen = nil } }), arrowEdge: .top) {
+                        MuxTabsMenu(space: ws, tabs: tabs, shown: on, logo: m.logo(for: ws)) { t in
+                            tabsOpen = nil
+                            Task { await m.focusTab(app, t.id) }
+                        }
+                        .presentationCompactAdaptation(.popover)
+                    }
+            } else {
+                Button { Task { await m.focus(app, ws) } } label: { label }.buttonStyle(.plain)
+            }
+        }
+        .accessibilityLabel("\(ws.label)\(tabs.count > 1 ? ", \(tabs.count) tabs" : "")\(up.map { t in ", showing " + (t.label.flatMap { $0.isEmpty ? nil : $0 } ?? "tab \(t.number)") } ?? ""), \(hasAgents ? HerdrStatusIcon.label(ws.agent_status) : "no agents")")
+        .accessibilityAddTraits(on ? .isSelected : [])
+        .accessibilityIdentifier("herdr-space-\(ws.label)")
+    }
+
+    private func chip(_ ws: MuxSnapshot.Workspace, pill: String?, on: Bool, status: MuxStatus?, m: MuxMonitor) -> some View {
+        HStack(spacing: 7) {
+            HerdrLogoView(name: ws.label, image: m.logo(for: ws), size: 16)
+            Text(ws.label).font(SidraFont.ui(12.5, weight: on ? .bold : .regular))
+                .foregroundStyle(on ? SidraColor.text : SidraColor.muted).lineLimit(1)
+            if let pill {
+                // The tab pill (small, dark, round), then the dropdown chevron.
+                Text(pill).font(SidraFont.ui(10, weight: .semibold)).monospacedDigit()
+                    .foregroundStyle(on ? SidraColor.text : SidraColor.muted).lineLimit(1)
+                    .padding(.horizontal, pill.count > 1 ? 5 : 0).frame(minWidth: 16, minHeight: 16)
+                    .background(Color.black.opacity(0.55), in: Capsule())
+                    .overlay(Capsule().strokeBorder(SidraColor.hairline2))
+                Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold)).foregroundStyle(SidraColor.muted)
+            }
+            if let status, status != .unknown { HerdrStatusIcon(status: status, size: 9) }
+        }
+        .padding(.horizontal, 12).frame(height: 36)
+        .overlay(alignment: .bottom) {
+            if on { UnevenRoundedRectangle(topLeadingRadius: 2, topTrailingRadius: 2).fill(SidraGradient.horizontal).frame(height: 2).padding(.horizontal, 10) }
+        }
+        .contentShape(Rectangle())
+    }
+
+    /// ⌥⌘1–9 jump to a space while this pane has focus.
+    @ViewBuilder private func spaceShortcuts(_ m: MuxMonitor, _ s: MuxSnapshot) -> some View {
+        if app.workspace.focusedPane?.id == pane.id {
+            ForEach(Array(s.workspaces.prefix(9).enumerated()), id: \.element.id) { i, ws in
+                Button("") { Task { await m.focus(app, ws) } }
+                    .keyboardShortcut(KeyEquivalent(Character("\(i + 1)")), modifiers: [.command, .option])
+                    .opacity(0).accessibilityHidden(true)
+            }
+        }
+    }
+}
+
+/// New space in a folder that is already there: the folders under ~/Development on that machine, searchable,
+/// with the ones that already have a space marked; or any path. Making a new folder is the secondary action.
+struct NewSpacePicker: View {
+    let monitor: MuxMonitor
+    let snapshot: MuxSnapshot
+    let newFolder: () -> Void
+    @Environment(AppModel.self) private var app
+    @Environment(\.dismiss) private var dismiss
+    @State private var folders: [String]?
+    @State private var query = ""
+    @State private var path = ""
+    @State private var working = false
+
+    private var withSpace: Set<String> {
+        Set(snapshot.workspaces.compactMap { snapshot.folder(of: $0.id).map { ($0 as NSString).lastPathComponent } })
+    }
+    private var shown: [String] {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        return (folders ?? []).filter { q.isEmpty || $0.localizedCaseInsensitiveContains(q) }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("New space").font(SidraFont.ui(17, weight: .bold)).foregroundStyle(SidraColor.text)
+                Spacer()
+                Button("New folder…") { dismiss(); DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { newFolder() } }
+                    .buttonStyle(.sidraSecondary).accessibilityIdentifier("new-space-new-folder")
+            }
+            Text("Pick a folder on \(app.herdrMachineName(monitor.target)); the space opens a shell there.")
+                .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
+            StartAgentRow()
+            TextField("Search ~/Development", text: $query)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                .font(SidraFont.ui(14)).padding(.horizontal, 10).frame(height: 36)
+                .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline2))
+                .accessibilityIdentifier("new-space-search")
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 2) {
+                    if folders == nil { HStack(spacing: 8) { GradientSpinner(size: 12); Text("Reading folders…").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted) }.padding(10) }
+                    else if shown.isEmpty { Text("No folder matches.").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted).padding(10) }
+                    ForEach(shown, id: \.self) { name in
+                        Button { Task { await create(label: name, folder: "~/Development/" + name) } } label: {
+                            HStack(spacing: 10) {
+                                HerdrLogoView(name: name, image: nil, size: 22)
+                                Text(name).font(SidraFont.ui(13.5, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
+                                Spacer()
+                                if withSpace.contains(name) { Text("has a space").font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim) }
+                            }
+                            .padding(.horizontal, 10).frame(height: 40).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain).disabled(working)
+                        .accessibilityIdentifier("new-space-folder-\(name)")
+                    }
+                }
+            }
+            .frame(maxHeight: 360)
+            HStack(spacing: 8) {
+                TextField("Or a path, e.g. ~/src/tool", text: $path)
+                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .font(SidraFont.mono(12.5)).padding(.horizontal, 10).frame(height: 32)
+                    .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline2))
+                Button("Open") {
+                    let p = path.trimmingCharacters(in: .whitespaces)
+                    Task { await create(label: (p as NSString).lastPathComponent, folder: p) }
+                }
+                .buttonStyle(.sidraPrimary).disabled(path.trimmingCharacters(in: .whitespaces).isEmpty || working)
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: 520)
+        .background(SidraColor.popup)
+        .task { folders = await monitor.folders(app) }
+    }
+
+    private func create(label: String, folder: String) async {
+        working = true
+        defer { working = false }
+        if await monitor.newSpace(app, label: label, folder: folder) { dismiss() } else { app.toast("herdr did not make the space") }
+    }
+}
+
+struct HerdrFooter: View {
+    let pane: Pane
+    var body: some View {
+        if let m = MuxMonitors.shared.byPane[pane.id] {
+            if let s = m.snapshot {
+                FooterChip([.init("\(s.workspaces.count)", label: "spaces"), .init("\(s.agents.count)", label: "agents")]
+                           + (s.count(.blocked) > 0 ? [.init("\(s.count(.blocked))", label: "needs you", color: SidraColor.gold)] : []))
+            } else if m.error != nil {
+                FooterItem("\(m.adapter.name) not reachable", color: SidraColor.yellow)
+            }
+            Spacer()
+            FooterChip(m.adapter.keyHints.map { .init($0.key, label: $0.label) })
+        }
+    }
+}
+
+/// Needs you / working across multiplexer panes, beside the other title bar pills. Tapping opens
+/// every agent grouped by project; a row opens it in Theasa, its arrow shows it in the pane.
+struct HerdrTitleCounts: View {
+    @Environment(AppModel.self) private var app
+    @State private var open = false
+    private var live: Set<UUID> { Set(app.allWorkspaces.flatMap { $0.tabs.flatMap { $0.panes.map(\.id) } }) }
+
+    var body: some View {
+        counts.onChange(of: live) { _, ids in MuxMonitors.shared.prune(live: ids) }
+    }
+
+    @ViewBuilder private var counts: some View {
+        let monitors = MuxMonitors.shared
+        let live = live
+        let working = monitors.count(.working, live: live)
+        let pipelines = PipelinesStore.shared.running.count   // their own count: a pipeline is no agent
+        let failed = PipelinesStore.shared.unseenFailedCount   // only failures you have not opened yet
+        // Waiting agents keep the menu reachable even with nothing working and GitLab off (their count is on the Theasa pill).
+        let waiting = monitors.count(.blocked, live: live) > 0
+        if working > 0 || pipelines > 0 || PipelinesStore.shared.connected || waiting {
+            Button { open.toggle() } label: {
+                HStack(spacing: 8) {
+                    // No separate waiting pill: the Theasa pill shows "N waiting" (2026-11-14).
+                    // One working pill for agents and pipelines; its dropdown has a tab for each. With nothing
+                    // running but GitLab connected, just the pipelines icon opens the same dropdown (no "0 working").
+                    if working + pipelines > 0 || PipelinesStore.shared.connected || waiting {
+                        HStack(spacing: 6) {
+                            if working + pipelines > 0 {
+                                HerdrStatusIcon(status: .working, size: 10)
+                                Text("\(working + pipelines)").font(SidraFont.ui(12.5, weight: .bold)).foregroundStyle(SidraColor.text)
+                                Text("working").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
+                            } else if PipelinesStore.shared.connected {
+                                ProcessIcon(.pipelines, size: 14)
+                            } else {
+                                HerdrStatusIcon(status: .blocked, size: 9)
+                            }
+                            if failed > 0 { Circle().fill(SidraColor.red).frame(width: 7, height: 7) }   // a pipeline failed this week and you have not opened it
+                            Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold)).foregroundStyle(SidraColor.dim)
+                        }
+                        .pillBox()
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(working) agents and \(pipelines) pipelines working, \(failed) new failed pipelines")
+            .accessibilityIdentifier("mux-agents")
+            .popover(isPresented: $open, arrowEdge: .top) {
+                MuxAgentsMenu(live: live) { open = false }.presentationCompactAdaptation(.popover)
+            }
+        }
+    }
+}
+
+/// Every agent across open multiplexer panes, grouped by project (space), most urgent first.
+struct MuxAgentsMenu: View {
+    let live: Set<UUID>
+    let close: () -> Void
+    @Environment(AppModel.self) private var app
+    enum Section { case agents, pipelines }
+    /// Agents first when there are any, else pipelines.
+    @State private var section: Section?
+    private static let order: [MuxStatus] = [.blocked, .working, .done, .idle, .unknown]
+    private static func rank(_ s: MuxStatus) -> Int { order.firstIndex(of: s) ?? order.count }
+
+    /// One monitor per machine and session; two panes on the same herdr list its agents once.
+    private var sources: [(pane: UUID, monitor: MuxMonitor, snapshot: MuxSnapshot)] {
+        var seen = Set<String>()
+        return MuxMonitors.shared.byPane.sorted { $0.key.uuidString < $1.key.uuidString }.compactMap { id, m in
+            guard live.contains(id), let s = m.snapshot, !s.agents.isEmpty, seen.insert(m.key).inserted else { return nil }
+            return (id, m, s)
+        }
+    }
+
+    var body: some View {
+        let sources = sources
+        let pipes = PipelinesStore.shared
+        let shown = section ?? (sources.isEmpty && pipes.connected ? .pipelines : .agents)
+        VStack(alignment: .leading, spacing: 6) {
+            if pipes.connected {
+                HStack(spacing: 4) {
+                    sectionButton("Agents", icon: .agent, count: sources.reduce(0) { $0 + $1.snapshot.agents.count }, on: shown == .agents) { section = .agents }
+                    sectionButton("Pipelines", icon: .pipelines, count: pipes.running.count, on: shown == .pipelines) { section = .pipelines }
+                    Spacer()
+                }
+                .padding(.horizontal, 4)
+            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    if shown == .pipelines { allPipelines } else { agents(sources) }
+                }
+            }
+        }
+        .frame(maxHeight: 560)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(8)
+        .frame(width: 420)
+        .background(SidraColor.popup)
+    }
+
+    private func sectionButton(_ title: String, icon: ProcessIcon.Kind, count: Int, on: Bool, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                ProcessIcon(icon, size: 16)
+                Text(title).font(SidraFont.ui(12.5, weight: on ? .bold : .regular)).foregroundStyle(on ? SidraColor.text : SidraColor.muted)
+                if count > 0 { Text("\(count)").font(SidraFont.ui(11, weight: .bold)).foregroundStyle(SidraColor.muted) }
+            }
+            .padding(.leading, 6).padding(.trailing, 10).frame(height: 28)
+            .background(on ? SidraColor.tabActive : .clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .overlay { if on { RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraGradient.horizontal, lineWidth: 1) } }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(on ? .isSelected : [])
+        .accessibilityIdentifier("section-\(title.lowercased())")
+    }
+
+    /// Recent pipelines, finished ones too, grouped by namespace like the pipelines TUI, five per group.
+    @ViewBuilder private var allPipelines: some View {
+        let store = PipelinesStore.shared
+        let groups = Dictionary(grouping: store.pipelines) { store.projects[$0.project_id]?.group ?? "?" }
+            .sorted { $0.value[0].updated_at > $1.value[0].updated_at }
+        if store.pipelines.isEmpty {
+            Text(store.loading ? "Reading pipelines…" : store.error ?? "No pipelines yet.")
+                .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted).padding(10)
+        }
+        ForEach(groups, id: \.key) { name, list in
+            HStack(spacing: 8) {
+                PipelineAvatar(image: store.avatar(group: name), name: name, size: 16)
+                Text(name.uppercased()).font(SidraFont.ui(11, weight: .bold)).foregroundStyle(SidraColor.muted).tracking(0.5)
+                Spacer()
+                Text("\(list.count)").font(SidraFont.ui(11)).foregroundStyle(SidraColor.dim)
+            }
+            .padding(.horizontal, 10).padding(.top, 10).padding(.bottom, 2)
+            ForEach(list.prefix(5)) { p in
+                let project = store.projects[p.project_id]?.name ?? "project \(p.project_id)"
+                Button { close(); app.openPipelines(reveal: p.id) } label: {
+                    HStack(spacing: 9) {
+                        PipelineStatusIcon(status: p.status, size: 14)
+                        PipelineAvatar(image: store.avatar(project: p.project_id), name: project, size: 14)
+                        Text(project).font(SidraFont.ui(13, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
+                        Text(p.ref).font(SidraFont.mono(11)).foregroundStyle(SidraColor.dim).lineLimit(1)
+                        Spacer(minLength: 6)
+                        Text(PipelinesPane.ago(p.updated_at)).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.muted)
+                    }
+                    .padding(.horizontal, 10).frame(height: 34).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(project) \(p.ref), \(p.status), open in Pipelines")
+            }
+        }
+    }
+
+    @ViewBuilder private func agents(_ sources: [(pane: UUID, monitor: MuxMonitor, snapshot: MuxSnapshot)]) -> some View {
+                if sources.isEmpty {
+                    Text("No agents in open herdr tabs.").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted).padding(10)
+                }
+                ForEach(sources, id: \.pane) { src in
+                    HStack(spacing: 6) {
+                        Text("Agents on").foregroundStyle(SidraColor.muted)
+                        Text(app.herdrMachineName(src.monitor.target)).fontWeight(.bold).foregroundStyle(SidraColor.text)
+                    }
+                    .font(SidraFont.ui(12)).padding(.horizontal, 10).padding(.top, 6).padding(.bottom, 2)
+                    let spaces = src.snapshot.workspaces.filter { !src.snapshot.agents(in: $0.id).isEmpty }
+                        .sorted { Self.rank($0.agent_status) < Self.rank($1.agent_status) }
+                    ForEach(spaces) { ws in
+                        group(ws, src: src)
+                    }
+                }
+    }
+
+    @ViewBuilder private func group(_ ws: MuxSnapshot.Workspace, src: (pane: UUID, monitor: MuxMonitor, snapshot: MuxSnapshot)) -> some View {
+        let agents = src.snapshot.agents(in: ws.id).sorted { Self.rank($0.agent_status) < Self.rank($1.agent_status) }
+        HStack(spacing: 8) {
+            HerdrLogoView(name: ws.label, image: src.monitor.logo(for: ws), size: 18)
+            Text(ws.label).font(SidraFont.ui(12, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
+            Spacer()
+            Text(agents.count == 1 ? "1 agent" : "\(agents.count) agents").font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.muted)
+        }
+        .padding(.horizontal, 10).padding(.top, 10).padding(.bottom, 4)
+        ForEach(agents) { a in
+            HStack(spacing: 10) {
+                let choices = app.theasaConnections(for: src.monitor.target)
+                let row = HStack(spacing: 10) {
+                    HerdrAgentMark(agent: a.agent, size: 14)
+                    Text(a.terminal_title_stripped.flatMap { $0.isEmpty ? nil : $0 } ?? a.agent)
+                        .font(SidraFont.ui(13)).foregroundStyle(SidraColor.text).lineLimit(1)
+                    Spacer(minLength: 6)
+                    HerdrStatusChip(status: a.agent_status)
+                }
+                .contentShape(Rectangle())
+                Group {
+                    if choices.count > 1 {
+                        // Several Theasa servers and none is this machine's: ask which.
+                        Menu {
+                            ForEach(choices) { c in Button(c.name + (URL(string: c.url)?.host.map { ", \($0)" } ?? "")) { close(); app.openAgentInTheasa(a.pane_id, connection: c.id) } }
+                        } label: { row }
+                    } else {
+                        Button { close(); app.openAgentInTheasa(a.pane_id, connection: choices.first?.id) } label: { row }
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(a.terminal_title_stripped ?? a.agent), \(HerdrStatusIcon.label(a.agent_status)), open in Theasa")
+                .accessibilityIdentifier("mux-agent-\(a.pane_id)")
+                Button {
+                    close()
+                    app.open(.pane(src.pane))
+                    Task { await src.monitor.focusAgent(app, pane: a.pane_id) }
+                } label: {
+                    Image(systemName: "arrow.up.forward.square").font(.system(size: 13)).foregroundStyle(SidraColor.muted).frame(width: 26, height: 26).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Show in \(src.monitor.adapter.name)")
+            }
+            .padding(.leading, 36).padding(.trailing, 6).frame(height: 36)
+        }
+    }
+}
+
+extension AppModel {
+    /// Opens Theasa's Agents screen on this agent: in an open Theasa pane, else a new tab on the first
+    /// saved connection, else the connect sheet. Theasa reads the same herdr, so pane ids match.
+    /// The Theasa connections that can show this machine's agents: those whose host matches the
+    /// machine's host or alias (first label, so devbox matches devbox.tailnet.ts.net); all when none matches.
+    func theasaConnections(for target: TerminalTarget) -> [TheasaConnection] {
+        let all = TheasaStore.shared.connections
+        func label(_ s: String) -> String { String(s.lowercased().prefix { $0 != "." }) }
+        var names: Set<String> = [label(herdrMachineName(target))]
+        if case .ssh(let id) = target, let h = hosts.host(id) { names.insert(label(h.host)); names.insert(label(h.alias)) }
+        let matched = all.filter { c in URL(string: c.url)?.host.map { names.contains(label($0)) } ?? false }
+        return matched.isEmpty ? all : matched
+    }
+
+    /// Opens Theasa's popover on that connection's Agents screen at this agent; without a connection, the connect sheet.
+    func openAgentInTheasa(_ agentPane: String, connection: UUID?) {
+        TheasaStore.shared.openAgent(agentPane, connection: connection, app: self)   // Theasa's popover, on Agents at this card
+    }
+}
+
+private extension View {
+    func pillBox() -> some View {
+        padding(.horizontal, 10).frame(height: 28)
+            .background(SidraColor.raised, in: RoundedRectangle(cornerRadius: SidraRadius.pill, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: SidraRadius.pill, style: .continuous).strokeBorder(SidraColor.hairline))
+    }
+}
+
+// MARK: - Small pieces
+
+/// Working spins with the gradient (it is progress); needs you is gold, done jade, idle a ring.
+struct HerdrStatusIcon: View {
+    let status: MuxStatus
+    var size: CGFloat = 10
+    var body: some View {
+        switch status {
+        case .working: GradientSpinner(size: size)
+        case .blocked: Circle().fill(SidraColor.gold).frame(width: size - 1, height: size - 1)
+        case .done: Circle().fill(SidraColor.jade).frame(width: size - 1, height: size - 1)
+        case .idle, .unknown: Circle().strokeBorder(SidraColor.dim, lineWidth: 1.5).frame(width: size - 1, height: size - 1)
+        }
+    }
+    static func label(_ s: MuxStatus) -> String {
+        switch s {
+        case .working: "Working"
+        case .blocked: "Needs you"
+        case .done: "Done"
+        case .idle: "Idle"
+        case .unknown: "No agent"
+        }
+    }
+}
+
+struct HerdrStatusChip: View {
+    let status: MuxStatus
+    var body: some View {
+        let color: Color = switch status { case .blocked: SidraColor.gold; case .done: SidraColor.jade; case .working: SidraColor.text; default: SidraColor.muted }
+        HStack(spacing: 5) {
+            HerdrStatusIcon(status: status, size: 9)
+            Text(HerdrStatusIcon.label(status)).font(SidraFont.ui(11.5)).foregroundStyle(color)
+        }
+        .padding(.horizontal, 7).frame(height: 22)
+        .background(SidraColor.raised, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(status == .blocked ? SidraColor.gold.opacity(0.3) : SidraColor.hairline))
+    }
+}
+
+/// The project's own logo, or its first letter when the folder has none.
+struct HerdrLogoView: View {
+    let name: String
+    let image: UIImage?
+    var size: CGFloat = 20
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
+        Group {
+            if let image {
+                Image(uiImage: image).resizable().scaledToFill()
+            } else {
+                Text(String(name.first(where: { $0.isLetter || $0.isNumber }) ?? "?").uppercased())
+                    .font(SidraFont.ui(size * 0.5, weight: .bold)).foregroundStyle(SidraColor.muted)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(hex: 0x2a3039))
+            }
+        }
+        .frame(width: size, height: size).clipShape(shape)
+        .accessibilityHidden(true)
+    }
+}
+
+/// A space's tabs, in Sidra's popup style: the project's logo, the tab, and its stage; the one showing in the gradient.
+/// Rows only switch tabs. No "Move here" into an existing tab (2026-11-16: leave it out); + > Move to tab remains.
+struct MuxTabsMenu: View {
+    let space: MuxSnapshot.Workspace
+    let tabs: [MuxSnapshot.Tab]
+    let shown: Bool
+    let logo: UIImage?
+    let pick: (MuxSnapshot.Tab) -> Void
+
+    var body: some View {
+        ScrollView {
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(tabs) { t in
+                let on = shown && t.focused
+                Button { pick(t) } label: {
+                    HStack(spacing: 10) {
+                        HerdrLogoView(name: space.label, image: logo, size: 20)
+                        let name = Text(t.label.flatMap { $0.isEmpty || Int($0) != nil ? nil : $0 } ?? "\(space.label) \(t.number)")
+                            .font(SidraFont.ui(13.5, weight: on ? .bold : .regular))
+                        if on {
+                            // The tab showing: its name in the gradient, a blinking caret after it.
+                            HStack(spacing: 0) { name.foregroundStyle(SidraGradient.horizontal).lineLimit(1); BlinkCaret(font: SidraFont.ui(13.5, weight: .bold)) }
+                        } else {
+                            name.foregroundStyle(SidraColor.muted).lineLimit(1)
+                        }
+                        Spacer(minLength: 16)
+                        if t.agent_status != .unknown { HerdrStatusIcon(status: t.agent_status, size: 10) }
+                        Text(HerdrStatusIcon.label(t.agent_status)).font(SidraFont.ui(12)).foregroundStyle(SidraColor.muted)
+                    }
+                    .padding(.horizontal, 10).frame(height: 38)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(space.label) tab \(t.number), \(HerdrStatusIcon.label(t.agent_status))")
+                .accessibilityAddTraits(on ? .isSelected : [])
+                .accessibilityIdentifier("herdr-tab-\(space.label)-\(t.number)")
+            }
+        }
+        }
+        .frame(maxHeight: 480).fixedSize(horizontal: false, vertical: true)   // many tabs scroll instead of running off the screen
+        .padding(6)
+        .frame(width: 280)
+        .background(SidraColor.popup)
+    }
+}
+
+/// HackerTab's block cursor (BlinkTitle): " ▌" in orange, blinking; steady with Reduce Motion.
+struct BlinkCaret: View {
+    var font: Font
+    @Environment(\.accessibilityReduceMotion) private var still
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 0.53)) { t in
+            let lit = still || Int(t.date.timeIntervalSinceReferenceDate / 0.53) % 2 == 0
+            Text(verbatim: " ▌").font(font).foregroundStyle(lit ? SidraColor.orange : .clear)
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// The coding agent a new space starts in its first pane (the agents Sidra has official marks for).
+enum CodingAgent {
+    static let all: [(id: String, name: String)] = [("claude", "Claude Code"), ("codex", "Codex"), ("amp", "Amp"), ("pi", "Pi")]
+    static let onKey = "sidra.newSpace.startAgent", kindKey = "sidra.newSpace.agent"
+    /// The executable to run in a new space, or nil when the toggle is off. On, Claude Code, by default.
+    static var startOnNewSpace: String? {
+        let d = UserDefaults.standard
+        guard d.object(forKey: onKey) == nil || d.bool(forKey: onKey) else { return nil }
+        return d.string(forKey: kindKey) ?? "claude"
+    }
+}
+
+/// Start coding agent: a toggle and the agent, each with its own logo. Read by every New space path.
+struct StartAgentRow: View {
+    @AppStorage(CodingAgent.onKey) private var on = true
+    @AppStorage(CodingAgent.kindKey) private var kind = "claude"
+    var body: some View {
+        // Side by side when it fits, stacked on a narrow sheet.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) { toggle; Spacer(); picker }
+            VStack(alignment: .leading, spacing: 8) { toggle; picker }
+        }
+    }
+    private var toggle: some View {
+            Toggle("Start coding agent", isOn: $on).toggleStyle(GradientToggleStyle())
+                .font(SidraFont.ui(13)).foregroundStyle(SidraColor.text).fixedSize()
+                .accessibilityIdentifier("new-space-start-agent")
+    }
+    private var picker: some View {
+            Menu {
+                ForEach(CodingAgent.all, id: \.id) { a in
+                    Button { kind = a.id } label: { Label { Text(a.name) } icon: { Image("agent-\(a.id)").renderingMode(.original) } }
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    HerdrAgentMark(agent: kind, size: 16)
+                    Text(CodingAgent.all.first { $0.id == kind }?.name ?? kind).font(SidraFont.ui(13, weight: .bold)).foregroundStyle(SidraColor.text)
+                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(SidraColor.muted)
+                }
+                .padding(.horizontal, 10).frame(height: 30)
+                .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline2))
+            }
+            .disabled(!on).opacity(on ? 1 : 0.45)
+            .accessibilityIdentifier("new-space-agent")
+    }
+}
+
+/// An agent's own mark (official files from herdr.dev), or its initial for agents without one.
+struct HerdrAgentMark: View {
+    let agent: String
+    var size: CGFloat = 14
+    static let known: Set<String> = ["claude", "codex", "pi", "amp"]
+    var body: some View {
+        if Self.known.contains(agent) {
+            Image("agent-\(agent)").resizable().scaledToFit().frame(width: size, height: size).accessibilityHidden(true)
+        } else {
+            Text(String(agent.prefix(1)).uppercased()).font(SidraFont.ui(size * 0.7, weight: .bold)).foregroundStyle(SidraColor.muted)
+                .frame(width: size, height: size).background(SidraColor.raised, in: RoundedRectangle(cornerRadius: 3))
+                .accessibilityHidden(true)
+        }
+    }
+}
+
+/// One command typed into many agents at once (2026-11-14): `/remote-control` after switching
+/// claude.ai accounts (each session drops Remote Control and needs it again), `/exit`, or any prompt.
+/// All agents are picked by default; herdr's `agent prompt` types the text and presses Return in each.
+struct BroadcastSheet: View {
+    let monitor: MuxMonitor
+    @Environment(AppModel.self) private var app
+    @Environment(\.dismiss) private var dismiss
+    @State private var text = "/remote-control"
+    @State private var off: Set<String> = []
+    @State private var confirm = false
+    @State private var sending = false
+
+    private var agents: [MuxSnapshot.Agent] { monitor.snapshot?.agents ?? [] }
+    private var picked: [String] { agents.map(\.pane_id).filter { !off.contains($0) } }
+    private var command: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Broadcast command").font(SidraFont.ui(17, weight: .bold)).foregroundStyle(SidraColor.text)
+            Text("Types the command into each picked agent on \(app.herdrMachineName(monitor.target)) and presses Return.")
+                .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
+            TextField("/remote-control", text: $text)
+                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                .font(SidraFont.mono(14)).padding(.horizontal, 10).frame(height: 36)
+                .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline2))
+                .accessibilityIdentifier("broadcast-text")
+            HStack(spacing: 6) {
+                ForEach(["/remote-control", "/exit"], id: \.self) { c in
+                    Button(c) { text = c }.buttonStyle(.sidraSecondary).font(SidraFont.mono(12))
+                }
+                Spacer()
+                Button(off.isEmpty ? "None" : "All") { off = off.isEmpty ? Set(agents.map(\.pane_id)) : [] }
+                    .buttonStyle(.sidraSecondary)
+            }
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 2) {
+                    if agents.isEmpty { Text("No agents are running.").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted).padding(10) }
+                    ForEach(agents) { a in row(a) }
+                }
+            }
+            .frame(maxHeight: 360)
+            HStack {
+                Spacer()
+                Button("Cancel") { dismiss() }.buttonStyle(.sidraSecondary)
+                Button(picked.count == 1 ? "Send to 1 agent" : "Send to \(picked.count) agents") { confirm = true }
+                    .buttonStyle(.sidraPrimary).disabled(command.isEmpty || picked.isEmpty || sending)
+                    .accessibilityIdentifier("broadcast-send")
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: 520)
+        .background(SidraColor.popup)
+        .confirmationDialog("Send \(command) to \(picked.count) agent\(picked.count == 1 ? "" : "s")?", isPresented: $confirm, titleVisibility: .visible) {
+            Button("Send", role: command.hasPrefix("/exit") || command.hasPrefix("/quit") ? .destructive : nil) { Task { await send() } }
+        }
+    }
+
+    private func row(_ a: MuxSnapshot.Agent) -> some View {
+        let ws = monitor.snapshot?.workspaces.first { $0.id == a.workspace_id }
+        let on = !off.contains(a.pane_id)
+        return Button { if on { off.insert(a.pane_id) } else { off.remove(a.pane_id) } } label: {
+            HStack(spacing: 10) {
+                Image(systemName: on ? "checkmark.circle.fill" : "circle").foregroundStyle(on ? SidraColor.jade : SidraColor.dim)
+                if let ws { HerdrLogoView(name: ws.label, image: monitor.logo(for: ws), size: 20) }
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(ws?.label ?? a.pane_id).font(SidraFont.ui(13.5, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
+                    Text([a.agent, a.terminal_title_stripped].compactMap { $0 }.joined(separator: " · ")).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.muted).lineLimit(1)
+                }
+                Spacer()
+                HerdrStatusIcon(status: a.agent_status, size: 9)
+            }
+            .padding(.horizontal, 10).frame(height: 44).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
+        .accessibilityIdentifier("broadcast-agent-\(a.pane_id)")
+    }
+
+    private func send() async {
+        sending = true
+        defer { sending = false }
+        let panes = picked
+        guard let failed = await monitor.broadcast(app, command, to: panes) else { app.toast("Could not reach \(app.herdrMachineName(monitor.target))"); return }
+        app.toast(failed.isEmpty ? "Sent \(command) to \(panes.count) agent\(panes.count == 1 ? "" : "s")"
+                                 : "Sent to \(panes.count - failed.count) of \(panes.count); herdr refused \(failed.count)")
+        dismiss()
+    }
+}
+
+/// Short prompts typed over and over ("status", "what's left"): tap one and it goes into this pane's
+/// terminal with Return. The list is kept on this device and edited here.
+struct QuickPromptsSheet: View {
+    let pane: UUID
+    @Environment(AppModel.self) private var app
+    @Environment(\.dismiss) private var dismiss
+    @AppStorage("sidra.quickPrompts") private var stored = ""
+    @State private var adding = false
+    @State private var draft = ""
+    @FocusState private var draftFocused: Bool
+
+    static let defaults = ["status", "what's left", "issues you found"]
+    private var prompts: [String] {
+        get { stored.isEmpty ? Self.defaults : ((try? JSONDecoder().decode([String].self, from: Data(stored.utf8))) ?? Self.defaults) }
+    }
+    private func save(_ list: [String]) { stored = String(decoding: (try? JSONEncoder().encode(list)) ?? Data("[]".utf8), as: UTF8.self) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Quick prompt").font(SidraFont.ui(17, weight: .bold)).foregroundStyle(SidraColor.text)
+                Spacer()
+                Button { adding = true; draft = ""; draftFocused = true } label: { Image(systemName: "plus") }
+                    .buttonStyle(.sidraSecondary).accessibilityLabel("Add a prompt").accessibilityIdentifier("quick-prompt-add")
+            }
+            Text("Tap one to type it into this pane and press Return. Hold one to remove it.")
+                .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
+            if adding {
+                HStack(spacing: 8) {
+                    TextField("New prompt", text: $draft)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .focused($draftFocused).onSubmit(add)
+                        .font(SidraFont.mono(14)).padding(.horizontal, 10).frame(height: 36)
+                        .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline2))
+                        .accessibilityIdentifier("quick-prompt-text")
+                    Button("Add", action: add).buttonStyle(.sidraPrimary)
+                        .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 6) {
+                    if prompts.isEmpty { Text("No prompts yet. Add one with +.").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted).padding(10) }
+                    ForEach(Array(prompts.enumerated()), id: \.offset) { i, p in
+                        Button { send(p) } label: {
+                            HStack(spacing: 10) {
+                                Text(p).font(SidraFont.mono(14)).foregroundStyle(SidraColor.text).lineLimit(2).multilineTextAlignment(.leading)
+                                Spacer()
+                                Image(systemName: "return").foregroundStyle(SidraColor.dim)
+                            }
+                            .padding(.horizontal, 12).frame(minHeight: 44)
+                            .background(SidraColor.raised, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(SidraColor.hairline))
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            Button(role: .destructive) { var l = prompts; l.remove(at: i); save(l) } label: { Label("Remove", systemImage: "trash") }
+                        }
+                        .accessibilityIdentifier("quick-prompt-\(i)")
+                    }
+                }
+            }
+            .frame(maxHeight: 360)
+            HStack { Spacer(); Button("Close") { dismiss() }.buttonStyle(.sidraSecondary) }
+        }
+        .padding(20)
+        .frame(maxWidth: 520)
+        .background(SidraColor.popup)
+    }
+
+    private func add() {
+        let t = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return }
+        save(prompts + [t])
+        draft = ""; adding = false
+    }
+
+    /// The text, then Return a moment later: a TUI such as Claude Code reads text and Return arriving
+    /// together as a paste and would put a newline in the prompt instead of sending it.
+    private func send(_ text: String) {
+        guard let s = TerminalLink.of(pane).session else { app.toast("This pane is not connected"); return }
+        s.write(Data(text.utf8))
+        Task { try? await Task.sleep(for: .milliseconds(120)); s.write(Data("\r".utf8)) }
+        dismiss()
+    }
+}

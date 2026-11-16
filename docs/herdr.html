@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patch herdr for Sidra</title>
+<meta name="description" content="A one-line patch to the herdr client that hides its tab row in Sidra. Point your coding agent at herdr.md.">
+<link rel="icon" href="media/icon-256.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<link rel="alternate" type="text/markdown" href="herdr.md">
+</head>
+<body>
+<header class="nav wrap">
+  <a class="brand" href="./"><img src="media/icon-256.png" alt="" width="28" height="28">Sidra</a>
+  <nav><a href="https://github.com/Kunba-Labs/sidra">GitHub</a></nav>
+</header>
+<main class="wrap doc">
+  <span class="kicker"><img src="media/logo-herdr.png" alt="">herdr</span>
+  <h1>Patch herdr for Sidra</h1>
+  <p>Sidra shows herdr's tabs as chips, so herdr's own tab row shows them twice. A one-line patch to the herdr client hides that row. The patch is optional.</p>
+
+  <h2>Let your coding agent do it</h2>
+  <p>On the machine that runs herdr, give your agent (Claude Code, Codex or similar) this prompt:</p>
+  <pre><code>Read https://kunba-labs.github.io/sidra/herdr.md and follow it.</code></pre>
+  <p>The instructions are plain Markdown at <a href="herdr.md">herdr.md</a>. The agent builds the patched client, checks it, and reports the result to you.</p>
+
+  <h2>Do it yourself</h2>
+  <p>You need herdr, <code>git</code> and <code>cargo</code>. Run these as the user Sidra signs in as:</p>
+  <pre><code>curl -fsSL -o /tmp/herdr-client.sh https://raw.githubusercontent.com/Kunba-Labs/sidra/main/tools/herdr-client.sh
+sh /tmp/herdr-client.sh
+~/.local/share/sidra/herdr-client --version
+herdr --version</code></pre>
+  <p>The last two lines must print the same version. Then close the herdr tab in Sidra and open it again.</p>
+  <p>Run the script again after each herdr upgrade. Until then, Sidra uses the stock herdr client.</p>
+
+  <h2>The change</h2>
+  <p>In herdr's <code>src/client/shell/config.rs</code>, the tab row stays hidden while <code>SIDRA_HIDE_TAB_BAR</code> is set:</p>
+  <pre><code>let show_tab_bar = rows &gt; 1 &amp;&amp; std::env::var_os("SIDRA_HIDE_TAB_BAR").is_none() &amp;&amp; …</code></pre>
+  <p>To undo it, delete <code>~/.local/share/sidra/herdr-client</code>. herdr is open source under the Apache 2.0 license.</p>
+</main>
+<footer class="wrap foot">
+  <span>© 2026 Kunba Labs BV</span>
+  <nav><a href="./">Sidra</a><a href="privacy.html">Privacy</a><a href="https://github.com/Kunba-Labs/sidra/issues">Support</a></nav>
+</footer>
+</body>
+</html>

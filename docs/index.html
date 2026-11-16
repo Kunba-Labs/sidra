@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sidra · Your coding agents on iPad and iPhone</title>
+<meta name="description" content="Sidra is a free, open-source app for iPad and iPhone. Run Claude Code and Codex in herdr on your machine, and answer them from your iPad.">
+<meta property="og:title" content="Sidra">
+<meta property="og:description" content="Your coding agents in herdr, on your iPad and iPhone.">
+<meta property="og:image" content="https://kunba-labs.github.io/sidra/media/social.png">
+<link rel="icon" href="media/icon-256.png">
+<link rel="apple-touch-icon" href="media/icon-256.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header class="nav wrap">
+  <a class="brand" href="./"><img src="media/icon-256.png" alt="" width="28" height="28">Sidra</a>
+  <nav>
+    <a href="#herdr">herdr</a>
+    <a href="#tabs">Tabs</a>
+    <a href="#start">Get started</a>
+    <a href="https://github.com/Kunba-Labs/sidra">GitHub</a>
+  </nav>
+</header>
+
+<main>
+<section class="hero">
+  <div class="glow" aria-hidden="true"></div>
+  <div class="wrap hero-inner">
+    <ul class="tags">
+      <li><b>Free</b><span>no account, no tracking</span></li>
+      <li><b>Open source</b><span>Apache 2.0</span></li>
+      <li><b>Native</b><span>iPad and iPhone</span></li>
+    </ul>
+    <h1>Your coding agents,<br>on your <span class="grad">iPad</span>.</h1>
+    <p class="lede">Run Claude Code and Codex in herdr on your Mac or Linux machine. Sidra opens herdr over SSH, and a dot shows you each agent that needs an answer.</p>
+    <div class="ctas">
+      <a class="badge" href="https://apps.apple.com/app/id6832359499"><img src="media/app-store-badge.svg" alt="Download on the App Store" height="48"></a>
+      <a class="btn" href="https://github.com/Kunba-Labs/sidra">Source on GitHub</a>
+    </div>
+    <p class="works">Works with
+      <span><img src="media/logo-herdr.png" alt="">herdr</span>
+      <span><img src="media/logo-claude.svg" alt="">Claude Code</span>
+      <span><img src="media/logo-codex.svg" alt="" class="inv">Codex</span>
+      <span><img src="media/logo-tailscale.svg" alt="" class="inv">Tailscale</span>
+      <span><img src="media/logo-gitlab.png" alt="">GitLab</span>
+    </p>
+  </div>
+  <div class="wrap shot hero-shot">
+    <img src="media/ipad-01-herdr.png" alt="Sidra on an iPad: herdr with four spaces, and Claude Code asking to run a database migration" width="1600" height="1200">
+  </div>
+</section>
+
+<section id="herdr" class="band">
+  <div class="wrap band-head">
+    <div>
+      <span class="kicker">herdr</span>
+      <h2>Every agent in one tab bar</h2>
+      <p class="lede">Sidra runs herdr's own client in a terminal tab. herdr's spaces and tabs show as chips above it, so you switch with one tap.</p>
+    </div>
+    <ul class="points">
+      <li>A dot on each space shows an agent that works, waits for you or is done.</li>
+      <li>The title bar counts the agents that work and the ones that need you, across all your machines.</li>
+      <li>Send one prompt to several agents at once.</li>
+      <li>Your agents keep running on the machine when your iPad sleeps.</li>
+    </ul>
+  </div>
+  <div class="wrap shot">
+    <video src="media/sidra.mp4" poster="media/ipad-01-herdr.png" autoplay muted loop playsinline width="1280" height="960"></video>
+  </div>
+</section>
+
+<section id="tabs" class="rows wrap">
+  <div class="row">
+    <div class="row-text">
+      <span class="kicker"><img src="media/logo-theasa.png" alt="">Theasa</span>
+      <h3>Answer agents from the title bar</h3>
+      <p>Theasa is a small server that records your Claude Code and Codex turns and writes a summary of each. Tap the Theasa pill to see the agents that wait for you and answer their questions.</p>
+      <p class="sub">Theasa is open source too. <a href="https://github.com/Kunba-Labs/theasa">Run it on your machine.</a></p>
+    </div>
+    <img class="shot" src="media/ipad-02-theasa.png" alt="Theasa in Sidra: agents waiting for an answer, and a week of turns" loading="lazy" width="1600" height="1200">
+  </div>
+  <div class="row flip">
+    <div class="row-text">
+      <span class="kicker"><img src="media/logo-gitlab.png" alt="">Pipelines</span>
+      <h3>Know why the build failed</h3>
+      <p>See the GitLab pipelines of all your projects, newest first. Open a failed job to read its log, with the failed lines marked.</p>
+      <p class="sub">Your GitLab token stays in the Keychain of your device.</p>
+    </div>
+    <img class="shot" src="media/ipad-03-pipelines.png" alt="GitLab pipelines in Sidra with the log of a failed test job" loading="lazy" width="1600" height="1200">
+  </div>
+  <div class="row">
+    <div class="row-text">
+      <span class="kicker">SSH</span>
+      <h3>A real terminal on every machine</h3>
+      <p>Open a shell on any host you reach over SSH, with mosh for flaky networks. The terminal is libghostty-vt, with keys from the Secure Enclave.</p>
+      <p class="sub">Split a tab to put a shell next to herdr.</p>
+    </div>
+    <img class="shot" src="media/ipad-04-ssh.png" alt="An SSH terminal in Sidra" loading="lazy" width="1600" height="1200">
+  </div>
+  <div class="row flip">
+    <div class="row-text">
+      <span class="kicker">Breaks</span>
+      <h3>Hacker News and chess while you wait</h3>
+      <p>HackerTab shows Hacker News with the comments first. Chess plays against Sidra's own engine, on your device.</p>
+      <p class="sub">Tap + to open any tab. You set up each kind the first time you open it.</p>
+    </div>
+    <img class="shot" src="media/ipad-06-chess.png" alt="A chess game against Sidra's engine" loading="lazy" width="1600" height="1200">
+  </div>
+</section>
+
+<section class="phones">
+  <div class="wrap">
+    <span class="kicker">iPhone</span>
+    <h2>The same tabs in your pocket</h2>
+    <div class="phone-row">
+      <img src="media/iphone-01-herdr.png" alt="herdr on iPhone" loading="lazy" width="1200" height="2607">
+      <img src="media/iphone-02-theasa.png" alt="Theasa on iPhone" loading="lazy" width="1200" height="2607">
+      <img src="media/iphone-03-pipelines.png" alt="Pipelines on iPhone" loading="lazy" width="1200" height="2607">
+    </div>
+  </div>
+</section>
+
+<section id="start" class="start wrap">
+  <span class="kicker">Get started</span>
+  <h2>Set up in five minutes</h2>
+  <ol class="steps">
+    <li><b>Install Sidra</b><span>Get it free from the App Store on an iPad or iPhone with iOS 26.</span></li>
+    <li><b>Add your machine</b><span>Tap +, choose SSH host, and add the public key Sidra shows to your machine.</span></li>
+    <li><b>Open herdr</b><span>Tap +, choose herdr and pick the machine. Tap Install herdr if it is missing.</span></li>
+  </ol>
+  <div class="cards">
+    <a class="card" href="herdr.html">
+      <img src="media/logo-herdr.png" alt="">
+      <b>Patch herdr</b>
+      <span>Hide herdr's own tab row with a one-line patch. Point your coding agent at the page.</span>
+    </a>
+    <a class="card" href="https://tailscale.com">
+      <img src="media/logo-tailscale.svg" alt="" class="inv">
+      <b>Use Tailscale</b>
+      <span>Reach your machine at home and away without an open port.</span>
+    </a>
+    <a class="card" href="https://github.com/Kunba-Labs/theasa">
+      <img src="media/logo-theasa.png" alt="">
+      <b>Run Theasa</b>
+      <span>Get a summary of every agent turn and answer agents from Sidra.</span>
+    </a>
+  </div>
+</section>
+
+<section class="download">
+  <div class="wrap">
+    <img src="media/icon-256.png" alt="" width="96" height="96">
+    <h2>Get Sidra</h2>
+    <p class="lede">Free on the App Store. Open source under Apache 2.0.</p>
+    <div class="ctas center">
+      <a class="badge" href="https://apps.apple.com/app/id6832359499"><img src="media/app-store-badge.svg" alt="Download on the App Store" height="48"></a>
+      <a class="btn" href="https://github.com/Kunba-Labs/sidra">Source on GitHub</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="wrap foot">
+  <span>© 2026 Kunba Labs BV</span>
+  <nav>
+    <a href="privacy.html">Privacy</a>
+    <a href="herdr.html">Patch herdr</a>
+    <a href="https://github.com/Kunba-Labs/sidra/issues">Support</a>
+    <a href="https://github.com/Kunba-Labs/sidra">GitHub</a>
+  </nav>
+</footer>
+</body>
+</html>

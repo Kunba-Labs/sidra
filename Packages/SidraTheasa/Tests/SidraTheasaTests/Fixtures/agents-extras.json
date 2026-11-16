@@ -1,0 +1,12 @@
+{"available": true, "error": null, "agents": [
+ {"pane_id": "w8Y:p1", "agent": "claude", "status": "blocked", "title": "Design", "cwd": "/home/dev/Development/lexicon",
+  "session_id": "s-design", "since": "2026-11-14T13:40:00.000Z", "project": {"id": 77, "name": "lexicon", "icon_url": null, "initial": "L"},
+  "ask": [{"question": "Which login screen should we build?", "header": "Login", "multiSelect": false,
+           "options": [{"label": "Card", "description": "A centred card", "preview": "+----------------+\n|  Sign in       |\n|  [ email    ]  |\n|  [ Continue ]  |\n+----------------+"},
+                       {"label": "Split", "description": "Image left, form right"}]}],
+  "ask_extras": {"context": "Two designs are ready. **Card** keeps the form centred; **Split** adds the hero image.",
+                 "attachments": [
+                   {"id": 1, "kind": "sent", "name": "/home/dev/Development/lexicon/design/login-a.png", "media_type": "image/png", "src": "/api/asks/attachments/1"},
+                   {"id": 2, "kind": "sent", "name": "/home/dev/Development/lexicon/design/login-b.png", "media_type": "image/png", "src": "/api/asks/attachments/2"},
+                   {"id": 3, "kind": "sent", "name": "/home/dev/Development/lexicon/design/notes.md", "media_type": "text/markdown"},
+                   {"id": 4, "kind": "artifact", "name": "Login options", "url": "https://claude.ai/artifact/abc123"}]}}]}

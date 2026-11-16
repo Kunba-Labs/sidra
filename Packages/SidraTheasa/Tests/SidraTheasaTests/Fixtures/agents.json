@@ -1,0 +1,148 @@
+{
+ "available": true,
+ "error": null,
+ "agents": [
+  {
+   "pane_id": "w4D:pQ",
+   "agent": "claude",
+   "status": "done",
+   "title": "Webapp",
+   "cwd": "/home/dev/Development/webapp",
+   "session_id": "e3bfe874-d92f-4daf-a7de-8e6f583104bc",
+   "since": "2026-11-14T08:15:12.899Z",
+   "project": {
+    "id": 57,
+    "name": "webapp",
+    "icon_url": "/api/projects/57/icon?v=b7bef250",
+    "initial": "P"
+   },
+   "last": {
+    "turn_id": 9548,
+    "headline": "Orbit nightly gate still fails, and the cause is not yet found.",
+    "text": "Same commit every night, and the same six tests plus clippy fail each time. Checking the two that are new tonight.",
+    "question": null,
+    "ended_at": "2026-11-14T08:04:50.409Z"
+   }
+  },
+  {
+   "pane_id": "w8E:p1",
+   "agent": "claude",
+   "status": "done",
+   "title": "Shop",
+   "cwd": "/home/dev/Development/Shop",
+   "session_id": "46cb6ad8-f50d-4e76-8862-9b33cdf7d69f",
+   "since": "2026-11-14T08:15:12.988Z",
+   "project": {
+    "id": 72,
+    "name": "Shop",
+    "icon_url": "/api/projects/72/icon?v=0fc51813",
+    "initial": "T"
+   },
+   "last": {
+    "turn_id": 9541,
+    "headline": "Searched api for the failing test name; the search results are not in the log.",
+    "text": "Webapp has finished the cleanup. Dev gave his own yes before anything was deleted, as the rule requires. These are now gone:\n- the old `files` buckets (emptied first) and their keys\n- both old DSNs (revoked)\n- all secrets of the two old environments\n- the four volumes\n- the projects shop-atlas and shop-bloom themselves\n\nThe final database backups stay under retention. Project `shop` now holds only the four previews: bloom, develop, atlas and servaid.\n\nThe one red test in that earlier background run, `TheCaptureToken_IsAPlainSettableUniqueField`, isn't in the tree any more. Another session removed or renamed it, so the failure doesn't apply to current develop.\n\nI'm still waiting on Verna-Port's Bloom menu check against `3427d84fe0`, which will prove the five page fixes. After that I go back to the remaining rows: sending the dunning notice as a PDF on WhatsApp, and attaching the SPA (sale and purchase agreement) PDF on the profile send form.",
+    "question": null,
+    "ended_at": "2026-11-14T00:22:46.637Z"
+   }
+  },
+  {
+   "pane_id": "w8E:p2",
+   "agent": "claude",
+   "status": "done",
+   "title": "Verna-Port",
+   "cwd": "/home/dev/Development/Shop",
+   "session_id": "e6c9e602-3769-4ffc-80e5-184cc8b9653c",
+   "since": "2026-11-14T08:15:13.055Z",
+   "project": {
+    "id": 72,
+    "name": "Shop",
+    "icon_url": "/api/projects/72/icon?v=0fc51813",
+    "initial": "T"
+   },
+   "last": {
+    "turn_id": 9539,
+    "headline": "The Bloom menu-link check finished with exit 0; the earlier outage cause is still unknown.",
+    "text": "Bloom is ready for testing. The final menu check found only a brief outage, not a page defect: three consecutive Finance report pages got 503s and a CORS error on `/profile/me` during the run. All three answer 200 when called directly now. Bloom did not redeploy in that window and its release log records no restart, so I don't know what caused the blip; it's worth watching once testers are on it.\n\n**Bloom** (`https://bloom-test.shop.com`, build `3ab862c8ec`)\n- **Install:** company Bloom (AED, UAE) with finance, CRM and sales, and the Symphony and Isla developments.\n- **Admin:** `admin@bloom-test.shop.com`, password in the Keychain item `shop-bloom-admin`, with an employee record.\n- **Documents:** all 28 Word templates are uploaded, and a statement generated from the Symphony template came back as a correct PDF.\n- **Menu check:** 280 links (Admin 31, CRM 22, Finance 147, Sales 80). Apart from that outage, every page opens with no console errors and no failed calls. The six failures from the first install are fixed or removed:\n  - CRM \u203a Cases, the two cash-flow forecasts and Listing EOIs now open.\n  - The two inventory valuation reports no longer appear, since Bloom has no warehousing.\n- **Before real testers:**\n  - real Turnstile keys (it has Cloudflare's always-pass test keys);\n  - two Messy templates (`instalment-invoice-sent`, `broker-registration-received`);\n  - the admin user's own employee link, so owner fields have to be picked by hand;\n  - a leftover \"Test Customer (delete me)\" record.\n\n**Verna parity:** every Sales-side row of the audit in `docs/plans/verna-parity.md` is built and pushed. What's left belongs to the other Shop session:\n- email and WhatsApp from a record, and an activity timeline per record;\n- the mobile sales hub;\n- FM SLA escalation.\n\nOne small piece is mine: request unlock on buildings, communities, unit types and units.\n\n**Tests:** the latest full C# run passes (Shop.Test 5,648). The browser suite has not been rerun end to end on a fresh stack since all the fixes. Doing that would be the final confirmation of full browser coverage.",
+    "question": null,
+    "ended_at": "2026-11-13T22:13:18.929Z"
+   }
+  },
+  {
+   "pane_id": "w9Z:p3",
+   "agent": "claude",
+   "status": "blocked",
+   "title": "fixture",
+   "cwd": "/tmp/fixture",
+   "session_id": "s-ask",
+   "since": "2026-11-14T08:15:12.899Z",
+   "project": null,
+   "ask": [
+    {
+     "question": "Which database?",
+     "header": "DB",
+     "multiSelect": false,
+     "options": [
+      {
+       "label": "SQLite",
+       "description": "One file"
+      },
+      {
+       "label": "Postgres",
+       "description": "Server"
+      }
+     ]
+    },
+    {
+     "question": "Which targets?",
+     "header": "Targets",
+     "multiSelect": true,
+     "options": [
+      {
+       "label": "iPad",
+       "description": "iPad"
+      },
+      {
+       "label": "Mac",
+       "description": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "pane_id": "w9Z:p4",
+   "agent": "codex",
+   "status": "blocked",
+   "title": "fixture",
+   "cwd": "/tmp/fixture",
+   "session_id": "s-screen",
+   "since": "2026-11-14T08:15:12.899Z",
+   "project": {
+    "id": 48,
+    "name": "theasa",
+    "icon_url": null,
+    "initial": "T"
+   },
+   "screen": {
+    "text": "Allow command?\n> 1. Yes\n  2. No",
+    "options": [
+     {
+      "label": "Yes",
+      "keys": [
+       "1"
+      ],
+      "selected": true
+     },
+     {
+      "label": "No",
+      "keys": [
+       "2"
+      ],
+      "selected": false
+     }
+    ]
+   }
+  }
+ ]
+}

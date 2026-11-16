@@ -1,0 +1,133 @@
+# Sidra Xcode project. Regenerate with `xcodegen` after editing. The .xcodeproj is not committed.
+name: Sidra
+options:
+  bundleIdPrefix: nl.sadiq
+  deploymentTarget:
+    iOS: "26.0"
+  xcodeVersion: "27.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: KF53B4S5HD
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1,2"   # iPhone added 2026-11-14: compact layout in PhoneWorkspace
+    SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
+    SUPPORTS_MACCATALYST: NO
+    SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    SWIFT_STRICT_CONCURRENCY: minimal
+packages:
+  SidraDesign: { path: Packages/SidraDesign }
+  SidraWorkspace: { path: Packages/SidraWorkspace }
+  SidraTerminal: { path: Packages/SidraTerminal }
+  SidraSSH: { path: Packages/SidraSSH }
+  SidraTheasa: { path: Packages/SidraTheasa }
+  SidraHackerTab: { path: Packages/SidraHackerTab }
+  SidraChess: { path: Packages/SidraChess }
+targets:
+  Sidra:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sidra
+        excludes: ["Info.plist", "Sidra.entitlements"]
+    dependencies:
+      - package: SidraDesign
+      - package: SidraWorkspace
+      - package: SidraTerminal
+      - package: SidraSSH
+      - package: SidraTheasa
+      - package: SidraHackerTab
+      - package: SidraChess
+    info:
+      path: Sidra/Info.plist
+      properties:
+        CFBundleDisplayName: Sidra
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIRequiresFullScreen: false
+        UISupportedInterfaceOrientations~iphone:   # portrait: a Pro Max in landscape reports regular width and would get the iPad layout
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true  # one WorkspaceStore per scene (decision 52)
+        UIApplicationSupportsIndirectInputEvents: true
+        UIUserInterfaceStyle: Dark
+        UIAppFonts:
+          - Inter-Regular.ttf
+          - Inter-Bold.ttf
+          - JetBrainsMono-Variable.ttf
+        NSLocalNetworkUsageDescription: Sidra connects to the SSH hosts, herdr machines and Theasa servers you add on your local network.
+        NSBonjourServices: [_ssh._tcp]
+        NSFaceIDUsageDescription: Sidra asks for Face ID before an SSH key marked confirm on use signs.
+        ITSAppUsesNonExemptEncryption: false
+    entitlements:
+      path: Sidra/Sidra.entitlements
+      properties: {}
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: nl.sadiq.sidra
+        PRODUCT_NAME: Sidra
+        MARKETING_VERSION: 1.0.0
+        CURRENT_PROJECT_VERSION: 13
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+        OTHER_LDFLAGS: ["-ObjC"]
+  SidraTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [Tests/SidraTests]
+    # Only the host app: linking packages here too makes Xcode build them as dynamic products
+    # and the Crypto framework never gets staged. Modules are still importable through the host.
+    dependencies:
+      - target: Sidra
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: nl.sadiq.sidra.tests
+        GENERATE_INFOPLIST_FILE: YES
+  SidraUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [Tests/SidraUITests]
+    dependencies:
+      - target: Sidra
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: nl.sadiq.sidra.uitests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Sidra:
+    build:
+      targets:
+        Sidra: all
+        SidraTests: [test]
+        SidraUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      # UI tests write landscape screenshots here (ShellUITests.saveScreenshot).
+      environmentVariables:
+        SIDRA_SHOT_PATH: $(SRCROOT)/build/shots/shot.png
+      targets:
+        - SidraTests
+        - SidraUITests
+        - package: SidraDesign/SidraDesignTests
+        - package: SidraWorkspace/SidraWorkspaceTests
+        - package: SidraTerminal/SidraTerminalTests
+        - package: SidraTheasa/SidraTheasaTests
+        - package: SidraHackerTab/SidraHackerTabTests
+        - package: SidraChess/SidraChessTests
+        # Packages that link Citadel (NIOSSH, swift-crypto) cannot run as package test bundles
+        # from this scheme: Xcode fails to stage the dynamic Crypto package product. Their tests
+        # live in Tests/SidraTests instead (see docs/DECISIONS.md).
+    archive:
+      config: Release

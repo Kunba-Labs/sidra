@@ -1,0 +1,25 @@
+# Xcode
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+DerivedData/
+build/
+*.xcuserstate
+# SwiftPM
+.build/
+.swiftpm/
+Packages/*/.build/
+# Secrets
+*.p8
+*.mobileprovision
+pairingFile.plist
+# macOS
+.DS_Store
+# handoff archive (unpacked into docs/ and design/)
+sidra-handoff.zip
+Packages/*/Package.resolved
+
+# slopo duplication scan output (scratch; a persisted dup map is an attack surface)
+slopo.db
+slopo-report/
+slopo.ignore.txt
+slopo.agent.log

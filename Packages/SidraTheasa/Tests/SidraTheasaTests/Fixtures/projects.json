@@ -1,0 +1,90 @@
+[
+ {
+  "id": 48,
+  "key": "/home/dev/Development/theasa",
+  "name": "theasa",
+  "repo_name": "theasa",
+  "root": "/home/dev/Development/theasa",
+  "remote": "",
+  "hidden": false,
+  "has_icon": true,
+  "icon_url": "/api/projects/48/icon?v=62b3565f",
+  "initial": "T",
+  "icon_locked": false,
+  "last_at": "2026-11-14T08:16:48.669Z",
+  "turns": 11,
+  "tokens": 80701218,
+  "cost": 27.434006,
+  "agent_ms": 6923088,
+  "open_watch": 56,
+  "machines": [
+   "devbox"
+  ]
+ },
+ {
+  "id": 230,
+  "key": "/private/tmp/claude-501/-home-dev-Development-theasa/15268a82-c964-4202-a8c2-461c59a43439/scratchpad/asktest",
+  "name": "asktest",
+  "repo_name": "asktest",
+  "root": "/private/tmp/claude-501/-home-dev-Development-theasa/15268a82-c964-4202-a8c2-461c59a43439/scratchpad/asktest",
+  "remote": "",
+  "hidden": true,
+  "has_icon": false,
+  "icon_url": null,
+  "initial": "A",
+  "icon_locked": false,
+  "last_at": "2026-11-14T08:13:07.692Z",
+  "turns": 7,
+  "tokens": 435587,
+  "cost": 0.019717215,
+  "agent_ms": 141289,
+  "open_watch": 11,
+  "machines": [
+   "devbox"
+  ]
+ },
+ {
+  "id": 71,
+  "key": "git.example.com/me/notes",
+  "name": "notes",
+  "repo_name": "notes",
+  "root": "/home/dev/Development/notes",
+  "remote": "git.example.com/me/notes",
+  "hidden": false,
+  "has_icon": true,
+  "icon_url": "/api/projects/71/icon?v=dd3c31af",
+  "initial": "H",
+  "icon_locked": false,
+  "last_at": "2026-11-14T08:10:03.363Z",
+  "turns": 13,
+  "tokens": 41073689,
+  "cost": 26.1246832,
+  "agent_ms": 6706638,
+  "open_watch": 63,
+  "machines": [
+   "devbox"
+  ]
+ },
+ {
+  "id": 57,
+  "key": "git.example.com/acme/webapp",
+  "name": "webapp",
+  "repo_name": "webapp",
+  "root": "/home/dev/Development/webapp",
+  "remote": "git.example.com/acme/webapp",
+  "hidden": false,
+  "has_icon": true,
+  "icon_url": "/api/projects/57/icon?v=b7bef250",
+  "initial": "P",
+  "icon_locked": false,
+  "last_at": "2026-11-14T08:04:50.409Z",
+  "turns": 261,
+  "tokens": 1547364488,
+  "cost": 576.8079144,
+  "agent_ms": 171006299,
+  "open_watch": 157,
+  "machines": [
+   "devbox"
+  ]
+ }
+]

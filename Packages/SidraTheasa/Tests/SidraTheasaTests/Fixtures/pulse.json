@@ -1,0 +1,391 @@
+{
+ "range": "week",
+ "since": "2026-11-07T23:00:00.000Z",
+ "totals": {
+  "turns": 1609,
+  "agent_ms": 615623364,
+  "tokens": 6371414255,
+  "cache_share": 0.9888931033762797,
+  "cost": 2282.0455976499998,
+  "priced": 1601,
+  "by_agent": {
+   "claude": 1599,
+   "codex": 10
+  }
+ },
+ "bars": [
+  {
+   "label": "Sun",
+   "day": "2026-11-08",
+   "claude": 640098701,
+   "codex": 0
+  },
+  {
+   "label": "Mon",
+   "day": "2026-11-09",
+   "claude": 1049535438,
+   "codex": 5604261
+  },
+  {
+   "label": "Tue",
+   "day": "2026-11-10",
+   "claude": 1352341317,
+   "codex": 0
+  },
+  {
+   "label": "Wed",
+   "day": "2026-11-11",
+   "claude": 1078088972,
+   "codex": 4239845
+  },
+  {
+   "label": "Thu",
+   "day": "2026-11-12",
+   "claude": 836110351,
+   "codex": 1356680
+  },
+  {
+   "label": "Fri",
+   "day": "2026-11-13",
+   "claude": 1360982499,
+   "codex": 1887165
+  },
+  {
+   "label": "Sat",
+   "day": "2026-11-14",
+   "claude": 41169026,
+   "codex": 0
+  }
+ ],
+ "days": [
+  {
+   "day": "2026-11-14",
+   "items": [
+    {
+     "project": {
+      "id": 48,
+      "key": "/home/dev/Development/theasa",
+      "name": "theasa",
+      "repo_name": "theasa",
+      "root": "/home/dev/Development/theasa",
+      "remote": "",
+      "hidden": false,
+      "has_icon": true,
+      "icon_url": "/api/projects/48/icon?v=62b3565f",
+      "initial": "T",
+      "icon_locked": false
+     },
+     "turns": 3,
+     "agents": [
+      "claude"
+     ],
+     "last_at": "2026-11-14T08:16:48.669Z",
+     "health": "watch",
+     "pending": 0,
+     "bullets": [
+      {
+       "turn_id": 9557,
+       "text": "Theasa now detects waiting agents and answers their questions from the app.",
+       "verdict": "watch"
+      },
+      {
+       "turn_id": 9543,
+       "text": "Claude Code hook works, Codex hook needs approval, and Theasa runs on your Tailscale address.",
+       "verdict": "watch"
+      },
+      {
+       "turn_id": 9544,
+       "text": "The page address for the iPad is reported, but the log does not confirm it works.",
+       "verdict": "watch"
+      }
+     ],
+     "decisions": 6,
+     "watch": 17,
+     "files": 1
+    },
+    {
+     "project": {
+      "id": 71,
+      "key": "git.example.com/me/notes",
+      "name": "notes",
+      "repo_name": "notes",
+      "root": "/home/dev/Development/notes",
+      "remote": "git.example.com/me/notes",
+      "hidden": false,
+      "has_icon": true,
+      "icon_url": "/api/projects/71/icon?v=dd3c31af",
+      "initial": "H",
+      "icon_locked": false
+     },
+     "turns": 2,
+     "agents": [
+      "claude"
+     ],
+     "last_at": "2026-11-14T08:10:03.363Z",
+     "health": "watch",
+     "pending": 0,
+     "bullets": [
+      {
+       "turn_id": 9549,
+       "text": "The selected story now uses a solid orange number block and a blinking cursor.",
+       "verdict": "watch"
+      },
+      {
+       "turn_id": 9545,
+       "text": "Up and down arrow keys now work in the iPad simulator; build 0.1.0 (6) is uploaded.",
+       "verdict": "watch"
+      }
+     ],
+     "decisions": 5,
+     "watch": 7,
+     "files": 0
+    }
+   ]
+  },
+  {
+   "day": "2026-11-13",
+   "items": [
+    {
+     "project": {
+      "id": 57,
+      "key": "git.example.com/acme/webapp",
+      "name": "webapp",
+      "repo_name": "webapp",
+      "root": "/home/dev/Development/webapp",
+      "remote": "git.example.com/acme/webapp",
+      "hidden": false,
+      "has_icon": true,
+      "icon_url": "/api/projects/57/icon?v=b7bef250",
+      "initial": "P",
+      "icon_locked": false
+     },
+     "turns": 18,
+     "agents": [
+      "claude"
+     ],
+     "last_at": "2026-11-14T00:22:43.998Z",
+     "health": "broken",
+     "pending": 0,
+     "bullets": [
+      {
+       "turn_id": 3952,
+       "text": "Production 502s not confirmed fixed; placement change applied, redeploy still building.",
+       "verdict": "broken"
+      },
+      {
+       "turn_id": 3962,
+       "text": "Members can open a shell in Shop preview environments; production stays admin-only.",
+       "verdict": "watch"
+      },
+      {
+       "turn_id": 3965,
+       "text": "shop-atlas and shop-bloom now run as shop preview/atlas and preview/bloom.",
+       "verdict": "watch"
+      }
+     ],
+     "decisions": 29,
+     "watch": 96,
+     "files": 2
+    },
+    {
+     "project": {
+      "id": 72,
+      "key": "git.example.com/acme/shop",
+      "name": "Shop",
+      "repo_name": "Shop",
+      "root": "/home/dev/Development/Shop",
+      "remote": "git.example.com/acme/shop",
+      "hidden": false,
+      "has_icon": true,
+      "icon_url": "/api/projects/72/icon?v=0fc51813",
+      "initial": "T",
+      "icon_locked": false
+     },
+     "turns": 96,
+     "agents": [
+      "claude"
+     ],
+     "last_at": "2026-11-13T22:13:18.929Z",
+     "health": "broken",
+     "pending": 0,
+     "bullets": [
+      {
+       "turn_id": 7407,
+       "text": "Pushes stay held; the WhatsApp work is staged, and its commit is blocked by a failing UI test.",
+       "verdict": "broken"
+      },
+      {
+       "turn_id": 7394,
+       "text": "Uploaded 28 templates to Bloom; the Gotenberg PDF proof is not done.",
+       "verdict": "broken"
+      },
+      {
+       "turn_id": 7379,
+       "text": "The walk stopped at a 403 API error; Sales is reported done, nothing committed.",
+       "verdict": "broken"
+      }
+     ],
+     "decisions": 151,
+     "watch": 485,
+     "files": 8
+    }
+   ]
+  }
+ ],
+ "attention": [
+  {
+   "id": 1593,
+   "text": "Build 8 is not confirmed uploaded or pushed. The log ends at the build 8 commit command.",
+   "impact": "high",
+   "created_at": "2026-11-14T08:10:03.363Z",
+   "turn_id": 9549,
+   "project_id": 71,
+   "project": {
+    "id": 71,
+    "key": "git.example.com/me/notes",
+    "name": "notes",
+    "repo_name": "notes",
+    "root": "/home/dev/Development/notes",
+    "remote": "git.example.com/me/notes",
+    "hidden": false,
+    "has_icon": true,
+    "icon_url": "/api/projects/71/icon?v=dd3c31af",
+    "initial": "H",
+    "icon_locked": false
+   }
+  },
+  {
+   "id": 1575,
+   "text": "The nightly gate still fails. The cause and the fix are not known.",
+   "impact": "high",
+   "created_at": "2026-11-14T08:04:50.409Z",
+   "turn_id": 9548,
+   "project_id": 57,
+   "project": {
+    "id": 57,
+    "key": "git.example.com/acme/webapp",
+    "name": "webapp",
+    "repo_name": "webapp",
+    "root": "/home/dev/Development/webapp",
+    "remote": "git.example.com/acme/webapp",
+    "hidden": false,
+    "has_icon": true,
+    "icon_url": "/api/projects/57/icon?v=b7bef250",
+    "initial": "P",
+    "icon_locked": false
+   }
+  },
+  {
+   "id": 1569,
+   "text": "Build 1.1.1 (47) is not confirmed VALID. The log ends while Apple processes it. Check the build status before you test.",
+   "impact": "high",
+   "created_at": "2026-11-14T01:18:37.035Z",
+   "turn_id": 9546,
+   "project_id": 51,
+   "project": {
+    "id": 51,
+    "key": "git.example.com/me/lexicon",
+    "name": "lexicon",
+    "repo_name": "lexicon",
+    "root": "/home/dev/Development/lexicon",
+    "remote": "git.example.com/me/lexicon",
+    "hidden": false,
+    "has_icon": true,
+    "icon_url": "/api/projects/51/icon?v=26765d7d",
+    "initial": "L",
+    "icon_locked": false
+   }
+  }
+ ],
+ "open_watch": 1396,
+ "decisions": [
+  {
+   "id": 516,
+   "text": "Capture pending questions with a Claude PreToolUse hook for AskUserQuestion.",
+   "created_at": "2026-11-14T08:16:48.669Z",
+   "turn_id": 9557,
+   "project_id": 48,
+   "project": {
+    "id": 48,
+    "key": "/home/dev/Development/theasa",
+    "name": "theasa",
+    "repo_name": "theasa",
+    "root": "/home/dev/Development/theasa",
+    "remote": "",
+    "hidden": false,
+    "has_icon": true,
+    "icon_url": "/api/projects/48/icon?v=62b3565f",
+    "initial": "T",
+    "icon_locked": false
+   }
+  },
+  {
+   "id": 517,
+   "text": "Answer a question by sending Esc, then a prompt with the answers.",
+   "created_at": "2026-11-14T08:16:48.669Z",
+   "turn_id": 9557,
+   "project_id": 48,
+   "project": {
+    "id": 48,
+    "key": "/home/dev/Development/theasa",
+    "name": "theasa",
+    "repo_name": "theasa",
+    "root": "/home/dev/Development/theasa",
+    "remote": "",
+    "hidden": false,
+    "has_icon": true,
+    "icon_url": "/api/projects/48/icon?v=62b3565f",
+    "initial": "T",
+    "icon_locked": false
+   }
+  },
+  {
+   "id": 518,
+   "text": "Do the Sidra port after the waiting-agents feature.",
+   "created_at": "2026-11-14T08:16:48.669Z",
+   "turn_id": 9557,
+   "project_id": 48,
+   "project": {
+    "id": 48,
+    "key": "/home/dev/Development/theasa",
+    "name": "theasa",
+    "repo_name": "theasa",
+    "root": "/home/dev/Development/theasa",
+    "remote": "",
+    "hidden": false,
+    "has_icon": true,
+    "icon_url": "/api/projects/48/icon?v=62b3565f",
+    "initial": "T",
+    "icon_locked": false
+   }
+  }
+ ],
+ "decisions_count": 455,
+ "worker": {
+  "written": 362,
+  "tokens": 3980630,
+  "cost": 1.02886805,
+  "queued": 0,
+  "running": 0,
+  "failed": 0,
+  "median_delay_s": 26704
+ },
+ "active": [
+  {
+   "agent": "claude",
+   "session_id": "15268a82-c964-4202-a8c2-461c59a43439",
+   "machine": "devbox",
+   "last_at": "2026-11-14T08:16:48.669Z",
+   "project_id": 48,
+   "project": "theasa"
+  },
+  {
+   "agent": "claude",
+   "session_id": "55ef265f-c495-412d-a42c-5c2f6dde8b36",
+   "machine": "devbox",
+   "last_at": "2026-11-14T08:13:07.692Z",
+   "project_id": 230,
+   "project": "asktest"
+  }
+ ]
+}
