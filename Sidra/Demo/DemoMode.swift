@@ -52,6 +52,9 @@ enum DemoMode {
         if command.contains("api snapshot") { return ok(snapshot()) }
         if command.contains("workspace focus"), let id = ["w1", "w2", "w3", "w4"].first(where: { command.contains("'\($0)'") }) { focused = id }
         if command.contains("uname") { return ok("Linux\n") }
+        // Sidra's project-logo finder: answer with the made-up project's icon.
+        if command.contains("base64 <"), let name = ["webapp", "api", "mobile", "docs"].first(where: { command.contains("/home/dev/\($0)") }),
+           let png = icon(name) { return ok(png.base64EncodedString()) }
         return ok("")
     }
 
@@ -70,6 +73,9 @@ enum DemoMode {
         let panes = ["w1", "w2", "w3", "w4"].map { #"{"pane_id":"\#($0):p1","workspace_id":"\#($0)","cwd":"/home/dev/\#(["w1": "webapp", "w2": "api", "w3": "mobile", "w4": "docs"][$0]!)"}"# }
         return #"{"id":"cli:api:snapshot","result":{"snapshot":{"version":"0.9.1","protocol":22,"focused_workspace_id":"\#(focused)","focused_pane_id":"\#(focused):p1","focused_tab_id":"\#(focused):t1","workspaces":[\#(spaces.joined(separator: ","))],"agents":[\#(agents.joined(separator: ","))],"panes":[\#(panes.joined(separator: ","))],"tabs":[],"layouts":[]}}}"#
     }
+
+    /// The made-up projects' icons, from tools/dev/demo-icons in this checkout.
+    static func icon(_ name: String) -> Data? { try? Data(contentsOf: repo.appendingPathComponent("tools/dev/demo-icons/\(name).png")) }
 
     // MARK: Terminal screens
 
@@ -206,7 +212,7 @@ final class DemoURLProtocol: URLProtocol {
         case "user": return data(#"{"username":"dev"}"#)
         case "groups": return data("[]")
         case "projects" where parts.count == 1:
-            return data("[" + projects.map { #"{"id":\#($0.id),"name":"\#($0.name)","path_with_namespace":"\#($0.group)/\#($0.name)","web_url":"https://gitlab.demo/\#($0.group)/\#($0.name)","avatar_url":null,"namespace":{"id":1,"kind":"group","full_path":"\#($0.group)"},"last_activity_at":"\#(iso(5))"}"# }.joined(separator: ",") + "]")
+            return data("[" + projects.map { #"{"id":\#($0.id),"name":"\#($0.name)","path_with_namespace":"\#($0.group)/\#($0.name)","web_url":"https://gitlab.demo/\#($0.group)/\#($0.name)","avatar_url":"https://gitlab.demo/a/\#($0.name).png","namespace":{"id":1,"kind":"group","full_path":"\#($0.group)"},"last_activity_at":"\#(iso(5))"}"# }.joined(separator: ",") + "]")
         case "projects" where parts.count == 3 && parts[2] == "pipelines":
             let pid = Int(parts[1]) ?? 0
             return data("[" + pipelines.filter { $0.project == pid }.map { p in
@@ -221,6 +227,9 @@ final class DemoURLProtocol: URLProtocol {
             return data("[" + jobs.enumerated().map { i, j in
                 #"{"id":\#((Int(parts[3]) ?? 0) * 10 + i),"name":"\#(j.0)","stage":"\#(j.1)","status":"\#(j.2)","duration":\#(40 + i * 23),"failure_reason":\#(j.2 == "failed" ? "\"script_failure\"" : "null"),"web_url":"https://gitlab.demo/j"}"#
             }.joined(separator: ",") + "]")
+        case "projects" where parts.count == 3 && parts[2] == "avatar":
+            let name = projects.first { "\($0.id)" == parts[1] }?.name ?? ""
+            return DemoMode.icon(name).map { (200, "image/png", $0) } ?? (404, json, Data())
         case "projects" where parts.last == "trace":
             return (200, "text/plain", Data(trace.utf8))
         default: return (404, json, Data("{}".utf8))
