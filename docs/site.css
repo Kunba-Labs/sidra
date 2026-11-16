@@ -45,6 +45,8 @@ h3 { font-size: 28px; letter-spacing: -.02em; line-height: 1.15; margin: 8px 0 1
 .hero-shot { margin-top: 48px; padding: 0; }
 .hero-shot img { width: 100%; }
 
+.film { padding: 110px 0 0; text-align: center; }
+.film video { width: 100%; margin-top: 28px; border-radius: 18px; border: 1px solid var(--hair2); box-shadow: 0 30px 80px rgba(0,0,0,.55); }
 .band { padding: 110px 0 40px; }
 .band-head { display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: end; margin-bottom: 40px; }
 .band-head .lede { margin: 0; }

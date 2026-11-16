@@ -16,6 +16,11 @@
   <img src="docs/media/sidra.gif" width="900" alt="Sidra on an iPad: herdr spaces, Theasa, GitLab pipelines, an SSH shell and chess">
 </p>
 
+<p align="center">
+  <a href="https://kunba-labs.github.io/sidra/#film"><img src="docs/media/explainer-poster.png" width="420" alt="The 45-second explainer of Sidra and herdr"></a><br>
+  <a href="https://kunba-labs.github.io/sidra/#film">Watch the 45-second explainer</a>
+</p>
+
 Sidra is a native app for iPad and iPhone. You run your coding agents (Claude Code, Codex and
 others) in [herdr](https://herdr.dev) on a Mac or a Linux machine. Sidra connects over SSH and opens
 herdr in a tab. herdr's spaces and their tabs show as chips, with a dot for each agent that needs you.
