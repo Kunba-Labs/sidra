@@ -28,7 +28,7 @@ struct KeysSection: View {
                         }
                         Text(k.fingerprint).font(SidraFont.mono(11.5)).foregroundStyle(SidraColor.dim).textSelection(.enabled)
                         HStack(spacing: 8) {
-                            Button(copiedID == k.id ? "Copied" : "Copy public key") { UIPasteboard.general.string = k.publicKey; copiedID = k.id }.buttonStyle(.sidraSecondary)
+                            Button(copiedID == k.id ? "Copied" : "Copy public key") { Platform.pasteString = k.publicKey; copiedID = k.id }.buttonStyle(.sidraSecondary)
                             Toggle("Confirm on use", isOn: Binding(get: { k.confirmOnUse }, set: { SSHKeyManager.setConfirmOnUse(k.id, $0); reload() }))
                                 .toggleStyle(GradientToggleStyle()).font(SidraFont.ui(12)).foregroundStyle(SidraColor.muted).fixedSize()
                             Spacer()
@@ -118,10 +118,10 @@ struct ImportKeySheet: View {
             TextField("Name", text: $name).textFieldStyle(.plain).font(SidraFont.mono(13)).foregroundStyle(SidraColor.text)
                 .padding(8).background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
             TextEditor(text: $text).font(SidraFont.mono(11.5)).foregroundStyle(SidraColor.text).scrollContentBackground(.hidden)
-                .autocorrectionDisabled().textInputAutocapitalization(.never)
+                .autocorrectionDisabled().plainTextEntry()
                 .frame(height: 220).padding(6).background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
             HStack {
-                Button("Paste") { text = UIPasteboard.general.string ?? "" }.buttonStyle(.sidraSecondary)
+                Button("Paste") { text = Platform.pasteString ?? "" }.buttonStyle(.sidraSecondary)
                 Spacer()
                 Button("Cancel") { dismiss() }.buttonStyle(.sidraSecondary)
                 Button("Import") {

@@ -1,5 +1,8 @@
 import UserNotifications
+import SidraDesign
+#if canImport(UIKit)
 import UIKit
+#endif
 import OSLog
 
 /// Local notifications for long-running things finishing while Sidra is in the background:
@@ -36,12 +39,12 @@ enum Notifier {
         if CommandLine.arguments.contains("-sidra.requestNotifications") { UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in } }
     }
 
-    static func notify(_ title: String, _ body: String, route: Route? = nil) {
-        log.log("notify \(title, privacy: .public) state=\(UIApplication.shared.applicationState.rawValue)")
-        guard UIApplication.shared.applicationState != .active else { return }
+    @MainActor static func notify(_ title: String, _ body: String, route: Route? = nil) {
+        log.log("notify \(title, privacy: .public) active=\(Platform.isAppActive)")
+        guard !Platform.isAppActive else { return }
         // The build's own background grace ends as it finishes; this keeps the app awake until the post is queued.
-        let task = UIApplication.shared.beginBackgroundTask(withName: "sidra.notify", expirationHandler: nil)
-        let finish = { DispatchQueue.main.async { UIApplication.shared.endBackgroundTask(task) } }
+        let task = Platform.beginBackgroundTask("sidra.notify")
+        let finish = { DispatchQueue.main.async { Platform.endBackgroundTask(task) } }
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { ok, _ in
             log.log("authorized=\(ok)")

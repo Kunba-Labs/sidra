@@ -65,7 +65,7 @@ struct TheasaRootView: View {
     @Bindable var nav: TheasaNav
     @Environment(WorkspaceStore.self) private var workspace
     /// Inside a popover the size class is always compact, so this checks the device.
-    private var compactWidth: Bool { UIDevice.current.userInterfaceIdiom == .phone }
+    private var compactWidth: Bool { Platform.isPhone }
     @State private var query = ""
     private var path: [TheasaRoute] {
         get { nav.path }
@@ -90,11 +90,11 @@ struct TheasaRootView: View {
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(SidraColor.pane)
-                        .toolbar(.hidden, for: .navigationBar)
+                        .hiddenNavigationBar()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(SidraColor.pane)
-                    .toolbar(.hidden, for: .navigationBar)
+                    .hiddenNavigationBar()
             }
             .environment(\.theasaOpen) { path.append($0) }
         }
@@ -168,7 +168,7 @@ struct TheasaRootView: View {
                 .buttonStyle(.plain).accessibilityLabel("Search").accessibilityIdentifier("theasa-search-go")
                 TextField("Search turns, decisions, files", text: $query)
                     .font(SidraFont.ui(13)).foregroundStyle(SidraColor.text)
-                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .plainTextEntry().autocorrectionDisabled()
                     .submitLabel(.search)
                     .onSubmit { let q = query.trimmingCharacters(in: .whitespaces); if !q.isEmpty { path.append(.search(q)) } }
                     .theasaField(nav: nav, workspace: workspace, focusOn: nav.focusSearch)

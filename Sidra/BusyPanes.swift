@@ -1,6 +1,9 @@
 import Foundation
 import Observation
+import SidraDesign
+#if canImport(UIKit)
 import UIKit
+#endif
 
 /// Pane ids with a live process (PTY, build, agent run, serial connection). Closing one asks
 /// first. A pane marks itself with two lines:
@@ -16,17 +19,17 @@ final class BusyPanes {
         if ids.isEmpty { endGrace() }
     }
 
-    private var grace = UIBackgroundTaskIdentifier.invalid
+    private var grace: Int?
     /// iPadOS allows about 30 s after leaving: enough for a short build to finish and notify.
     /// ponytail: longer runs need BGContinuedProcessingTask, which needs the device VM (M5).
     func beginGrace() {
-        guard !ids.isEmpty, grace == .invalid else { return }
-        grace = UIApplication.shared.beginBackgroundTask(withName: "sidra.busy") { [weak self] in MainActor.assumeIsolated { self?.endGrace() } }
+        guard !ids.isEmpty, grace == nil else { return }
+        grace = Platform.beginBackgroundTask("sidra.busy") { [weak self] in self?.endGrace() }
     }
     func endGrace() {
-        guard grace != .invalid else { return }
-        UIApplication.shared.endBackgroundTask(grace)
-        grace = .invalid
+        guard let g = grace else { return }
+        Platform.endBackgroundTask(g)
+        grace = nil
     }
     func isBusy(_ id: UUID) -> Bool { ids.contains(id) }
 }

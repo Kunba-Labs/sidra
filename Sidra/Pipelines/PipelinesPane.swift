@@ -1,5 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#endif
 import SidraDesign
 import SidraWorkspace
 
@@ -144,7 +146,7 @@ struct PipelinesPane: View {
                 Button("") { step(-1) }.keyboardShortcut(.upArrow, modifiers: [])
                 Button("") { step(1) }.keyboardShortcut(.downArrow, modifiers: [])
                 Button("") { Task { await store.refresh() } }.keyboardShortcut("r", modifiers: .command)
-                Button("") { if let p = store.pipelines.first(where: { $0.id == selected }), let u = URL(string: p.web_url) { UIApplication.shared.open(u) } }
+                Button("") { if let p = store.pipelines.first(where: { $0.id == selected }), let u = URL(string: p.web_url) { Platform.open(u) } }
                     .keyboardShortcut("o", modifiers: .command)
             }
             .opacity(0).accessibilityHidden(true)
@@ -209,7 +211,7 @@ struct PipelineRun: View {
             PipelineAvatar(image: store.avatar(project: pipeline.project_id), name: project?.name ?? "?", size: 22)
             Text(project?.name ?? "").font(SidraFont.ui(15, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
         }
-        let open = Button { if let u = URL(string: pipeline.web_url) { UIApplication.shared.open(u) } } label: {
+        let open = Button { if let u = URL(string: pipeline.web_url) { Platform.open(u) } } label: {
             Label("Open in GitLab", systemImage: "arrow.up.forward.square").labelStyle(.titleAndIcon)
         }
         .buttonStyle(.sidraDark)
@@ -415,7 +417,7 @@ struct PipelineStatusChip: View {
 
 /// GitLab's own avatar for a project or group, or its first letter.
 struct PipelineAvatar: View {
-    let image: UIImage?
+    let image: PlatformImage?
     let name: String
     var size: CGFloat = 18
     var body: some View { HerdrLogoView(name: name, image: image, size: size) }
@@ -466,7 +468,7 @@ struct PipelinesConnectSheet: View {
             }
             Text("A personal access token with the read_api scope. Sidra keeps it in the Keychain and talks to GitLab directly.")
                 .font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted)
-            field("GitLab URL") { TextField("https://gitlab.example.com", text: $url).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled() }
+            field("GitLab URL") { TextField("https://gitlab.example.com", text: $url).urlKeyboard().plainTextEntry().autocorrectionDisabled() }
             field("Token") { SecureField(store.connected ? "Saved; type to replace it" : "glpat-…", text: $token) }
             if let error { Text(error).font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.yellow) }
             HStack {

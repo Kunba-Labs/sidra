@@ -274,7 +274,9 @@ public struct IconButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        #if os(iOS)
         .hoverEffect(.highlight)
+        #endif
         .accessibilityLabel(label)
     }
 }

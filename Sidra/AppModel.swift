@@ -79,10 +79,17 @@ final class AppModel {
     }
 
     private func activateWindow(of store: WorkspaceStore) {
-        guard let id = sceneWorkspaces.first(where: { $0.value === store })?.key,
-              let session = UIApplication.shared.openSessions.first(where: { $0.persistentIdentifier == id }) else { return }
+        guard let id = sceneWorkspaces.first(where: { $0.value === store })?.key else { return }
+        #if os(iOS)
+        guard let session = UIApplication.shared.openSessions.first(where: { $0.persistentIdentifier == id }) else { return }
         UIApplication.shared.activateSceneSession(for: UISceneSessionActivationRequest(session: session))
+        #else
+        NSApp.windows.first { $0.identifier?.rawValue == id }?.makeKeyAndOrderFront(nil)
+        #endif
     }
+
+    /// SwiftUI's openWindow, handed over by RootView: menu commands have no environment of their own.
+    var openNewWindow: (() -> Void)?
 
     func connection(for profile: SSHHostProfile) -> SSHConnection {
         if let c = connections[profile.id], c.profile == profile { return c }
@@ -118,7 +125,7 @@ final class AppModel {
         }
     }
 
-    func openLink(_ url: URL) { UIApplication.shared.open(url) }
+    func openLink(_ url: URL) { Platform.open(url) }
 
     func openTab(kind: PaneKind) {
         let pane = newPane(kind: kind)

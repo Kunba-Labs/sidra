@@ -1,5 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#endif
 import SidraWorkspace
 
 /// The Theasa menu: registered with every other command, so the keys work from any focus, list
@@ -58,6 +60,23 @@ enum TheasaCommands {
     }
 }
 
+#if os(macOS)
+/// On the Mac, Esc reaches a hidden button's shortcut, so the pane needs no key-owning host.
+struct TheasaKeyHosted<Content: View>: View {
+    let nav: TheasaNav
+    let paneFocused: Bool
+    let typing: Bool
+    var overlay = false
+    @ViewBuilder let content: Content
+    var body: some View {
+        content.background {
+            if paneFocused && !typing && !nav.path.isEmpty {
+                Button("Back") { nav.escape() }.keyboardShortcut(.cancelAction).hidden()
+            }
+        }
+    }
+}
+#else
 /// Esc goes back in the Theasa pane's stack when none of its fields has the keyboard. Esc never
 /// reaches SwiftUI menu shortcuts on iPad, and the app delegate is not in the responder chain under the
 /// SwiftUI lifecycle (notes found it dead on a real iPad), so the pane is hosted in this controller: it
@@ -149,3 +168,4 @@ private extension UIView {
         return nil
     }
 }
+#endif

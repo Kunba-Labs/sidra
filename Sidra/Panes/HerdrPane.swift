@@ -89,9 +89,9 @@ struct MuxSpacesBar: View {
                 if !newSpaceMoving, newSpaceFolder == "~/Development/" + newSpaceLabel { newSpaceFolder = "~/Development/" + v }
                 newSpaceLabel = v
             }))
-            .textInputAutocapitalization(.never).autocorrectionDisabled()
+            .plainTextEntry().autocorrectionDisabled()
             if !newSpaceMoving {
-                TextField("Folder", text: $newSpaceFolder).textInputAutocapitalization(.never).autocorrectionDisabled()
+                TextField("Folder", text: $newSpaceFolder).plainTextEntry().autocorrectionDisabled()
             }
             Button("Create") {
                 guard let mon = MuxMonitors.shared.byPane[pane.id] else { return }
@@ -276,7 +276,7 @@ struct NewSpacePicker: View {
                 .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
             StartAgentRow()
             TextField("Search ~/Development", text: $query)
-                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                .plainTextEntry().autocorrectionDisabled()
                 .font(SidraFont.ui(14)).padding(.horizontal, 10).frame(height: 36)
                 .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline2))
@@ -303,7 +303,7 @@ struct NewSpacePicker: View {
             .frame(maxHeight: 360)
             HStack(spacing: 8) {
                 TextField("Or a path, e.g. ~/src/tool", text: $path)
-                    .textInputAutocapitalization(.never).autocorrectionDisabled()
+                    .plainTextEntry().autocorrectionDisabled()
                     .font(SidraFont.mono(12.5)).padding(.horizontal, 10).frame(height: 32)
                     .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline2))
@@ -632,13 +632,13 @@ struct HerdrStatusChip: View {
 /// The project's own logo, or its first letter when the folder has none.
 struct HerdrLogoView: View {
     let name: String
-    let image: UIImage?
+    let image: PlatformImage?
     var size: CGFloat = 20
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: size * 0.24, style: .continuous)
         Group {
             if let image {
-                Image(uiImage: image).resizable().scaledToFill()
+                Image(platformImage: image).resizable().scaledToFill()
             } else {
                 Text(String(name.first(where: { $0.isLetter || $0.isNumber }) ?? "?").uppercased())
                     .font(SidraFont.ui(size * 0.5, weight: .bold)).foregroundStyle(SidraColor.muted)
@@ -657,7 +657,7 @@ struct MuxTabsMenu: View {
     let space: MuxSnapshot.Workspace
     let tabs: [MuxSnapshot.Tab]
     let shown: Bool
-    let logo: UIImage?
+    let logo: PlatformImage?
     let pick: (MuxSnapshot.Tab) -> Void
 
     var body: some View {
@@ -796,7 +796,7 @@ struct BroadcastSheet: View {
             Text("Types the command into each picked agent on \(app.herdrMachineName(monitor.target)) and presses Return.")
                 .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
             TextField("/remote-control", text: $text)
-                .textInputAutocapitalization(.never).autocorrectionDisabled()
+                .plainTextEntry().autocorrectionDisabled()
                 .font(SidraFont.mono(14)).padding(.horizontal, 10).frame(height: 36)
                 .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline2))
@@ -894,7 +894,7 @@ struct QuickPromptsSheet: View {
             if adding {
                 HStack(spacing: 8) {
                     TextField("New prompt", text: $draft)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .plainTextEntry().autocorrectionDisabled()
                         .focused($draftFocused).onSubmit(add)
                         .font(SidraFont.mono(14)).padding(.horizontal, 10).frame(height: 36)
                         .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))

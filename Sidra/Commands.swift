@@ -1,5 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#endif
 import SidraWorkspace
 
 /// Menu bar and Cmd-HUD shortcuts. Every command is registered in `CommandRegistry`, so the
@@ -66,7 +68,7 @@ struct WorkspaceCommands: Commands {
                 else if case .terminal = store.focusedPane?.kind { NotificationCenter.default.post(name: .sidraTerminalFind, object: nil) }
             },
             .init("go.back", "Back", area: "Go", key: ".") { if TheasaCommands.focused(app) { TheasaCommands.back(app) } },
-            .init("go.newWindow", "New Window", area: "Go") { UIApplication.shared.requestSceneSessionActivation(nil, userActivity: nil, options: nil, errorHandler: nil) },
+            .init("go.newWindow", "New Window", area: "Go") { app.openNewWindow?() },
             .init("go.settings", "Settings…", area: "Go", key: ",") { app.sheet = .settings },
         ]
         c += TheasaCommands.all(app)

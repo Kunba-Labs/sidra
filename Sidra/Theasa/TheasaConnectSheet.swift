@@ -86,7 +86,7 @@ struct TheasaConnectSheet: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label).font(SidraFont.ui(12)).foregroundStyle(SidraColor.muted)
             TextField(placeholder, text: text).modifier(FieldStyle())
-                .textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(label == "Name" ? .default : .URL)
+                .plainTextEntry().autocorrectionDisabled().urlKeyboard(label != "Name")
                 .accessibilityIdentifier(id)
         }
     }

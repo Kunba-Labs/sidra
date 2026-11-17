@@ -175,3 +175,10 @@ public final class RedrawGate {
         }
     }
 }
+
+#if canImport(UIKit)
+public typealias PlatformImage = UIImage
+#else
+import AppKit
+public typealias PlatformImage = NSImage
+#endif

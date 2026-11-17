@@ -1,4 +1,6 @@
 import SwiftUI
+import ImageIO
+import UniformTypeIdentifiers
 import PhotosUI
 import SidraDesign
 import SidraTheasa
@@ -482,19 +484,31 @@ struct ProjectSettings: View {
         .onChange(of: iconPick) { _, item in if let item { Task { await upload(item) } } }
     }
 
+    /// Scales an image down to `side` px on its long edge with ImageIO, which both platforms share.
+    private static func shrink(_ raw: Data, to side: Int) -> (png: Data, jpeg: Data?)? {
+        guard let src = CGImageSourceCreateWithData(raw as CFData, nil),
+              let cg = CGImageSourceCreateThumbnailAtIndex(src, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true,
+                    kCGImageSourceThumbnailMaxPixelSize: side, kCGImageSourceCreateThumbnailWithTransform: true] as CFDictionary)
+        else { return nil }
+        func encode(_ type: UTType, _ opts: [CFString: Any] = [:]) -> Data? {
+            let out = NSMutableData()
+            guard let dst = CGImageDestinationCreateWithData(out, type.identifier as CFString, 1, nil) else { return nil }
+            CGImageDestinationAddImage(dst, cg, opts as CFDictionary)
+            return CGImageDestinationFinalize(dst) ? out as Data : nil
+        }
+        guard let png = encode(.png) else { return nil }
+        return (png, encode(.jpeg, [kCGImageDestinationLossyCompressionQuality: 0.8]))
+    }
+
     /// The server takes an image under 1 MB: a large photo is scaled to 512 px and sent as PNG, or JPEG if still too big.
     private func upload(_ item: PhotosPickerItem) async {
         uploading = true
         defer { uploading = false; iconPick = nil }
-        guard let raw = try? await item.loadTransferable(type: Data.self), let img = UIImage(data: raw) else {
+        guard let raw = try? await item.loadTransferable(type: Data.self), let small = Self.shrink(raw, to: 512) else {
             live.say("That image didn't load."); return
         }
-        let side: CGFloat = 512
-        let scale = min(1, side / max(img.size.width, img.size.height))
-        let size = CGSize(width: img.size.width * scale, height: img.size.height * scale)
-        let small = UIGraphicsImageRenderer(size: size).image { _ in img.draw(in: CGRect(origin: .zero, size: size)) }
-        var data = small.pngData() ?? Data(), mime = "image/png"
-        if data.count >= 1_000_000, let jpg = small.jpegData(compressionQuality: 0.8) { data = jpg; mime = "image/jpeg" }
+        var data = small.png, mime = "image/png"
+        if data.count >= 1_000_000, let jpg = small.jpeg { data = jpg; mime = "image/jpeg" }
         guard data.count < 1_000_000 else { live.say("Pick a smaller image."); return }
         do {
             try await live.client.uploadIcon(project: project.id, image: data, mime: mime)

@@ -1,3 +1,4 @@
+#if os(iOS)   // touch keyboard UI: a Mac has a hardware keyboard
 import UIKit
 import Observation
 import GameController
@@ -299,3 +300,4 @@ public final class FloatingKeyboard {
     public static let shifted: [String: String] = ["1": "!", "2": "@", "3": "#", "4": "$", "5": "%", "6": "^", "7": "&", "8": "*", "9": "(", "0": ")",
                                             ";": ":", "'": "\"", ",": "<", ".": ">", "/": "?", "-": "_", "=": "+", "`": "~", "\\": "|", "[": "{", "]": "}"]
 }
+#endif

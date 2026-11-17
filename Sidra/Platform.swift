@@ -77,7 +77,7 @@ final class PlatformStatus {
     private func confirmDenied() {
         denyCheck?.cancel()
         denyCheck = Task { [weak self] in
-            repeat { try? await Task.sleep(for: .seconds(3)) } while !Task.isCancelled && UIApplication.shared.applicationState != .active
+            repeat { try? await Task.sleep(for: .seconds(3)) } while !Task.isCancelled && !Platform.isAppActive
             try? await Task.sleep(for: .seconds(2))
             if !Task.isCancelled, self?.localNetwork == .asking { self?.localNetwork = .denied; self?.localNetworkDenied = true }
         }
@@ -118,11 +118,22 @@ final class PlatformStatus {
     /// `App-prefs:` is private, which is fine for a build that never goes to the App Store. iPadOS may
     /// stop honouring it, so a refusal falls back to Sidra's own page in Settings.
     static func openSystemSettings(_ link: String) {
+        #if os(iOS)
         guard let u = URL(string: link) else { return openSettings() }
         UIApplication.shared.open(u) { ok in if !ok { Task { @MainActor in openSettings() } } }
+        #else
+        openSettings()
+        #endif
     }
 
-    static func openSettings() { if let u = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(u) } }
+    static func openSettings() {
+        #if os(iOS)
+        if let u = URL(string: UIApplication.openSettingsURLString) { Platform.open(u) }
+        #else
+        // Local Network and other privacy switches live under Privacy & Security on the Mac.
+        if let u = URL(string: "x-apple.systempreferences:com.apple.preference.security") { Platform.open(u) }
+        #endif
+    }
 }
 
 /// Banners under the title bar for conditions the user has to act on.

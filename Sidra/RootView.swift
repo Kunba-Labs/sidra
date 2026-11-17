@@ -24,7 +24,9 @@ struct RootView: View {
         }
         // A floating or undocked keyboard sits over the panes; only a docked one makes room.
         .ignoresSafeArea(.keyboard, edges: keyboard.floating ? .all : [])   // a floating keyboard dragged near the top must not push from above either
+        #if os(iOS)
         .background { KeyboardGuideProbe(dock: keyboard).ignoresSafeArea().allowsHitTesting(false) }
+        #endif
         .overlay(alignment: .top) { PlatformBanners() }
         .overlay(alignment: .bottom) {
             if let msg = app.toastMessage {
@@ -57,6 +59,7 @@ struct RootView: View {
         // A tab closed while hidden never runs its terminals' handlers: end their sessions here.
         .onChange(of: Set(app.allWorkspaces.flatMap { $0.tabs.flatMap { $0.panes.map(\.id) } })) { _, live in TerminalLink.prune(live: live) }
         .onAppear {
+            app.openNewWindow = { [openWindow] in openWindow(id: "main") }
             store.isBusy = { BusyPanes.shared.isBusy($0) }
             store.isHiddenTab = TheasaStore.isTheasaTab   // the Theasa tab's only handle is its pill
             #if DEBUG
@@ -101,6 +104,7 @@ struct RootView: View {
                 .foregroundStyle(SidraColor.muted)
                 .frame(width: 30, height: 30)
         }
+        .menuIndicator(.hidden)
         .accessibilityLabel("Sidra menu")
     }
 }
@@ -114,6 +118,7 @@ final class KeyboardDock {
     fileprivate(set) var floating = false
 }
 
+#if os(iOS)
 /// Full-window view whose hidden marker spans from the keyboard layout guide's top to the window bottom;
 /// it also reads the keyboard notifications in its own window's coordinates.
 private struct KeyboardGuideProbe: UIViewRepresentable {
@@ -167,3 +172,4 @@ private struct KeyboardGuideProbe: UIViewRepresentable {
         }
     }
 }
+#endif

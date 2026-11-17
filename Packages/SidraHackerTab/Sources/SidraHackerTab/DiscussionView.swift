@@ -1,4 +1,5 @@
 import SwiftUI
+import SidraDesign
 
 struct DiscussionView: View {
     @Environment(AppModel.self) private var model
@@ -34,7 +35,7 @@ struct DiscussionView: View {
             if model.finding {
                 HStack {
                     TextField("find in thread", text: $model.find)
-                        .font(T.mono(13)).foregroundStyle(T.text).tint(T.accent).textInputAutocapitalization(.never).autocorrectionDisabled()
+                        .font(T.mono(13)).foregroundStyle(T.text).tint(T.accent).plainTextEntry().autocorrectionDisabled()
                         .focused($findFocused).onAppear { findFocused = true }
                         .onChange(of: findFocused) { model.typing = findFocused }
                         .onDisappear { model.typing = false }
@@ -184,7 +185,7 @@ private struct CommentRow: View {
         .overlay(alignment: .leading) { if model.keyed && model.cursor == c.id { T.accent.frame(width: 3) } }
         .contextMenu {
             if c.subtree > 0 { Button("Focus on this thread", systemImage: "scope") { model.focus = c.id; model.cursor = c.id } }
-            Button("Copy text", systemImage: "doc.on.doc") { UIPasteboard.general.string = c.plain }
+            Button("Copy text", systemImage: "doc.on.doc") { Platform.pasteString = c.plain }
             ShareLink(item: URL(string: "https://news.ycombinator.com/item?id=\(c.id)")!)
         }
     }
@@ -253,7 +254,7 @@ struct SummaryBlock: View {
                             .buttonStyle(.plain).accessibilityHint("Goes to the thread")
                         }
                         Rule()
-                        Text(verbatim: "generated on this \(UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone") · may be wrong · nothing left the device")
+                        Text(verbatim: "generated on this \(Platform.deviceName) · may be wrong · nothing left the device")
                             .font(T.mono(10.5)).foregroundStyle(T.dim).padding(.top, 8)
                     }
                     .padding(.horizontal, 12).padding(.bottom, 12)

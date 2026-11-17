@@ -70,7 +70,7 @@ struct SidraAlertBody: View {
                     }
                     .frame(maxHeight: 220)
                     .background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
-                    Button("Copy") { UIPasteboard.general.string = raw }.buttonStyle(.sidraSecondary)
+                    Button("Copy") { Platform.pasteString = raw }.buttonStyle(.sidraSecondary)
                 }
             }
             HStack {

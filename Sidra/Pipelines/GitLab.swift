@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import SidraDesign
 import SidraSSH
 
 // MARK: - API shapes (GitLab REST v4)
@@ -238,7 +239,7 @@ final class PipelinesStore {
     private(set) var loading = false
     private var loadingGeneration: Int?
     private(set) var lastRefresh: Date?
-    private(set) var avatars: [String: UIImage] = [:]   // "p<id>" or "g<id>"
+    private(set) var avatars: [String: PlatformImage] = [:]   // "p<id>" or "g<id>"
     private var groupIDs: [String: Int] = [:]           // full_path → id, for groups with an avatar
     private var avatarTried: Set<String> = []
     private var jobsCache: [Int: [GitLabJob]] = [:]
@@ -412,12 +413,12 @@ final class PipelinesStore {
     // MARK: Avatars
 
     /// A project's avatar, else its closest group's that has one.
-    func avatar(project id: Int) -> UIImage? {
+    func avatar(project id: Int) -> PlatformImage? {
         if let a = avatars["p\(id)"] { return a }
         guard let p = projects[id] else { return nil }
         return groupKey(for: p.namespace.full_path).flatMap { avatars[$0] }
     }
-    func avatar(group name: String) -> UIImage? { groupIDs[name].flatMap { avatars["g\($0)"] } }
+    func avatar(group name: String) -> PlatformImage? { groupIDs[name].flatMap { avatars["g\($0)"] } }
 
     private func groupKey(for path: String) -> String? {
         var parts = path.split(separator: "/").map(String.init)
@@ -440,7 +441,7 @@ final class PipelinesStore {
         }
         for (key, path) in wanted where !avatarTried.contains(key) {
             avatarTried.insert(key)
-            if let d = try? await client.data(path), let img = UIImage(data: d), gen == generation { avatars[key] = img }
+            if let d = try? await client.data(path), let img = PlatformImage(data: d), gen == generation { avatars[key] = img }
         }
     }
 }

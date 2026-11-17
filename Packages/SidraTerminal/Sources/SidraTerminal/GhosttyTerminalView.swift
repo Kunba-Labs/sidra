@@ -1,3 +1,4 @@
+#if os(iOS)   // macOS: MacTerminal.swift
 import UIKit
 import CoreText
 import SidraDesign
@@ -456,7 +457,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     }
     private lazy var thumbnails = TerminalThumbnails(host: self)
     public var onFetchImage: ((String) async -> Data?)? { get { thumbnails.fetch } set { thumbnails.fetch = newValue } }
-    public var onOpenImage: ((String, UIImage) -> Void)? { get { thumbnails.open } set { thumbnails.open = newValue } }
+    public var onOpenImage: ((String, PlatformImage) -> Void)? { get { thumbnails.open } set { thumbnails.open = newValue } }
 
     /// A tap on a thumbnail is the thumbnail's, not a click for the program.
     public func gestureRecognizer(_ g: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
@@ -820,3 +821,4 @@ func terminalTextPresentation(_ text: String) -> String {
     if s.properties.isEmoji && !s.properties.isEmojiPresentation { return text + "\u{FE0E}" }
     return text
 }
+#endif

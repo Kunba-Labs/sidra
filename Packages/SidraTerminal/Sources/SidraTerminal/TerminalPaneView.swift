@@ -1,3 +1,4 @@
+#if os(iOS)   // macOS: MacTerminal.swift
 import SwiftUI
 import SidraDesign
 import UIKit
@@ -17,7 +18,7 @@ public struct TerminalPaneView: UIViewRepresentable {
     var onPasteImage: ((Data) async -> String?)? = nil
     var pasteLabel = "⌘V"
     var onFetchImage: ((String) async -> Data?)? = nil
-    var onOpenImage: ((String, UIImage) -> Void)? = nil
+    var onOpenImage: ((String, PlatformImage) -> Void)? = nil
     var onOpenLink: ((URL) -> Void)? = nil
     /// The host went away: the screen rots and keys go nowhere.
     var lost = false
@@ -25,7 +26,7 @@ public struct TerminalPaneView: UIViewRepresentable {
     public init(io: TerminalIO, engine: TerminalEngineKind = .ghostty, focusToken: Int = 0, onTitle: ((String) -> Void)? = nil,
                 searchQuery: String? = nil, searchStep: Int = 0, onFind: (() -> Void)? = nil, onSearchResult: ((Int, Int?) -> Void)? = nil,
                 onPasteImage: ((Data) async -> String?)? = nil, pasteLabel: String = "⌘V",
-                onFetchImage: ((String) async -> Data?)? = nil, onOpenImage: ((String, UIImage) -> Void)? = nil, onOpenLink: ((URL) -> Void)? = nil, lost: Bool = false) {
+                onFetchImage: ((String) async -> Data?)? = nil, onOpenImage: ((String, PlatformImage) -> Void)? = nil, onOpenLink: ((URL) -> Void)? = nil, lost: Bool = false) {
         self.onOpenLink = onOpenLink
         self.lost = lost
         self.onPasteImage = onPasteImage
@@ -117,3 +118,4 @@ public struct TerminalPaneView: UIViewRepresentable {
         var lastStep = 0
     }
 }
+#endif

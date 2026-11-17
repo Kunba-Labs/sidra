@@ -61,6 +61,9 @@ public struct WorkspaceView<TitleTrailing: View>: View {
     }
 
     public var body: some View {
+        #if os(macOS)
+        regular
+        #else
         if sizeClass == .compact {
             PhoneWorkspace(store: store, provider: provider, newTabMenu: newTabMenu, hostMenu: hostMenu, trailing: compactTrailing, emptyHero: emptyHero)
                 .alert("Close \(store.pendingClose?.title ?? "")?", isPresented: Binding(get: { store.pendingClose != nil }, set: { if !$0 { store.pendingClose = nil } })) {
@@ -70,6 +73,7 @@ public struct WorkspaceView<TitleTrailing: View>: View {
         } else {
             regular
         }
+        #endif
     }
 
     private var regular: some View {

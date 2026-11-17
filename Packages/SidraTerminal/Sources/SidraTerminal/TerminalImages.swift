@@ -1,3 +1,4 @@
+#if os(iOS)   // macOS: MacTerminal.swift
 import UIKit
 import SidraDesign
 
@@ -194,3 +195,4 @@ public enum TerminalLinks {
         }
     }
 }
+#endif

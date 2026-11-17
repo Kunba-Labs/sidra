@@ -440,7 +440,7 @@ struct AskExtrasView: View {
                 }
             }
         }
-        .fullScreenCover(item: Binding(get: { viewer.map { ViewerStart(index: $0) } }, set: { viewer = $0?.index })) { start in
+        .fullScreenSheet(item: Binding(get: { viewer.map { ViewerStart(index: $0) } }, set: { viewer = $0?.index })) { start in
             TheasaImageViewer(images: images.map { ViewerImage(id: $0.id, src: $0.src ?? "", name: $0.basename) }, start: start.index).environment(live)
         }
     }
@@ -494,7 +494,7 @@ struct OptionPreview: View {
 
 /// Images the agents sent, loaded with the token (AsyncImage cannot send it) and kept per id.
 @MainActor enum TheasaImageCache {
-    static let shared = NSCache<NSString, UIImage>()
+    static let shared = NSCache<NSString, PlatformImage>()
 }
 
 struct TheasaImage: View {
@@ -502,12 +502,12 @@ struct TheasaImage: View {
     let id: Int
     var fit = true
     @Environment(TheasaLive.self) private var live
-    @State private var image: UIImage?
+    @State private var image: PlatformImage?
     @State private var failed = false
     var body: some View {
         Group {
             if let image {
-                Image(uiImage: image).resizable().aspectRatio(contentMode: fit ? .fit : .fill)
+                Image(platformImage: image).resizable().aspectRatio(contentMode: fit ? .fit : .fill)
             } else if live.client.token == nil {
                 // Sent files and pasted images need the token (theasa 7cb7a95).
                 Text("Add the token to see images.").font(SidraFont.ui(12)).foregroundStyle(SidraColor.dim)
@@ -526,7 +526,7 @@ struct TheasaImage: View {
             guard let token = live.client.token else { return }
             let key = "\(live.client.base.absoluteString)|\(token.hashValue)|\(id)|\(src)" as NSString
             if let hit = TheasaImageCache.shared.object(forKey: key) { image = hit; return }
-            if let d = try? await live.client.data(src), let img = UIImage(data: d) {
+            if let d = try? await live.client.data(src), let img = PlatformImage(data: d) {
                 TheasaImageCache.shared.setObject(img, forKey: key); image = img
             } else { failed = true }
         }
@@ -556,7 +556,7 @@ struct TheasaImageViewer: View {
                     ZoomableImage(src: a.src, id: a.id).tag(i)
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: images.count > 1 ? .always : .never))
+            .pagedTabs(showIndex: images.count > 1)
         }
         .background(SidraColor.ground.ignoresSafeArea())
         .accessibilityIdentifier("theasa-viewer")

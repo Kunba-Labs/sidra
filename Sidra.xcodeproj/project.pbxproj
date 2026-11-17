@@ -8,70 +8,117 @@
 
 /* Begin PBXBuildFile section */
 		005EAC4D1237E61549BBC233 /* SidraDesign in Frameworks */ = {isa = PBXBuildFile; productRef = 217505AFF3DE9612F7B260DE /* SidraDesign */; };
+		022B75384875C9635EE2FCDE /* TheasaAgents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FA4FA59DD2513883467739 /* TheasaAgents.swift */; };
+		03866B4E9359212BE32F0289 /* PipelinesPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0D67B8A7040FD87F2598823 /* PipelinesPane.swift */; };
 		08FBA303B4C6FFECB02BBB39 /* BusyPanes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DF9B0DE46B31B9EBB3C0BA /* BusyPanes.swift */; };
 		098F1638832F56C4252C669C /* PipelinesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7154BCD71DBCA78733D7CF59 /* PipelinesUITests.swift */; };
+		09BA2A23DFCCC4B4EE7E9C53 /* KeysSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9020BCA2AC1F7D913937CCA7 /* KeysSection.swift */; };
+		0A47E38329AB8B1E7FE10DEC /* JetBrainsMono-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9FAFFC0DA4889FFFC37607E5 /* JetBrainsMono-Variable.ttf */; };
 		0B771BBB5C32A631AE2F7F35 /* LifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A958E2D546170231CBA9D2C /* LifecycleTests.swift */; };
 		10A62F11BFDFD7A86CAC198D /* DemoMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D40EFDF6FF49F49A56FDCE /* DemoMode.swift */; };
+		16D1038431AD1E8CCBBDF296 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 680898FB51F66C3B3F13859C /* Inter-Regular.ttf */; };
 		18712C6EFB1451F3D0F8FB01 /* HerdrTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C8C6F728A42C21EF094989 /* HerdrTests.swift */; };
+		1C52926532F4A9D6B7659B52 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F083441085B2B800071D6F /* RootView.swift */; };
+		1C643ACAAC77FF82968BC5E9 /* NewTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AE28FD3AB3C35FCCD53E8FF /* NewTab.swift */; };
+		1E629D46258DDE0C0CDD5750 /* DemoMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D40EFDF6FF49F49A56FDCE /* DemoMode.swift */; };
+		20C46E8C36F0060E4F0C91E6 /* SidraAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61631DB9FAA738AF8DC58B30 /* SidraAlert.swift */; };
+		23B1D3A4F06299705064EE14 /* HerdrConnectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79C4F81745995413751B61AA /* HerdrConnectSheet.swift */; };
+		24119E4023D8D213098EEDF9 /* SidraSSH in Frameworks */ = {isa = PBXBuildFile; productRef = CB6D2BC2DAB012C6F2E856F4 /* SidraSSH */; };
+		283606F2982CFF08E3AC6B34 /* SidraApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF4101D8B8817370EE559987 /* SidraApp.swift */; };
+		2A0AF26EBCB074CA82E49DE1 /* HerdrPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4477F8E3EBA916104FCB99C5 /* HerdrPane.swift */; };
+		2AC0A062D98D5333EBC3598D /* herdr-attach.sh in Resources */ = {isa = PBXBuildFile; fileRef = B0DC2327B7FE042EE0FD4378 /* herdr-attach.sh */; };
+		2BB41AB19B88C4CDF73575A9 /* TheasaPulse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1480327CDF081DB259C98E5F /* TheasaPulse.swift */; };
 		2E5B5083144AEADA07FCDEEC /* TheasaKeyboardUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86C0FAC71E767169A8F6AC6F /* TheasaKeyboardUITests.swift */; };
 		2FF338997D0573AC43F0ACFF /* TheasaCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A13AED1FB2E44CBBCE48E1 /* TheasaCommands.swift */; };
 		31D101CEF60E584779B37D49 /* SidraTheasa in Frameworks */ = {isa = PBXBuildFile; productRef = F3EF95590898D79DB9BF9B06 /* SidraTheasa */; };
 		3314E979ABFFE71D7DBC6CD4 /* TabActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9558625C18D327C68E8E8B55 /* TabActivity.swift */; };
 		342E47E76F6FDFAD3F0260DD /* TestHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E2D24662885AE2E47DC051 /* TestHost.swift */; };
+		3497C9708B593A0F652DB6AE /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED6DE4A11A47F0B05DDE8BA4 /* Commands.swift */; };
+		35C27C0E38C27AA214903CC4 /* ShortcutsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DFB8E8BC09AC7775AEEF291 /* ShortcutsSheet.swift */; };
+		3EF686081D0628FEFF15C573 /* TheasaPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = E370EAEEFC681DB92CFBC0EF /* TheasaPane.swift */; };
 		3F1527F314D94801B159B51C /* TheasaSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444C16EC11530D11005BDA70 /* TheasaSearch.swift */; };
 		401D2572B3378D327AA460E6 /* TerminalPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08DA5A482100B822AC3216BB /* TerminalPane.swift */; };
+		4902132C4FDD9804A0DFFE33 /* BusyPanes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DF9B0DE46B31B9EBB3C0BA /* BusyPanes.swift */; };
+		4CA48703B87A8CEA83D0A3E5 /* TheasaTurn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9151B661C8A5150FD6B3DD /* TheasaTurn.swift */; };
 		4EB0038BEAEBE43B236B1C7D /* ChessUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73017469F38A5080D3473461 /* ChessUITests.swift */; };
+		51DB76C7A852474C5E1F6837 /* Platform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898FEE6677F04B352643E7AB /* Platform.swift */; };
 		52D8473D4545285327988653 /* StoreScreenshotsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69A9BEE59A535B1C6F7572B3 /* StoreScreenshotsUITests.swift */; };
+		55A8E932394155B63433188D /* SidraChess in Frameworks */ = {isa = PBXBuildFile; productRef = AB3C253E12FD44E0D0DACA67 /* SidraChess */; };
+		564B4EB9D00A64F43511CF4C /* TheasaMarkdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DCC141B15F493AF564C38B /* TheasaMarkdown.swift */; };
 		575AFF9A69C4A42C29D4DFD6 /* GitLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7188AFC621B1D9E1EFB8CC4 /* GitLab.swift */; };
 		578E14E615D3F336AA4D5DFC /* SSHConnectionLiveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 600EBD10A930EB3B4F2C55DB /* SSHConnectionLiveTests.swift */; };
+		579A4EC5B15A0A5FB6C614FF /* TerminalPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08DA5A482100B822AC3216BB /* TerminalPane.swift */; };
+		581C44F4C2A14CB879759F93 /* PaneBodies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08F9C6E2FAA342E35589D7C /* PaneBodies.swift */; };
 		5854732AA473175C5FCFB5B7 /* herdr-attach.sh in Resources */ = {isa = PBXBuildFile; fileRef = B0DC2327B7FE042EE0FD4378 /* herdr-attach.sh */; };
 		592658D29F343143041E23DE /* ShortcutsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DFB8E8BC09AC7775AEEF291 /* ShortcutsSheet.swift */; };
 		5D3ADBE6C24C53DECD6EC630 /* TheasaConnectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B41E3C7C2BA941E511861CB /* TheasaConnectSheet.swift */; };
 		5D9CC4FCB755969318BDDFD8 /* TheasaUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 867174C3E73F59B207A9FDB0 /* TheasaUITests.swift */; };
 		61EB8A69879C57BB3BAFB34A /* KeysSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9020BCA2AC1F7D913937CCA7 /* KeysSection.swift */; };
+		63C9254D1FA7DADE246DF8B3 /* TheasaConnectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B41E3C7C2BA941E511861CB /* TheasaConnectSheet.swift */; };
 		65B635852204048381160C72 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F083441085B2B800071D6F /* RootView.swift */; };
 		672B64903CA115909DE2DD11 /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED6DE4A11A47F0B05DDE8BA4 /* Commands.swift */; };
 		6A074F3A40762F3A0A95AC0E /* TheasaPulse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1480327CDF081DB259C98E5F /* TheasaPulse.swift */; };
+		6AC0A1BC1AA155451A0B6189 /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4BC5697584C293B136FA2FB2 /* Inter-Bold.ttf */; };
+		6B5024C83E45197BF4473249 /* TheasaCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A13AED1FB2E44CBBCE48E1 /* TheasaCommands.swift */; };
 		6EBC7DB38F21425DECECA632 /* SidraSSH in Frameworks */ = {isa = PBXBuildFile; productRef = E3A47C10FA0E643E3967CC53 /* SidraSSH */; };
 		70837EE4B144DA323B9753D3 /* JetBrainsMono-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9FAFFC0DA4889FFFC37607E5 /* JetBrainsMono-Variable.ttf */; };
 		72957F7C89C8286EC9B48A86 /* SidraWorkspace in Frameworks */ = {isa = PBXBuildFile; productRef = 11BEF98FA85E5B56A02A801A /* SidraWorkspace */; };
+		762694257B241A70017A3BD6 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CC77A4E8D6AA264330D64 /* SettingsSheet.swift */; };
 		76818F3F38D7C373C58D6F24 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 788A46258945131DAB264C68 /* PrivacyInfo.xcprivacy */; };
 		77B73B65F1AF1BF0C75C805A /* Herdr.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19FFF77CC7CB50FA454494F7 /* Herdr.swift */; };
 		79E841603FE7F855A5C953C4 /* TheasaPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4250DDEA0881DA0432782662 /* TheasaPill.swift */; };
+		7F8A385915BB93D324C7331C /* SceneStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F90D9F3ACAEC2FB0ADCA51 /* SceneStore.swift */; };
 		7FEC65A5765404B7AA132D5D /* SidraTerminal in Frameworks */ = {isa = PBXBuildFile; productRef = FF0765AB422B0D45A35E475D /* SidraTerminal */; };
+		8588968343045DC05F87CF2E /* SidraDesign in Frameworks */ = {isa = PBXBuildFile; productRef = 38F0423505A0F5B90B73E9F5 /* SidraDesign */; };
 		89DBEEDE718CFC48E796A670 /* SSHKeyLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46309641DF73FE9E9FFCF88B /* SSHKeyLifecycleTests.swift */; };
 		89E5807F9528CDBF3E265320 /* SidraAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61631DB9FAA738AF8DC58B30 /* SidraAlert.swift */; };
 		8B3BAB38512BEE5F05DA6D60 /* Platform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898FEE6677F04B352643E7AB /* Platform.swift */; };
+		8BB80666014F3FB8C47B03C4 /* TabActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9558625C18D327C68E8E8B55 /* TabActivity.swift */; };
 		8BD74A1D373F10633931A4DC /* SidraSSHTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EE6DFA8F7CAB8895B0EC7A3 /* SidraSSHTests.swift */; };
+		8C757D4D63D9B6A172165FE2 /* TheasaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E386D698B0C73B5EFADB7F13 /* TheasaStore.swift */; };
 		8C8A7C859F123BF6E5C4DD16 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 026DB1F4BFD86A94EE83C678 /* AppModel.swift */; };
 		8D567A6A0AEAC60638766CBE /* TheasaProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A069A363B9F7AB51553030 /* TheasaProject.swift */; };
+		8F23A13F56510105FA21C6E3 /* SidraWorkspace in Frameworks */ = {isa = PBXBuildFile; productRef = 31252BA74554E5041C2F2836 /* SidraWorkspace */; };
 		91BBE159888E6DC08DC564FC /* Notifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E196B90CD3E23D5A8642B9E4 /* Notifier.swift */; };
 		9BFF73B4CD41730D8F97000C /* PipelinesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE12FF0FEBA7EB10B55328 /* PipelinesTests.swift */; };
 		9C09EC179AB3EC8359CA186F /* SSHKeysTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16A78597AF77F3BBAB81F25F /* SSHKeysTests.swift */; };
 		9DB7AF6DB496C9ECAECF3C76 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 680898FB51F66C3B3F13859C /* Inter-Regular.ttf */; };
+		9F26F087362726234D8BF6C3 /* SidraTerminal in Frameworks */ = {isa = PBXBuildFile; productRef = 847B616098444F08AECA88E1 /* SidraTerminal */; };
 		9FC7413353CFA15E48C49964 /* TheasaPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = E370EAEEFC681DB92CFBC0EF /* TheasaPane.swift */; };
+		A00E800E23C3A4E230CEAEC3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1F4667A0E51BA7C24D920DD /* Assets.xcassets */; };
 		A0D9EDEC398C69C5867E4301 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1F4667A0E51BA7C24D920DD /* Assets.xcassets */; };
 		A623DEEE53B4ACFE19518F59 /* HerdrPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4477F8E3EBA916104FCB99C5 /* HerdrPane.swift */; };
 		AA68CCB35DF9EB7A9A8186B4 /* TheasaMarkdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DCC141B15F493AF564C38B /* TheasaMarkdown.swift */; };
 		ADCABBA0CE88A581FEF55939 /* TheasaAgents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FA4FA59DD2513883467739 /* TheasaAgents.swift */; };
 		AFEAFDC623409ACE12493055 /* SidraChess in Frameworks */ = {isa = PBXBuildFile; productRef = 0CE9EE125C9A286548263F3C /* SidraChess */; };
+		B5145760F4ED57BEC411375B /* GitLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7188AFC621B1D9E1EFB8CC4 /* GitLab.swift */; };
+		B913C402DDBB59A495B59D5A /* Notifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E196B90CD3E23D5A8642B9E4 /* Notifier.swift */; };
 		BA25D9950CF47C88684ED41F /* HackerTabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5878234E78CAE96CF386F927 /* HackerTabUITests.swift */; };
 		BE265D46DCFEE3E497F53DF0 /* HerdrConnectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79C4F81745995413751B61AA /* HerdrConnectSheet.swift */; };
 		BE67F73EEF04D36498A08B32 /* SSHMoshUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A5640D612B671DEF0516D7B /* SSHMoshUITests.swift */; };
 		C4F0602DCB0E3FBB7155B713 /* SidraApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF4101D8B8817370EE559987 /* SidraApp.swift */; };
 		C5213763CE84F01419C2B518 /* NewTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AE28FD3AB3C35FCCD53E8FF /* NewTab.swift */; };
+		CA49C1067A793EE8CDB6205D /* SidraHackerTab in Frameworks */ = {isa = PBXBuildFile; productRef = C3883D8A12FE42C5D36C1FC4 /* SidraHackerTab */; };
+		CB07DE434A51D772F1A93C88 /* CommandRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BF97F13FCCEA3B5097ACB1 /* CommandRegistry.swift */; };
+		CD066056B57531B33D96532D /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 026DB1F4BFD86A94EE83C678 /* AppModel.swift */; };
 		CD424996DA892604811FC96E /* TheasaTurn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9151B661C8A5150FD6B3DD /* TheasaTurn.swift */; };
 		D248D34F66A28A227C81D1EA /* PipelinesPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0D67B8A7040FD87F2598823 /* PipelinesPane.swift */; };
+		D26241FEED7A824A5894C385 /* TheasaPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4250DDEA0881DA0432782662 /* TheasaPill.swift */; };
 		D329A6E8E848BD422D1D1A71 /* TheasaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E386D698B0C73B5EFADB7F13 /* TheasaStore.swift */; };
 		DBD541799BC95824D31E2B39 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CC77A4E8D6AA264330D64 /* SettingsSheet.swift */; };
 		DC868DBE1BEA62F52598D3CC /* FloatingOrbUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA664C38BC9D52E3E799088 /* FloatingOrbUITests.swift */; };
 		DF3814FE0078CE03ABD0BF1E /* SidraHackerTab in Frameworks */ = {isa = PBXBuildFile; productRef = DC9A2B79CFA0FED0D1A8A021 /* SidraHackerTab */; };
+		DFB3C2053A1DC1B6171BBDC4 /* Herdr.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19FFF77CC7CB50FA454494F7 /* Herdr.swift */; };
 		E432AD3A54C55893300A32CA /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4BC5697584C293B136FA2FB2 /* Inter-Bold.ttf */; };
 		E5795E4C4649FF14ADF7A896 /* PaneBodies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08F9C6E2FAA342E35589D7C /* PaneBodies.swift */; };
+		EBCCC0B6610AE719433183FF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 788A46258945131DAB264C68 /* PrivacyInfo.xcprivacy */; };
+		EE3FCFD9FCFB9F202F7D1D68 /* TheasaProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A069A363B9F7AB51553030 /* TheasaProject.swift */; };
+		F32455CD57664A9B89A9D52B /* TheasaSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444C16EC11530D11005BDA70 /* TheasaSearch.swift */; };
 		F3910D0B77EA4077E8699099 /* SceneStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F90D9F3ACAEC2FB0ADCA51 /* SceneStore.swift */; };
 		F3B50A34F450608051F45D1C /* SmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA53C89AF6EAA63E1ABAC641 /* SmokeTests.swift */; };
 		F54C10CBFB1A977F03FE4746 /* NewTabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835D989F13A564BB23920914 /* NewTabUITests.swift */; };
 		F9857DFFC09F44DEC6F754E1 /* CommandRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BF97F13FCCEA3B5097ACB1 /* CommandRegistry.swift */; };
+		FF4CFAB6C906B6680E21BDB7 /* SidraTheasa in Frameworks */ = {isa = PBXBuildFile; productRef = 0C82BF3189E6FDCF783465AC /* SidraTheasa */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -107,6 +154,7 @@
 		3EE6DFA8F7CAB8895B0EC7A3 /* SidraSSHTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidraSSHTests.swift; sourceTree = "<group>"; };
 		4250DDEA0881DA0432782662 /* TheasaPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaPill.swift; sourceTree = "<group>"; };
 		42A069A363B9F7AB51553030 /* TheasaProject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaProject.swift; sourceTree = "<group>"; };
+		431F62683B346773FF43404D /* SidraMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SidraMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		444C16EC11530D11005BDA70 /* TheasaSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaSearch.swift; sourceTree = "<group>"; };
 		4477F8E3EBA916104FCB99C5 /* HerdrPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HerdrPane.swift; sourceTree = "<group>"; };
 		44BF97F13FCCEA3B5097ACB1 /* CommandRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandRegistry.swift; sourceTree = "<group>"; };
@@ -125,6 +173,7 @@
 		73017469F38A5080D3473461 /* ChessUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChessUITests.swift; sourceTree = "<group>"; };
 		788A46258945131DAB264C68 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		79C4F81745995413751B61AA /* HerdrConnectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HerdrConnectSheet.swift; sourceTree = "<group>"; };
+		834E2A056986234964AF6506 /* SidraMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SidraMac.entitlements; sourceTree = "<group>"; };
 		835D989F13A564BB23920914 /* NewTabUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabUITests.swift; sourceTree = "<group>"; };
 		867174C3E73F59B207A9FDB0 /* TheasaUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaUITests.swift; sourceTree = "<group>"; };
 		86C0FAC71E767169A8F6AC6F /* TheasaKeyboardUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaKeyboardUITests.swift; sourceTree = "<group>"; };
@@ -163,6 +212,20 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		980843F8544C8A810F8A7EB7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8588968343045DC05F87CF2E /* SidraDesign in Frameworks */,
+				8F23A13F56510105FA21C6E3 /* SidraWorkspace in Frameworks */,
+				9F26F087362726234D8BF6C3 /* SidraTerminal in Frameworks */,
+				24119E4023D8D213098EEDF9 /* SidraSSH in Frameworks */,
+				FF4CFAB6C906B6680E21BDB7 /* SidraTheasa in Frameworks */,
+				CA49C1067A793EE8CDB6205D /* SidraHackerTab in Frameworks */,
+				55A8E932394155B63433188D /* SidraChess in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F509322163983CFD192E7677 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -248,6 +311,7 @@
 			isa = PBXGroup;
 			children = (
 				A27535A94778550C0BFB0AA2 /* Sidra.app */,
+				431F62683B346773FF43404D /* SidraMac.app */,
 				628260ACBDFD6ACC103AB75C /* SidraTests.xctest */,
 				DA6B2085C39F0188876B8475 /* SidraUITests.xctest */,
 			);
@@ -348,6 +412,7 @@
 				96F083441085B2B800071D6F /* RootView.swift */,
 				21F90D9F3ACAEC2FB0ADCA51 /* SceneStore.swift */,
 				EF4101D8B8817370EE559987 /* SidraApp.swift */,
+				834E2A056986234964AF6506 /* SidraMac.entitlements */,
 				9558625C18D327C68E8E8B55 /* TabActivity.swift */,
 				6920F420AC13A7F3AAB8D97C /* Demo */,
 				12DAAE7720D4E51D308B813B /* Panes */,
@@ -405,6 +470,32 @@
 			productReference = DA6B2085C39F0188876B8475 /* SidraUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		B6F531514AE626E95576790D /* SidraMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3F02EAB876A8758167A7D437 /* Build configuration list for PBXNativeTarget "SidraMac" */;
+			buildPhases = (
+				C3161E5192EF638DB1AFD31D /* Sources */,
+				9E5A07028639172DDD1C4251 /* Resources */,
+				980843F8544C8A810F8A7EB7 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SidraMac;
+			packageProductDependencies = (
+				38F0423505A0F5B90B73E9F5 /* SidraDesign */,
+				31252BA74554E5041C2F2836 /* SidraWorkspace */,
+				847B616098444F08AECA88E1 /* SidraTerminal */,
+				CB6D2BC2DAB012C6F2E856F4 /* SidraSSH */,
+				0C82BF3189E6FDCF783465AC /* SidraTheasa */,
+				C3883D8A12FE42C5D36C1FC4 /* SidraHackerTab */,
+				AB3C253E12FD44E0D0DACA67 /* SidraChess */,
+			);
+			productName = SidraMac;
+			productReference = 431F62683B346773FF43404D /* SidraMac.app */;
+			productType = "com.apple.product-type.application";
+		};
 		BEB540746EA92D253C85E508 /* SidraTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 2006FCD935FACF39F9098FA1 /* Build configuration list for PBXNativeTarget "SidraTests" */;
@@ -441,6 +532,10 @@
 						ProvisioningStyle = Automatic;
 						TestTargetID = 14CA571447511C955C0A2246;
 					};
+					B6F531514AE626E95576790D = {
+						DevelopmentTeam = KF53B4S5HD;
+						ProvisioningStyle = Automatic;
+					};
 					BEB540746EA92D253C85E508 = {
 						DevelopmentTeam = KF53B4S5HD;
 						ProvisioningStyle = Automatic;
@@ -471,6 +566,7 @@
 			projectRoot = "";
 			targets = (
 				14CA571447511C955C0A2246 /* Sidra */,
+				B6F531514AE626E95576790D /* SidraMac */,
 				BEB540746EA92D253C85E508 /* SidraTests */,
 				B1B2CB0337808B53E2A10E48 /* SidraUITests */,
 			);
@@ -478,6 +574,19 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		9E5A07028639172DDD1C4251 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00E800E23C3A4E230CEAEC3 /* Assets.xcassets in Resources */,
+				6AC0A1BC1AA155451A0B6189 /* Inter-Bold.ttf in Resources */,
+				16D1038431AD1E8CCBBDF296 /* Inter-Regular.ttf in Resources */,
+				0A47E38329AB8B1E7FE10DEC /* JetBrainsMono-Variable.ttf in Resources */,
+				EBCCC0B6610AE719433183FF /* PrivacyInfo.xcprivacy in Resources */,
+				2AC0A062D98D5333EBC3598D /* herdr-attach.sh in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AB155051BBD43604022F8811 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -507,6 +616,47 @@
 				52D8473D4545285327988653 /* StoreScreenshotsUITests.swift in Sources */,
 				2E5B5083144AEADA07FCDEEC /* TheasaKeyboardUITests.swift in Sources */,
 				5D9CC4FCB755969318BDDFD8 /* TheasaUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C3161E5192EF638DB1AFD31D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CD066056B57531B33D96532D /* AppModel.swift in Sources */,
+				4902132C4FDD9804A0DFFE33 /* BusyPanes.swift in Sources */,
+				CB07DE434A51D772F1A93C88 /* CommandRegistry.swift in Sources */,
+				3497C9708B593A0F652DB6AE /* Commands.swift in Sources */,
+				1E629D46258DDE0C0CDD5750 /* DemoMode.swift in Sources */,
+				B5145760F4ED57BEC411375B /* GitLab.swift in Sources */,
+				DFB3C2053A1DC1B6171BBDC4 /* Herdr.swift in Sources */,
+				23B1D3A4F06299705064EE14 /* HerdrConnectSheet.swift in Sources */,
+				2A0AF26EBCB074CA82E49DE1 /* HerdrPane.swift in Sources */,
+				09BA2A23DFCCC4B4EE7E9C53 /* KeysSection.swift in Sources */,
+				1C643ACAAC77FF82968BC5E9 /* NewTab.swift in Sources */,
+				B913C402DDBB59A495B59D5A /* Notifier.swift in Sources */,
+				581C44F4C2A14CB879759F93 /* PaneBodies.swift in Sources */,
+				03866B4E9359212BE32F0289 /* PipelinesPane.swift in Sources */,
+				51DB76C7A852474C5E1F6837 /* Platform.swift in Sources */,
+				1C52926532F4A9D6B7659B52 /* RootView.swift in Sources */,
+				7F8A385915BB93D324C7331C /* SceneStore.swift in Sources */,
+				762694257B241A70017A3BD6 /* SettingsSheet.swift in Sources */,
+				35C27C0E38C27AA214903CC4 /* ShortcutsSheet.swift in Sources */,
+				20C46E8C36F0060E4F0C91E6 /* SidraAlert.swift in Sources */,
+				283606F2982CFF08E3AC6B34 /* SidraApp.swift in Sources */,
+				8BB80666014F3FB8C47B03C4 /* TabActivity.swift in Sources */,
+				579A4EC5B15A0A5FB6C614FF /* TerminalPane.swift in Sources */,
+				022B75384875C9635EE2FCDE /* TheasaAgents.swift in Sources */,
+				6B5024C83E45197BF4473249 /* TheasaCommands.swift in Sources */,
+				63C9254D1FA7DADE246DF8B3 /* TheasaConnectSheet.swift in Sources */,
+				564B4EB9D00A64F43511CF4C /* TheasaMarkdown.swift in Sources */,
+				3EF686081D0628FEFF15C573 /* TheasaPane.swift in Sources */,
+				D26241FEED7A824A5894C385 /* TheasaPill.swift in Sources */,
+				EE3FCFD9FCFB9F202F7D1D68 /* TheasaProject.swift in Sources */,
+				2BB41AB19B88C4CDF73575A9 /* TheasaPulse.swift in Sources */,
+				F32455CD57664A9B89A9D52B /* TheasaSearch.swift in Sources */,
+				8C757D4D63D9B6A172165FE2 /* TheasaStore.swift in Sources */,
+				4CA48703B87A8CEA83D0A3E5 /* TheasaTurn.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -632,10 +782,10 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -705,6 +855,31 @@
 			};
 			name = Release;
 		};
+		4E10DF49BE10B5D11FB2C6C8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Sidra/SidraMac.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 14;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "build/SidraMac-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				OTHER_LDFLAGS = (
+					"-ObjC",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = nl.sadiq.sidra.mac;
+				PRODUCT_NAME = Sidra;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				TARGETED_DEVICE_FAMILY = "";
+			};
+			name = Release;
+		};
 		4E359BAD3C1FF771A26EF20C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -743,6 +918,31 @@
 				PRODUCT_NAME = Sidra;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CAAA9362A21348948457DD0C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Sidra/SidraMac.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 14;
+				ENABLE_HARDENED_RUNTIME = YES;
+				INFOPLIST_FILE = "build/SidraMac-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				OTHER_LDFLAGS = (
+					"-ObjC",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = nl.sadiq.sidra.mac;
+				PRODUCT_NAME = Sidra;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				TARGETED_DEVICE_FAMILY = "";
 			};
 			name = Debug;
 		};
@@ -818,11 +1018,11 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
@@ -842,6 +1042,15 @@
 			buildConfigurations = (
 				4E359BAD3C1FF771A26EF20C /* Debug */,
 				DBD704871FC8D5B83A4F0705 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		3F02EAB876A8758167A7D437 /* Build configuration list for PBXNativeTarget "SidraMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CAAA9362A21348948457DD0C /* Debug */,
+				4E10DF49BE10B5D11FB2C6C8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
@@ -907,6 +1116,10 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		0C82BF3189E6FDCF783465AC /* SidraTheasa */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SidraTheasa;
+		};
 		0CE9EE125C9A286548263F3C /* SidraChess */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SidraChess;
@@ -918,6 +1131,30 @@
 		217505AFF3DE9612F7B260DE /* SidraDesign */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SidraDesign;
+		};
+		31252BA74554E5041C2F2836 /* SidraWorkspace */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SidraWorkspace;
+		};
+		38F0423505A0F5B90B73E9F5 /* SidraDesign */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SidraDesign;
+		};
+		847B616098444F08AECA88E1 /* SidraTerminal */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SidraTerminal;
+		};
+		AB3C253E12FD44E0D0DACA67 /* SidraChess */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SidraChess;
+		};
+		C3883D8A12FE42C5D36C1FC4 /* SidraHackerTab */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SidraHackerTab;
+		};
+		CB6D2BC2DAB012C6F2E856F4 /* SidraSSH */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SidraSSH;
 		};
 		DC9A2B79CFA0FED0D1A8A021 /* SidraHackerTab */ = {
 			isa = XCSwiftPackageProductDependency;

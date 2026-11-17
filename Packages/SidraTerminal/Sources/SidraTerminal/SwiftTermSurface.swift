@@ -1,3 +1,4 @@
+#if os(iOS)   // macOS: MacTerminal.swift
 import UIKit
 import SwiftTerm
 
@@ -71,3 +72,4 @@ final class PasteTerminalView: SwiftTerm.TerminalView {
         }
     }
 }
+#endif

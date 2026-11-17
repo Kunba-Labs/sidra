@@ -1,3 +1,4 @@
+#if os(iOS)   // touch keyboard UI: a Mac has a hardware keyboard
 import UIKit
 import GameController
 
@@ -120,3 +121,4 @@ public final class SidraKeyRow: UIInputView {
         return r
     }
 }
+#endif

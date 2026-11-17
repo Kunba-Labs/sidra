@@ -133,7 +133,7 @@ struct HostEditor: View {
                     // The host's ~/.ssh/authorized_keys needs this line before key sign-in works.
                     if let k = keys.first(where: { $0.id == (profile.keyID ?? keys.first?.id) }) {
                         Button(copiedKeyID == "\(k.id)" ? "Copied" : "Copy public key", systemImage: copiedKeyID == "\(k.id)" ? "checkmark" : "doc.on.doc") {
-                            UIPasteboard.general.string = k.publicKey; copiedKeyID = "\(k.id)"
+                            Platform.pasteString = k.publicKey; copiedKeyID = "\(k.id)"
                         }.buttonStyle(.sidraSecondary)
                     }
                 }
@@ -216,7 +216,7 @@ struct HostEditor: View {
         }.pickerStyle(.menu).tint(SidraColor.text)
         TextField("Paste ssh_config (HostName, User, Port, ProxyJump)", text: Binding(get: { profile.rawConfig ?? "" }, set: { profile.rawConfig = $0.isEmpty ? nil : $0 }), axis: .vertical)
             .lineLimit(2...5).textFieldStyle(.plain).font(SidraFont.mono(12)).foregroundStyle(SidraColor.text)
-            .autocorrectionDisabled().textInputAutocapitalization(.never)
+            .autocorrectionDisabled().plainTextEntry()
             .padding(8).background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
         if profile.rawConfig != nil {
             HStack {
@@ -232,7 +232,7 @@ struct HostEditor: View {
     private func field(_ title: String, _ text: Binding<String>) -> some View {
         TextField(title, text: text)
             .textFieldStyle(.plain).font(SidraFont.mono(13)).foregroundStyle(SidraColor.text)
-            .autocorrectionDisabled().textInputAutocapitalization(.never)
+            .autocorrectionDisabled().plainTextEntry()
             .padding(8).background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
     }
 }

@@ -382,7 +382,7 @@ enum PasteFolders {
 
 struct ViewedImage: Identifiable {
     let path: String
-    let image: UIImage
+    let image: PlatformImage
     var id: String { path }
 }
 
@@ -399,14 +399,14 @@ struct ImageViewer: View {
                     .lineLimit(1).truncationMode(.middle)
                 FooterChip([.init("\(Int(item.image.size.width))×\(Int(item.image.size.height))", icon: "photo"), .init(machine, icon: "desktopcomputer")])
                 Spacer(minLength: 8)
-                ShareLink(item: Image(uiImage: item.image), preview: SharePreview((item.path as NSString).lastPathComponent, image: Image(uiImage: item.image))) {
+                ShareLink(item: Image(platformImage: item.image), preview: SharePreview((item.path as NSString).lastPathComponent, image: Image(platformImage: item.image))) {
                     Label("Share", systemImage: "square.and.arrow.up").font(SidraFont.ui(13))
                 }
                 .buttonStyle(.bordered)
                 Button { dismiss() } label: { Image(systemName: "xmark").font(.system(size: 13, weight: .semibold)) }
                     .buttonStyle(.bordered).accessibilityLabel("Close")
             }
-            Image(uiImage: item.image).resizable().scaledToFit()
+            Image(platformImage: item.image).resizable().scaledToFit()
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             Text(item.path).font(SidraFont.mono(11)).foregroundStyle(SidraColor.dim).lineLimit(1).truncationMode(.middle)

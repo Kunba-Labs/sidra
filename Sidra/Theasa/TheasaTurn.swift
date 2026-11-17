@@ -287,7 +287,7 @@ struct TheasaTurnView: View {
             }
             .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline))
-            Button("Copy resume command") { UIPasteboard.general.string = d.resume; live.say("Copied.") }.buttonStyle(.sidraSecondary)
+            Button("Copy resume command") { Platform.pasteString = d.resume; live.say("Copied.") }.buttonStyle(.sidraSecondary)
                 .accessibilityIdentifier("theasa-copy-resume")
         }
     }
@@ -399,7 +399,7 @@ struct AttachmentStrip: View {
                 TheasaChips(items: rest.map { a in (label(a), TFormat.shortPath(root.map { r in a.name.replacingOccurrences(of: r + "/", with: "") } ?? a.name)) })
             }
         }
-        .fullScreenCover(item: Binding(get: { viewer.map { ViewerStart(index: $0) } }, set: { viewer = $0?.index })) { start in
+        .fullScreenSheet(item: Binding(get: { viewer.map { ViewerStart(index: $0) } }, set: { viewer = $0?.index })) { start in
             TheasaImageViewer(images: items.filter { $0.src != nil }.map { ViewerImage(id: $0.id, src: $0.src ?? "", name: TFormat.shortPath($0.name)) }, start: start.index)
                 .environment(live)
         }

@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import SidraDesign
 
 /// Reader / web: the lit one is the view you are in, the other takes you there.
 struct ArticleControls: View {
@@ -44,7 +45,7 @@ struct ArticleView: View {
 /// Switching between reader and web only changes which one is visible, so nothing reloads.
 /// When Readability finds no article (a PDF, an app, a video), the page is shown in both modes.
 /// ponytail: the reader uses the system font; the app's fonts are not visible to web content.
-struct WebPane: UIViewRepresentable {
+struct WebPane: PlatformViewRepresentable {
     let story: Story
     let reader: Bool
     let scale: Double
@@ -62,16 +63,28 @@ struct WebPane: UIViewRepresentable {
         return c
     }
 
-    func makeUIView(context: Context) -> UIView {
+    #if os(iOS)
+    func makeUIView(context: Context) -> UIView { makeBox(context) }
+    func updateUIView(_ box: UIView, context: Context) { updateBox(context) }
+    #else
+    func makeNSView(context: Context) -> NSView { makeBox(context) }
+    func updateNSView(_ box: NSView, context: Context) { updateBox(context) }
+    #endif
+
+    private func makeBox(_ context: Context) -> PlatformView {
         let c = context.coordinator
         if let box = c.box { return box }
-        let box = UIView()
+        let box = PlatformView()
         c.box = box
         for w in [c.page, c.reader] {
             w.navigationDelegate = c
+            #if os(iOS)
             w.isOpaque = false
             w.backgroundColor = UIColor(T.article)
             w.scrollView.backgroundColor = UIColor(T.article)
+            #else
+            w.underPageBackgroundColor = NSColor(T.article)
+            #endif
             w.translatesAutoresizingMaskIntoConstraints = false
             box.addSubview(w)
             NSLayoutConstraint.activate([
@@ -83,7 +96,7 @@ struct WebPane: UIViewRepresentable {
         return box
     }
 
-    func updateUIView(_ box: UIView, context: Context) {
+    private func updateBox(_ context: Context) {
         let c = context.coordinator
         c.parent = self
         c.show()
@@ -92,7 +105,7 @@ struct WebPane: UIViewRepresentable {
 
     final class Coordinator: NSObject, WKNavigationDelegate {
         var parent: WebPane
-        var box: UIView?
+        var box: PlatformView?
         let page = WKWebView(frame: .zero, configuration: WKWebViewConfiguration())
         let reader = WKWebView(frame: .zero, configuration: WKWebViewConfiguration())
         /// pending: the page or the reader is still loading. found: the reader shows the page's article.
@@ -189,7 +202,7 @@ struct WebPane: UIViewRepresentable {
                 return .cancel
             }
             // Other links leave the app; the reader stays on its article.
-            await UIApplication.shared.open(url)
+            await Platform.open(url)
             return .cancel
         }
 

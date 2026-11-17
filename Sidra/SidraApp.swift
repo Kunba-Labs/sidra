@@ -1,5 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
 import UIKit
+#endif
 import SidraDesign
 import SidraWorkspace
 
@@ -24,6 +26,9 @@ struct SidraApp: App {
             SceneRoot()
                 .environment(app)
         }
+        #if os(macOS)
+        .defaultSize(width: 1440, height: 920)
+        #endif
         .commands {
             WorkspaceCommands(app: app)
         }

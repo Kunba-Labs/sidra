@@ -5,17 +5,17 @@ import SidraDesign
 /// ponytail: only /favicon.ico is tried. Read <link rel="icon"> from the page if too many sites miss.
 actor Favicons {
     static let shared = Favicons()
-    private var cache: [String: UIImage?] = [:]
-    private var tasks: [String: Task<UIImage?, Never>] = [:]
+    private var cache: [String: PlatformImage?] = [:]
+    private var tasks: [String: Task<PlatformImage?, Never>] = [:]
 
-    func image(_ host: String) async -> UIImage? {
+    func image(_ host: String) async -> PlatformImage? {
         if let hit = cache[host] { return hit }
         if let t = tasks[host] { return await t.value }
-        let t = Task<UIImage?, Never> {
+        let t = Task<PlatformImage?, Never> {
             guard let url = URL(string: "https://\(host)/favicon.ico"),
                   let (data, resp) = try? await URLSession.shared.data(from: url),
                   (resp as? HTTPURLResponse)?.statusCode == 200 else { return nil }
-            return UIImage(data: data)
+            return PlatformImage(data: data)
         }
         tasks[host] = t
         let img = await t.value
@@ -27,11 +27,11 @@ actor Favicons {
 
 struct Favicon: View {
     let host: String?
-    @State private var image: UIImage?
+    @State private var image: PlatformImage?
     var body: some View {
         ZStack {
             if let image {
-                Image(uiImage: image).resizable().interpolation(.high)
+                Image(platformImage: image).resizable().interpolation(.high)
             } else {
                 (host == nil ? T.accent : T.tiles[(host ?? "").unicodeScalars.reduce(0) { $0 + Int($1.value) } % T.tiles.count])
                 Text(host?.first.map { String($0).uppercased() } ?? "Y").font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundStyle(T.bg)
@@ -89,7 +89,7 @@ struct IndexView: View {
             if model.feed == .search {
                 TextField("search stories", text: $model.query)
                     .font(T.mono(13)).foregroundStyle(T.text).tint(T.accent)
-                    .textInputAutocapitalization(.never).autocorrectionDisabled().submitLabel(.search)
+                    .plainTextEntry().autocorrectionDisabled().submitLabel(.search)
                     .onSubmit { Task { await model.loadFeed() } }
                     .focused($searchFocused).onAppear { searchFocused = model.stories.isEmpty }
                     .onChange(of: searchFocused) { model.typing = searchFocused }

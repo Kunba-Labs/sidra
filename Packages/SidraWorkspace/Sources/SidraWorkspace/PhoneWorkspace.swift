@@ -1,3 +1,4 @@
+#if os(iOS)   // the compact iPhone layout
 import SwiftUI
 import SidraDesign
 
@@ -129,3 +130,4 @@ struct TabDetails: View {
         .background(SidraColor.popup)
     }
 }
+#endif

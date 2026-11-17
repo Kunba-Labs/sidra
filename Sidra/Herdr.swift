@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import SidraDesign
 import SidraWorkspace
 import SidraSSH
 
@@ -329,7 +330,7 @@ final class MuxMonitor {
     let session: String?
     private(set) var snapshot: MuxSnapshot?
     private(set) var error: String?
-    private(set) var logos: [String: UIImage] = [:]   // by folder
+    private(set) var logos: [String: PlatformImage] = [:]   // by folder
     private var logoTried: Set<String> = []
     private var loadingLogos = false
 
@@ -455,7 +456,7 @@ final class MuxMonitor {
         await refresh(app)
     }
 
-    func logo(for ws: MuxSnapshot.Workspace) -> UIImage? {
+    func logo(for ws: MuxSnapshot.Workspace) -> PlatformImage? {
         snapshot?.folder(of: ws.id).flatMap { logos[$0] }
     }
 
@@ -509,6 +510,6 @@ enum HerdrLogo {
         return "sh -c " + Herdr.shellQuote(inner) + " sh " + Herdr.shellQuote(folder)
     }
 
-    /// PNG, JPEG and ICO decode with UIImage; SVGs arrive rasterised by the script.
-    static func image(_ data: Data) -> UIImage? { UIImage(data: data) }
+    /// PNG, JPEG and ICO decode with PlatformImage; SVGs arrive rasterised by the script.
+    static func image(_ data: Data) -> PlatformImage? { PlatformImage(data: data) }
 }
