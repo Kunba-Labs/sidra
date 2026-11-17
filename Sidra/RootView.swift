@@ -18,7 +18,12 @@ struct RootView: View {
         WorkspaceView(store: store, provider: provider, newTabMenu: slot(newTabButton), emptyHero: slot(NewTabCards()),
                       compactTrailing: slot(HStack(spacing: 6) { TheasaPill(compact: true); HerdrTitleCounts(); commandMenu }),
                       // Title bar design B (design/html/13-title-bar.html): what needs you as labelled pills.
-                      machine: slot(HStack(spacing: 2) { commandMenu })) {
+                      machine: slot(HStack(spacing: 2) {
+                          #if os(macOS)
+                          VoiceButton()
+                          #endif
+                          commandMenu
+                      })) {
             TheasaPill()
             HerdrTitleCounts()
         }
@@ -28,6 +33,9 @@ struct RootView: View {
         .background { KeyboardGuideProbe(dock: keyboard).ignoresSafeArea().allowsHitTesting(false) }
         #endif
         .overlay(alignment: .top) { PlatformBanners() }
+        #if os(macOS)
+        .overlay(alignment: .bottom) { VoiceOverlay().animation(.easeOut(duration: 0.18), value: VoiceInput.shared.isActive) }
+        #endif
         .overlay(alignment: .bottom) {
             if let msg = app.toastMessage {
                 Text(msg)

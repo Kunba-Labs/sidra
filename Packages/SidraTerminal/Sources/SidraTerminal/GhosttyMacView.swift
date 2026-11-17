@@ -81,8 +81,12 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
     public override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
     /// The window installs this view as first responder only after this returns, so focus comes from the
     /// call's result and the window's key state, and the blink restarts once the change has landed.
+    /// The terminal that last had the keys: dictation's target when a button holds focus for a moment.
+    public private(set) static weak var lastFocused: GhosttyMacView?
+
     public override func becomeFirstResponder() -> Bool {
         let r = super.becomeFirstResponder()
+        if r { Self.lastFocused = self }
         if r { reportFocus(window?.isKeyWindow == true) }
         DispatchQueue.main.async { [weak self] in self?.restartBlink() }
         return r

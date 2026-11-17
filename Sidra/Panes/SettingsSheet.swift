@@ -47,6 +47,7 @@ struct SettingsSheet: View {
 
             #if os(macOS)
             TerminalFontSection(query: query)
+            VoiceSection(query: query)
             #endif
 
             TerminalKeysSection(query: query)
@@ -389,6 +390,50 @@ struct TerminalFontSection: View {
                     Button { TerminalFont.step(-1) } label: { Image(systemName: "minus") }.buttonStyle(.sidraSecondary).accessibilityLabel("Smaller text")
                     Text("\(Int(TerminalFont.size)) pt").font(SidraFont.mono(13)).foregroundStyle(SidraColor.text).frame(width: 52)
                     Button { TerminalFont.step(1) } label: { Image(systemName: "plus") }.buttonStyle(.sidraSecondary).accessibilityLabel("Bigger text")
+                }
+            }
+        }
+    }
+}
+#endif
+
+#if os(macOS)
+/// Dictation: Apple's on-device model by default; Whisper large-v3 as an optional download.
+struct VoiceSection: View {
+    let query: String
+    @State private var voice = VoiceInput.shared
+    private func show(_ words: String...) -> Bool { query.isEmpty || words.contains { $0.localizedCaseInsensitiveContains(query) } }
+
+    var body: some View {
+        if show("Voice", "dictation", "dictate", "Whisper", "speech", "microphone") {
+            SectionLabel("Voice")
+            SettingRow("Dictation", detail: "⌥⌘V or the mic in the title bar. Speech stays on this Mac.", isDefault: voice.engine == .apple, reset: { voice.engine = .apple }) {
+                SidraMenu([SidraMenuSection(nil, [
+                    SidraMenuItem("Apple dictation") { voice.engine = .apple },
+                    voice.whisperOnDisk
+                        ? SidraMenuItem("Whisper large-v3") { voice.engine = .whisper }
+                        : SidraMenuItem("Download Whisper large-v3 (\(VoiceInput.whisperSize))", systemImage: "arrow.down.circle") { voice.downloadWhisper() },
+                ])]) {
+                    HStack(spacing: 6) {
+                        Text(voice.engine == .whisper && voice.whisperOnDisk ? "Whisper large-v3" : "Apple dictation").font(SidraFont.ui(13)).foregroundStyle(SidraColor.text)
+                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(SidraColor.muted)
+                    }
+                    .padding(.horizontal, 10).frame(height: 30)
+                    .background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
+                }
+                .accessibilityLabel("Dictation engine")
+            }
+            SettingRow("Whisper model", detail: voice.downloadError ?? "Optional. Better with code words and mixed languages. \(VoiceInput.whisperSize), downloaded once.",
+                       isDefault: !voice.whisperOnDisk, reset: { voice.removeWhisper() }) {
+                if let p = voice.downloadProgress {
+                    HStack(spacing: 8) {
+                        ProgressView(value: p).frame(width: 120).tint(SidraColor.jade)
+                        Text(p >= 1 ? "Preparing…" : "\(Int(p * 100))%").font(SidraFont.mono(12)).foregroundStyle(SidraColor.muted)
+                    }
+                } else if voice.whisperOnDisk {
+                    Button("Remove") { voice.removeWhisper() }.buttonStyle(.sidraSecondary).disabled(voice.isActive)
+                } else {
+                    Button("Download \(VoiceInput.whisperSize)") { voice.downloadWhisper() }.buttonStyle(.sidraSecondary)
                 }
             }
         }

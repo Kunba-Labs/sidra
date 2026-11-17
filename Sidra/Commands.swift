@@ -79,6 +79,7 @@ struct WorkspaceCommands: Commands {
             .init("view.biggerText", "Bigger Text", area: "View", key: "=", label: "⌘+") { TerminalFont.step(1) },
             .init("view.smallerText", "Smaller Text", area: "View", key: "-") { TerminalFont.step(-1) },
             .init("view.actualSize", "Default Text Size", area: "View", key: "0") { TerminalFont.resetSize() },
+            .init("go.dictate", "Dictate", area: "Go", key: "v", modifiers: [.command, .option]) { VoiceInput.shared.toggle() },
         ]
         #endif
         c += TheasaCommands.all(app)

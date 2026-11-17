@@ -27,6 +27,10 @@ packages:
   SidraTheasa: { path: Packages/SidraTheasa }
   SidraHackerTab: { path: Packages/SidraHackerTab }
   SidraChess: { path: Packages/SidraChess }
+  Argmax:
+    # WhisperKit (MIT): the optional Whisper model for dictation on the Mac (Settings → Voice).
+    url: https://github.com/argmaxinc/argmax-oss-swift.git
+    revision: ea872ffd35705aa757f33033500b9b0d40bd38df
 targets:
   Sidra:
     type: application
@@ -98,6 +102,8 @@ targets:
       - package: SidraTheasa
       - package: SidraHackerTab
       - package: SidraChess
+      - package: Argmax
+        product: WhisperKit
     info:
       path: build/SidraMac-Info.plist
       properties:
@@ -109,10 +115,13 @@ targets:
         ATSApplicationFontsPath: .
         NSLocalNetworkUsageDescription: Sidra connects to the SSH hosts, herdr machines and Theasa servers you add on your local network.
         NSBonjourServices: [_ssh._tcp]
+        NSMicrophoneUsageDescription: Sidra listens while you dictate into a terminal. Speech is turned into text on this Mac.
+        NSSpeechRecognitionUsageDescription: Sidra turns your dictation into text on this Mac.
         ITSAppUsesNonExemptEncryption: false
     entitlements:
       path: Sidra/SidraMac.entitlements
-      properties: {}
+      properties:
+        com.apple.security.device.audio-input: true   # the microphone under the hardened runtime
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: nl.sadiq.sidra.mac

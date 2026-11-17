@@ -18,12 +18,14 @@
 		10A62F11BFDFD7A86CAC198D /* DemoMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D40EFDF6FF49F49A56FDCE /* DemoMode.swift */; };
 		16D1038431AD1E8CCBBDF296 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 680898FB51F66C3B3F13859C /* Inter-Regular.ttf */; };
 		18712C6EFB1451F3D0F8FB01 /* HerdrTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C8C6F728A42C21EF094989 /* HerdrTests.swift */; };
+		1B839889CEA5EBE0909041D1 /* VoiceOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 193983C1C9F58065C67AC026 /* VoiceOverlay.swift */; };
 		1C52926532F4A9D6B7659B52 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F083441085B2B800071D6F /* RootView.swift */; };
 		1C643ACAAC77FF82968BC5E9 /* NewTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AE28FD3AB3C35FCCD53E8FF /* NewTab.swift */; };
 		1E629D46258DDE0C0CDD5750 /* DemoMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D40EFDF6FF49F49A56FDCE /* DemoMode.swift */; };
 		20C46E8C36F0060E4F0C91E6 /* SidraAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61631DB9FAA738AF8DC58B30 /* SidraAlert.swift */; };
 		23B1D3A4F06299705064EE14 /* HerdrConnectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79C4F81745995413751B61AA /* HerdrConnectSheet.swift */; };
 		24119E4023D8D213098EEDF9 /* SidraSSH in Frameworks */ = {isa = PBXBuildFile; productRef = CB6D2BC2DAB012C6F2E856F4 /* SidraSSH */; };
+		2553C3C8A4C8DBF875700ABD /* VoiceInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEFA0D447FC952F4060C8301 /* VoiceInput.swift */; };
 		283606F2982CFF08E3AC6B34 /* SidraApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF4101D8B8817370EE559987 /* SidraApp.swift */; };
 		2A0AF26EBCB074CA82E49DE1 /* HerdrPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4477F8E3EBA916104FCB99C5 /* HerdrPane.swift */; };
 		2AC0A062D98D5333EBC3598D /* herdr-attach.sh in Resources */ = {isa = PBXBuildFile; fileRef = B0DC2327B7FE042EE0FD4378 /* herdr-attach.sh */; };
@@ -69,6 +71,7 @@
 		79E841603FE7F855A5C953C4 /* TheasaPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4250DDEA0881DA0432782662 /* TheasaPill.swift */; };
 		7F8A385915BB93D324C7331C /* SceneStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F90D9F3ACAEC2FB0ADCA51 /* SceneStore.swift */; };
 		7FEC65A5765404B7AA132D5D /* SidraTerminal in Frameworks */ = {isa = PBXBuildFile; productRef = FF0765AB422B0D45A35E475D /* SidraTerminal */; };
+		80C7DE4FD589E3B35B8C54A2 /* VoiceInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEFA0D447FC952F4060C8301 /* VoiceInput.swift */; };
 		8588968343045DC05F87CF2E /* SidraDesign in Frameworks */ = {isa = PBXBuildFile; productRef = 38F0423505A0F5B90B73E9F5 /* SidraDesign */; };
 		89DBEEDE718CFC48E796A670 /* SSHKeyLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46309641DF73FE9E9FFCF88B /* SSHKeyLifecycleTests.swift */; };
 		89E5807F9528CDBF3E265320 /* SidraAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61631DB9FAA738AF8DC58B30 /* SidraAlert.swift */; };
@@ -87,6 +90,7 @@
 		9FC7413353CFA15E48C49964 /* TheasaPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = E370EAEEFC681DB92CFBC0EF /* TheasaPane.swift */; };
 		A00E800E23C3A4E230CEAEC3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1F4667A0E51BA7C24D920DD /* Assets.xcassets */; };
 		A0D9EDEC398C69C5867E4301 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1F4667A0E51BA7C24D920DD /* Assets.xcassets */; };
+		A5756A18EB7E9B0B498A15B1 /* VoiceOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 193983C1C9F58065C67AC026 /* VoiceOverlay.swift */; };
 		A623DEEE53B4ACFE19518F59 /* HerdrPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4477F8E3EBA916104FCB99C5 /* HerdrPane.swift */; };
 		AA68CCB35DF9EB7A9A8186B4 /* TheasaMarkdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DCC141B15F493AF564C38B /* TheasaMarkdown.swift */; };
 		ADCABBA0CE88A581FEF55939 /* TheasaAgents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FA4FA59DD2513883467739 /* TheasaAgents.swift */; };
@@ -117,6 +121,7 @@
 		F3910D0B77EA4077E8699099 /* SceneStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F90D9F3ACAEC2FB0ADCA51 /* SceneStore.swift */; };
 		F3B50A34F450608051F45D1C /* SmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA53C89AF6EAA63E1ABAC641 /* SmokeTests.swift */; };
 		F54C10CBFB1A977F03FE4746 /* NewTabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835D989F13A564BB23920914 /* NewTabUITests.swift */; };
+		F6B9EC8C6A87955ED5F21628 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 64C542AF4A8DB04D5DB7B0AF /* WhisperKit */; };
 		F9857DFFC09F44DEC6F754E1 /* CommandRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BF97F13FCCEA3B5097ACB1 /* CommandRegistry.swift */; };
 		FF4CFAB6C906B6680E21BDB7 /* SidraTheasa in Frameworks */ = {isa = PBXBuildFile; productRef = 0C82BF3189E6FDCF783465AC /* SidraTheasa */; };
 /* End PBXBuildFile section */
@@ -145,6 +150,7 @@
 		0BCED55A7704AA6225857CA0 /* SidraChess */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraChess; path = Packages/SidraChess; sourceTree = SOURCE_ROOT; };
 		1480327CDF081DB259C98E5F /* TheasaPulse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaPulse.swift; sourceTree = "<group>"; };
 		16A78597AF77F3BBAB81F25F /* SSHKeysTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHKeysTests.swift; sourceTree = "<group>"; };
+		193983C1C9F58065C67AC026 /* VoiceOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceOverlay.swift; sourceTree = "<group>"; };
 		19FFF77CC7CB50FA454494F7 /* Herdr.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Herdr.swift; sourceTree = "<group>"; };
 		1B9151B661C8A5150FD6B3DD /* TheasaTurn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaTurn.swift; sourceTree = "<group>"; };
 		21F90D9F3ACAEC2FB0ADCA51 /* SceneStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneStore.swift; sourceTree = "<group>"; };
@@ -209,6 +215,7 @@
 		EF4101D8B8817370EE559987 /* SidraApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidraApp.swift; sourceTree = "<group>"; };
 		F0C8C6F728A42C21EF094989 /* HerdrTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HerdrTests.swift; sourceTree = "<group>"; };
 		FDFE12FF0FEBA7EB10B55328 /* PipelinesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelinesTests.swift; sourceTree = "<group>"; };
+		FEFA0D447FC952F4060C8301 /* VoiceInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceInput.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -223,6 +230,7 @@
 				FF4CFAB6C906B6680E21BDB7 /* SidraTheasa in Frameworks */,
 				CA49C1067A793EE8CDB6205D /* SidraHackerTab in Frameworks */,
 				55A8E932394155B63433188D /* SidraChess in Frameworks */,
+				F6B9EC8C6A87955ED5F21628 /* WhisperKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -362,6 +370,15 @@
 			path = Pipelines;
 			sourceTree = "<group>";
 		};
+		BDE0D52F18C042FB07295F6A /* Voice */ = {
+			isa = PBXGroup;
+			children = (
+				FEFA0D447FC952F4060C8301 /* VoiceInput.swift */,
+				193983C1C9F58065C67AC026 /* VoiceOverlay.swift */,
+			);
+			path = Voice;
+			sourceTree = "<group>";
+		};
 		C84D4283DF3DD76B7CB664DD = {
 			isa = PBXGroup;
 			children = (
@@ -419,6 +436,7 @@
 				BD30B9CC5081090969757B7A /* Pipelines */,
 				B78AA8018F6E9F31E62F3617 /* Resources */,
 				B0F81D4521F7B38A97507F78 /* Theasa */,
+				BDE0D52F18C042FB07295F6A /* Voice */,
 			);
 			path = Sidra;
 			sourceTree = "<group>";
@@ -491,6 +509,7 @@
 				0C82BF3189E6FDCF783465AC /* SidraTheasa */,
 				C3883D8A12FE42C5D36C1FC4 /* SidraHackerTab */,
 				AB3C253E12FD44E0D0DACA67 /* SidraChess */,
+				64C542AF4A8DB04D5DB7B0AF /* WhisperKit */,
 			);
 			productName = SidraMac;
 			productReference = 431F62683B346773FF43404D /* SidraMac.app */;
@@ -552,6 +571,7 @@
 			mainGroup = C84D4283DF3DD76B7CB664DD;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				A53E245867EDF4AB1EA7227F /* XCRemoteSwiftPackageReference "argmax-oss-swift" */,
 				97CB39CC2B2C34BA0EAD6DA2 /* XCLocalSwiftPackageReference "Packages/SidraChess" */,
 				203A1651EDDBCFBAF45A6211 /* XCLocalSwiftPackageReference "Packages/SidraDesign" */,
 				55355D0EBA1428CD36935FC9 /* XCLocalSwiftPackageReference "Packages/SidraHackerTab" */,
@@ -657,6 +677,8 @@
 				F32455CD57664A9B89A9D52B /* TheasaSearch.swift in Sources */,
 				8C757D4D63D9B6A172165FE2 /* TheasaStore.swift in Sources */,
 				4CA48703B87A8CEA83D0A3E5 /* TheasaTurn.swift in Sources */,
+				2553C3C8A4C8DBF875700ABD /* VoiceInput.swift in Sources */,
+				A5756A18EB7E9B0B498A15B1 /* VoiceOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -698,6 +720,8 @@
 				3F1527F314D94801B159B51C /* TheasaSearch.swift in Sources */,
 				D329A6E8E848BD422D1D1A71 /* TheasaStore.swift in Sources */,
 				CD424996DA892604811FC96E /* TheasaTurn.swift in Sources */,
+				80C7DE4FD589E3B35B8C54A2 /* VoiceInput.swift in Sources */,
+				1B839889CEA5EBE0909041D1 /* VoiceOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1115,6 +1139,17 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		A53E245867EDF4AB1EA7227F /* XCRemoteSwiftPackageReference "argmax-oss-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/argmaxinc/argmax-oss-swift.git";
+			requirement = {
+				kind = revision;
+				revision = ea872ffd35705aa757f33033500b9b0d40bd38df;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		0C82BF3189E6FDCF783465AC /* SidraTheasa */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -1139,6 +1174,11 @@
 		38F0423505A0F5B90B73E9F5 /* SidraDesign */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SidraDesign;
+		};
+		64C542AF4A8DB04D5DB7B0AF /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A53E245867EDF4AB1EA7227F /* XCRemoteSwiftPackageReference "argmax-oss-swift" */;
+			productName = WhisperKit;
 		};
 		847B616098444F08AECA88E1 /* SidraTerminal */ = {
 			isa = XCSwiftPackageProductDependency;
