@@ -71,12 +71,14 @@ struct PipelinesPane: View {
     // MARK: List
 
     private struct Bucket: Identifiable { let id: String; var pipelines: [GitLabPipeline] }
+    /// Running pipelines sit on top, above a divider; the groups below hold the rest.
+    private var running: [GitLabPipeline] { store.running }
     private var groups: [Bucket] {
         var by: [String: [GitLabPipeline]] = [:]
-        for p in store.pipelines { by[store.projects[p.project_id]?.group ?? "?", default: []].append(p) }
+        for p in store.pipelines where !p.isActive { by[store.projects[p.project_id]?.group ?? "?", default: []].append(p) }
         return by.map { Bucket(id: $0.key, pipelines: $0.value) }.sorted { $0.pipelines[0].updated_at > $1.pipelines[0].updated_at }
     }
-    private var flat: [GitLabPipeline] { groups.flatMap { g in expanded.contains(g.id) ? g.pipelines : Array(g.pipelines.prefix(5)) } }
+    private var flat: [GitLabPipeline] { running + groups.flatMap { g in expanded.contains(g.id) ? g.pipelines : Array(g.pipelines.prefix(5)) } }
 
     private var list: some View {
         ScrollViewReader { proxy in
@@ -86,6 +88,19 @@ struct PipelinesPane: View {
                     else if store.pipelines.isEmpty {
                         Text(store.loading || store.lastRefresh == nil ? "Reading pipelines…" : "No pipelines in your projects yet.")
                             .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted).padding(14)
+                    }
+                    if !running.isEmpty {
+                        HStack(spacing: 8) {
+                            // Spins only while something runs; pending and queued alone show a clock.
+                            if running.contains(where: { $0.status == "running" }) { GradientSpinner(size: 13) }
+                            else { Image(systemName: "clock").font(.system(size: 11)).foregroundStyle(SidraColor.dim) }
+                            Text("ACTIVE").font(SidraFont.ui(11.5, weight: .bold)).foregroundStyle(SidraColor.muted).tracking(0.5)
+                            Spacer()
+                            Text("\(running.count)").font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim)
+                        }
+                        .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 4)
+                        ForEach(running) { p in row(p).id(p.id) }
+                        if !groups.isEmpty { Rectangle().fill(SidraColor.hairline2).frame(height: 1).padding(.horizontal, 14).padding(.vertical, 8) }
                     }
                     ForEach(groups) { g in
                         HStack(spacing: 8) {
@@ -446,10 +461,10 @@ struct PipelinesConnectionButton: View {
     @Environment(AppModel.self) private var app
     var body: some View {
         Button { app.sheet = connection.map { .pipelinesEdit($0.id) } ?? .pipelines } label: {
-            Label(connection?.title ?? "Connect", systemImage: "key").labelStyle(.titleAndIcon).font(SidraFont.ui(12))
+            Label(connection.map { PipelinesHub.shared.label(for: $0) } ?? "Connect", systemImage: "key").labelStyle(.titleAndIcon).font(SidraFont.ui(12))
         }
         .buttonStyle(.sidraSecondary)
-        .accessibilityLabel("\(connection?.provider.name ?? "Pipelines") connection")
+        .accessibilityLabel("\(connection.map { PipelinesHub.shared.label(for: $0) } ?? "Pipelines") connection")
     }
 }
 
@@ -474,7 +489,7 @@ struct PipelinesConnectSheet: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
                 ProcessIcon(.pipelines, size: 30)
-                Text(existing.map { "\($0.title) pipelines" } ?? "Pipelines").font(SidraFont.ui(19, weight: .bold)).foregroundStyle(SidraColor.text)
+                Text(existing.map { "\($0.label) pipelines" } ?? "Pipelines").font(SidraFont.ui(19, weight: .bold)).foregroundStyle(SidraColor.text)
             }
             if existing == nil, !hub.connections.isEmpty, !adding {
                 Text("Open a connection, or add another: GitLab and GitHub tabs sit side by side.")
@@ -484,7 +499,7 @@ struct PipelinesConnectSheet: View {
                         HStack(spacing: 12) {
                             ProviderMark(provider: c.provider)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(c.title).font(SidraFont.ui(14, weight: .bold)).foregroundStyle(SidraColor.text)
+                                Text(c.label).font(SidraFont.ui(14, weight: .bold)).foregroundStyle(SidraColor.text)
                                 Text(c.url).font(SidraFont.ui(12)).foregroundStyle(SidraColor.muted)
                             }
                             Spacer()

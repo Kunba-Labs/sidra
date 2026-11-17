@@ -464,20 +464,38 @@ struct MuxAgentsMenu: View {
         .accessibilityIdentifier("section-\(title.lowercased())")
     }
 
-    /// Recent pipelines of every connection, finished ones too: per connection (when there are several),
-    /// grouped by namespace like the pipelines TUI, five per group.
+    /// Running pipelines of every connection on top, a divider, then the recent finished ones: per
+    /// connection (when there are several), grouped by namespace like the pipelines TUI, five per group.
     @ViewBuilder private var allPipelines: some View {
         let hub = PipelinesHub.shared
         let stores = hub.all.filter(\.connected)
+        let running = stores.flatMap { s in s.running.map { RunningRow(store: s, pipeline: $0) } }.sorted { $0.pipeline.updated_at > $1.pipeline.updated_at }
         if stores.allSatisfy({ $0.pipelines.isEmpty }) {
             Text(hub.loading ? "Reading pipelines…" : stores.compactMap(\.error).first ?? "No pipelines yet.")
                 .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted).padding(10)
         }
+        if !running.isEmpty {
+            HStack(spacing: 8) {
+                // Spins only while something runs; pending and queued alone show a clock.
+                if running.contains(where: { $0.pipeline.status == "running" }) { GradientSpinner(size: 13) }
+                else { Image(systemName: "clock").font(.system(size: 11)).foregroundStyle(SidraColor.dim) }
+                Text("ACTIVE").font(SidraFont.ui(11, weight: .bold)).foregroundStyle(SidraColor.muted).tracking(0.5)
+                Spacer()
+                Text("\(running.count)").font(SidraFont.ui(11)).foregroundStyle(SidraColor.dim)
+            }
+            .padding(.horizontal, 10).padding(.top, 10).padding(.bottom, 2)
+            // Keyed by connection and pipeline: ids repeat across services. With several connections each
+            // running row carries its service's mark, as the finished ones sit under its name.
+            ForEach(running, id: \.key) { r in pipelineRow(r.pipeline, r.store, mark: stores.count > 1) }
+            if stores.contains(where: { $0.pipelines.contains { !$0.isActive } }) {
+                Rectangle().fill(SidraColor.hairline2).frame(height: 1).padding(.horizontal, 10).padding(.vertical, 8)
+            }
+        }
         ForEach(stores, id: \.connection.id) { store in
-            if stores.count > 1, !store.pipelines.isEmpty {
+            if stores.count > 1, store.pipelines.contains(where: { !$0.isActive }) {
                 HStack(spacing: 8) {
                     ProviderMark(provider: store.connection.provider, size: 14)
-                    Text(store.connection.title).font(SidraFont.ui(12, weight: .bold)).foregroundStyle(SidraColor.text)
+                    Text(hub.label(for: store.connection)).font(SidraFont.ui(12, weight: .bold)).foregroundStyle(SidraColor.text)
                 }
                 .padding(.horizontal, 10).padding(.top, 12)
             }
@@ -486,7 +504,7 @@ struct MuxAgentsMenu: View {
     }
 
     @ViewBuilder private func pipelineGroups(_ store: PipelinesStore) -> some View {
-        let groups = Dictionary(grouping: store.pipelines) { store.projects[$0.project_id]?.group ?? "?" }
+        let groups = Dictionary(grouping: store.pipelines.filter { !$0.isActive }) { store.projects[$0.project_id]?.group ?? "?" }
             .sorted { $0.value[0].updated_at > $1.value[0].updated_at }
         ForEach(groups, id: \.key) { name, list in
             HStack(spacing: 8) {
@@ -496,23 +514,33 @@ struct MuxAgentsMenu: View {
                 Text("\(list.count)").font(SidraFont.ui(11)).foregroundStyle(SidraColor.dim)
             }
             .padding(.horizontal, 10).padding(.top, 10).padding(.bottom, 2)
-            ForEach(list.prefix(5)) { p in
-                let project = store.projects[p.project_id]?.name ?? "project \(p.project_id)"
-                Button { close(); app.openPipelines(connection: store.connection.id, reveal: p.id) } label: {
-                    HStack(spacing: 9) {
-                        PipelineStatusIcon(status: p.status, size: 14)
-                        PipelineAvatar(image: store.avatar(project: p.project_id), name: project, size: 14)
-                        Text(project).font(SidraFont.ui(13, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
-                        Text(p.ref).font(SidraFont.mono(11)).foregroundStyle(SidraColor.dim).lineLimit(1)
-                        Spacer(minLength: 6)
-                        Text(PipelinesPane.ago(p.updated_at)).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.muted)
-                    }
-                    .padding(.horizontal, 10).frame(height: 34).contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("\(project) \(p.ref), \(p.status), open in Pipelines")
-            }
+            ForEach(list.prefix(5)) { p in pipelineRow(p, store) }
         }
+    }
+
+    private struct RunningRow { let store: PipelinesStore; let pipeline: GitLabPipeline
+        var key: String { "\(store.connection.id.uuidString)-\(pipeline.id)" } }
+
+    private func pipelineRow(_ p: GitLabPipeline, _ store: PipelinesStore, mark: Bool = false) -> some View {
+        let project = store.projects[p.project_id]?.name ?? "project \(p.project_id)"
+        return Button { close(); app.openPipelines(connection: store.connection.id, reveal: p.id) } label: {
+            HStack(spacing: 9) {
+                PipelineStatusIcon(status: p.status, size: 14)
+                if mark {   // which connection: its mark and name, as two connections can share a service
+                    ProviderMark(provider: store.connection.provider, size: 13)
+                    Text(PipelinesHub.shared.label(for: store.connection)).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim)
+                        .lineLimit(1).truncationMode(.middle).frame(maxWidth: 110, alignment: .leading)
+                }
+                PipelineAvatar(image: store.avatar(project: p.project_id), name: project, size: 14)
+                Text(project).font(SidraFont.ui(13, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
+                Text(p.ref).font(SidraFont.mono(11)).foregroundStyle(SidraColor.dim).lineLimit(1)
+                Spacer(minLength: 6)
+                Text(PipelinesPane.ago(p.updated_at)).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.muted)
+            }
+            .padding(.horizontal, 10).frame(height: 34).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(mark ? PipelinesHub.shared.label(for: store.connection) + ", " : "")\(project) \(p.ref), \(p.status), open in Pipelines")
     }
 
     @ViewBuilder private func agents(_ sources: [(pane: UUID, monitor: MuxMonitor, snapshot: MuxSnapshot)]) -> some View {

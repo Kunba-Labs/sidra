@@ -19,12 +19,17 @@ struct PipelineConnection: Codable, Identifiable, Hashable, Sendable {
     /// Which Keychain entry holds the token: a new token gets a new entry, so the old one stays intact
     /// until the new one is saved. Nil: the entry named after `id`.
     var tokenID: UUID?
+    /// The account the token belongs to (its username), read when the token is checked.
+    var account: String?
 
     var tokenKey: String { "pipelines.token.\((tokenID ?? id).uuidString)" }
     var host: String { URL(string: url)?.host ?? url }
     var isHosted: Bool { URL(string: url)?.host == URL(string: provider.hostedURL)?.host }
     /// "GitHub", "GitLab", or the self-hosted server's host.
     var title: String { isHosted ? provider.name : host }
+    /// Title and account ("GitLab · waseem"): two accounts on one service stay apart, and the label does
+    /// not change when another connection is added or removed.
+    var label: String { account.map { "\(title) · \($0)" } ?? title }
 
     /// https://host[/path] with no trailing slash, https only (every request carries the token); nil if not a URL.
     static func normalize(_ raw: String) -> URL? {
@@ -52,8 +57,8 @@ struct PipelineConnection: Codable, Identifiable, Hashable, Sendable {
 protocol CIClient: Sendable {
     var token: String { get }
     var provider: PipelineConnection.Provider { get }
-    /// Throws when the token is not accepted.
-    func verify() async throws
+    /// The token's username; throws when the token is not accepted.
+    func verify() async throws -> String
     func projects() async throws -> [GitLabProject]
     /// full_path → id of groups that have an avatar (GitLab); empty elsewhere.
     func groupsWithAvatar() async -> [String: Int]
@@ -78,9 +83,9 @@ extension GitLabClient: CIClient {
     var provider: PipelineConnection.Provider { .gitlab }
     var pollSeconds: (visible: Double, hidden: Double) { (15, 60) }
 
-    func verify() async throws {
+    func verify() async throws -> String {
         struct User: Decodable { let username: String }
-        _ = try await get("/user") as User
+        return (try await get("/user") as User).username
     }
     func projects() async throws -> [GitLabProject] {
         try await all("/projects", ["membership": "true", "simple": "true", "order_by": "last_activity_at"])
@@ -156,9 +161,9 @@ struct GitHubClient: CIClient {
         try GitLabClient.decoder.decode(T.self, from: try await request(path, query))
     }
 
-    func verify() async throws {
+    func verify() async throws -> String {
         struct User: Decodable { let login: String }
-        _ = try await get("/user") as User
+        return (try await get("/user") as User).login
     }
 
     private struct Repo: Decodable {

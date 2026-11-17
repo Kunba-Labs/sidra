@@ -463,9 +463,13 @@ final class PipelinesHub {
         let s = PipelinesStore(connection: c)
         stores[c.id] = s
         s.start()
+        if c.account == nil { Task { await fillAccount(c.id) } }   // saved before accounts were kept
         return s
     }
     var all: [PipelinesStore] { connections.compactMap { store($0.id) } }
+
+    /// The connection's current label, from the hub's list: a store's copy predates an account read later.
+    func label(for c: PipelineConnection) -> String { (connections.first { $0.id == c.id } ?? c).label }
 
     var connected: Bool { all.contains(where: \.connected) }
     var runningCount: Int { all.reduce(0) { $0 + $1.running.count } }
@@ -484,7 +488,7 @@ final class PipelinesHub {
         if let id { c.id = id }
         let t = token.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let client = c.client(token: t) else { throw GitLabError(message: "That is not a URL.") }
-        try await client.verify()
+        c.account = try await client.verify()
         // The new token goes to its own entry first; the old store keeps reading the old entry, so it never
         // sees the new token, and a failed write leaves the connection as it was.
         try KeychainStore.set(t, for: c.tokenKey)
@@ -495,6 +499,14 @@ final class PipelinesHub {
         if let old, old.tokenKey != c.tokenKey { KeychainStore.remove(old.tokenKey) }
         _ = store(c.id)
         return c
+    }
+
+    /// Reads the token's username once for a connection saved without one, for its label.
+    private func fillAccount(_ id: UUID) async {
+        guard let s = stores[id], let client = s.client, let name = try? await client.verify(),
+              let i = connections.firstIndex(where: { $0.id == id }), connections[i].account == nil else { return }
+        connections[i].account = name
+        save()
     }
 
     func remove(_ id: UUID) {
