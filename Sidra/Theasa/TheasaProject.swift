@@ -305,7 +305,7 @@ struct DecisionsList: View {
     var body: some View {
         if decisions.isEmpty { TBox { Muted("No decisions yet.") } }
         ItemRows(data: decisions) { x in DecisionRow(decision: x, supersede: { superseding = x }) }
-            .sheet(item: $superseding) { x in SupersedeSheet(decision: x, projectID: projectID) }
+            .sheet(item: $superseding) { x in SupersedeSheet(decision: x, projectID: projectID).environment(live) }
     }
 }
 

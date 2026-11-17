@@ -88,7 +88,7 @@ struct SettingsSheet: View {
             app.hosts.upsert(saved, password: pw.isEmpty ? nil : pw)
             editing = nil
             _ = app.connection(for: saved)   // a cached shell connection picks up the new profile now
-        } }
+        }.environment(app) }
         .keyUseConfirmation()
         .sidraAlert($alert)
     }

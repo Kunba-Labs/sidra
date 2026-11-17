@@ -77,13 +77,13 @@ struct HerdrConnectSheet: View {
             app.hosts.upsert(saved, password: pw.isEmpty ? nil : pw)
             adding = nil
             target = .ssh(hostID: saved.id)
-        } }
+        }.environment(app) }
         .sheet(item: $editing) { h in HostEditor(profile: h, password: $password) { saved, pw in
             app.hosts.upsert(saved, password: pw.isEmpty ? nil : pw)
             editing = nil
             // Same target id, so the probe task would not rerun on its own.
             if target == .ssh(hostID: saved.id) { Task { await runProbe() } } else { target = .ssh(hostID: saved.id) }
-        } }
+        }.environment(app) }
         .keyUseConfirmation()
         // A first connection asks to trust the host key; without this it would wait unseen.
         .sheet(item: Binding(get: { editing == nil && adding == nil ? prompter.pending.map { PromptBox(prompt: $0) } : nil }, set: { _ in })) { box in

@@ -92,6 +92,7 @@ struct NewTabSheet: View {
                 editing = nil
                 openHost(saved.id)
             }
+            .environment(app)   // a sheet on a Mac does not inherit it
         }
     }
 

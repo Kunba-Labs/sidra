@@ -55,9 +55,9 @@ struct MuxSpacesBar: View {
                         if let ws = s.focused_workspace_id { tabsBar(m, s, space: ws) }
                     }
                     .padding(.horizontal, 6)
-                    .sheet(isPresented: $promptsShown) { QuickPromptsSheet(pane: pane.id) }
+                    .sheet(isPresented: $promptsShown) { QuickPromptsSheet(pane: pane.id).environment(app) }
                 }
-                .sheet(isPresented: $broadcastShown) { BroadcastSheet(monitor: m) }   // its own view: two sheets on one view clash
+                .sheet(isPresented: $broadcastShown) { BroadcastSheet(monitor: m).environment(app) }   // its own view: two sheets on one view clash
                 if s.focused_workspace_id == nil {
                     // No space yet (a fresh herdr): the first one is made here.
                     Button { pickerShown = true } label: {
@@ -81,6 +81,7 @@ struct MuxSpacesBar: View {
             .background { spaceShortcuts(m, s) }
             .sheet(isPresented: $pickerShown) {
                 NewSpacePicker(monitor: m, snapshot: s) { newSpaceMoving = false; newSpaceLabel = ""; newSpaceFolder = "~/Development/"; newSpaceShown = true }
+                    .environment(app)
             }
             .alert(newSpaceMoving ? "Move to space" : "New space", isPresented: $newSpaceShown) {
             TextField("Name", text: Binding(get: { newSpaceLabel }, set: { v in
@@ -390,7 +391,7 @@ struct HerdrTitleCounts: View {
             .accessibilityLabel("\(working) agents and \(pipelines) pipelines working, \(failed) new failed pipelines")
             .accessibilityIdentifier("mux-agents")
             .popover(isPresented: $open, arrowEdge: .top) {
-                MuxAgentsMenu(live: live) { open = false }.presentationCompactAdaptation(.popover)
+                MuxAgentsMenu(live: live) { open = false }.environment(app).presentationCompactAdaptation(.popover)
             }
         }
     }
