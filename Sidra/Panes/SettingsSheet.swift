@@ -125,8 +125,6 @@ struct HostEditor: View {
                 if !local { field("Port", Binding(get: { String(profile.port) }, set: { profile.port = Int($0) ?? 22 })).frame(width: 110) }
             }
             if local {
-                Label("This Mac. Sidra runs your login shell here, without SSH or a key.", systemImage: "desktopcomputer")
-                    .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
                 field("Run on connect (e.g. tmux new -A -s sidra)", $profile.startupCommand)
             } else {
             field("User", $profile.user)
