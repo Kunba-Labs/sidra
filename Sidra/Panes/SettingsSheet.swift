@@ -108,14 +108,27 @@ struct HostEditor: View {
     @Environment(AppModel.self) private var app
     @State private var configNote: String?
     @State private var copiedKeyID: String?   // the key whose public half is on the clipboard
+    /// Host key, mosh, jump host and ssh_config sit under "More options"; open when one is in use.
+    @State private var showMore = false
     private var hosts: [SSHHostProfile] { app.hosts.hosts }
+    private var usesExtras: Bool { profile.trustOnFirstUse || profile.mosh != nil || profile.jumpHostID != nil || profile.rawConfig != nil }
+    /// localhost on a Mac runs its shell directly: user, keys and SSH options do not apply.
+    private var local: Bool { profile.isThisMac }
 
     var body: some View {
         ScrollView {
         VStack(alignment: .leading, spacing: 12) {
             Text(profile.alias.isEmpty ? "New host" : profile.alias).font(SidraFont.ui(19, weight: .bold)).foregroundStyle(SidraColor.text)
             field("Alias", $profile.alias)
-            HStack { field("Host", $profile.host); field("Port", Binding(get: { String(profile.port) }, set: { profile.port = Int($0) ?? 22 })).frame(width: 110) }
+            HStack {
+                field("Host", $profile.host)
+                if !local { field("Port", Binding(get: { String(profile.port) }, set: { profile.port = Int($0) ?? 22 })).frame(width: 110) }
+            }
+            if local {
+                Label("This Mac. Sidra runs your login shell here, without SSH or a key.", systemImage: "desktopcomputer")
+                    .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
+                field("Run on connect (e.g. tmux new -A -s sidra)", $profile.startupCommand)
+            } else {
             field("User", $profile.user)
             Picker("Auth", selection: $profile.auth) {
                 Text("Sidra key").tag(SSHHostProfile.Auth.key)
@@ -140,23 +153,32 @@ struct HostEditor: View {
                 }
             }
             field("Run on connect (e.g. tmux new -A -s sidra)", $profile.startupCommand)
-            Toggle("Ask before trusting the host key on first connection", isOn: Binding(get: { !profile.trustOnFirstUse }, set: { profile.trustOnFirstUse = !$0 }))
-                .toggleStyle(GradientToggleStyle()).font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
-            if let pinned = KnownHosts.entry(host: profile.host, port: profile.port) {
-                HStack {
-                    FooterChip([.init(KnownHosts.fingerprint(pinned), label: "pinned", color: SidraColor.jade)])
-                    Button("Forget host key") { KnownHosts.forget(host: profile.host, port: profile.port) }.buttonStyle(.sidraSecondary)
-                }
+            Button { withAnimation(.easeOut(duration: 0.15)) { showMore.toggle() } } label: {
+                Label("More options", systemImage: showMore ? "chevron.down" : "chevron.right")
+                    .font(SidraFont.ui(12.5, weight: .bold)).foregroundStyle(SidraColor.muted)
             }
-            hostExtras
+            .buttonStyle(.plain)
+            .accessibilityHint("Host key, mosh, jump host and ssh_config")
+            if showMore {
+                Toggle("Ask before trusting the host key on first connection", isOn: Binding(get: { !profile.trustOnFirstUse }, set: { profile.trustOnFirstUse = !$0 }))
+                    .toggleStyle(GradientToggleStyle()).font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
+                if let pinned = KnownHosts.entry(host: profile.host, port: profile.port) {
+                    HStack {
+                        FooterChip([.init(KnownHosts.fingerprint(pinned), label: "pinned", color: SidraColor.jade)])
+                        Button("Forget host key") { KnownHosts.forget(host: profile.host, port: profile.port) }.buttonStyle(.sidraSecondary)
+                    }
+                }
+                hostExtras
+            }
+            }
             HStack {
-                Button(testing ? "Testing…" : "Test connection") { Task { await test() } }.buttonStyle(.sidraSecondary).disabled(testing || profile.host.isEmpty || profile.user.isEmpty)
+                Button(testing ? "Testing…" : "Test connection") { Task { await test() } }.buttonStyle(.sidraSecondary).disabled(testing || profile.host.isEmpty || (profile.user.isEmpty && !local))
                 if testing { GradientSpinner(size: 14) }
                 if let testResult { FooterChip([.init(testResult, color: SidraColor.jade)]) }
                 Spacer()
                 Button("Cancel") { dismiss() }.buttonStyle(.sidraSecondary)
                 Button("Save") { onSave(profile, password); dismiss() }.buttonStyle(.sidraPrimary)
-                    .disabled(profile.alias.isEmpty || profile.host.isEmpty || profile.user.isEmpty)
+                    .disabled(profile.alias.isEmpty || profile.host.isEmpty || (profile.user.isEmpty && !local))
             }
         }
         .padding(24)
@@ -169,7 +191,7 @@ struct HostEditor: View {
         .sheet(item: Binding(get: { prompter.pending.map { PromptBox(prompt: $0) } }, set: { _ in })) { box in
             HostKeySheet(prompt: box.prompt) { prompter.decide($0) }
         }
-        .onAppear { prompter.install() }
+        .onAppear { prompter.install(); showMore = usesExtras }
     }
 
     private struct PromptBox: Identifiable { let prompt: HostKeyPrompt; var id: String { "\(prompt.host):\(prompt.port)" } }
@@ -188,7 +210,7 @@ struct HostEditor: View {
         do {
             let r = try await c.run("echo ok")
             await c.disconnect()
-            testResult = r.stdoutText.contains("ok") ? "connected as \(p.user)" : "connected, shell answered \(r.exitCode)"
+            testResult = !r.stdoutText.contains("ok") ? "connected, shell answered \(r.exitCode)" : p.isThisMac ? "this Mac's shell answered" : "connected as \(p.user)"
         } catch {
             await c.disconnect()
             let d = SSHFailure.describe(error, host: p.host)

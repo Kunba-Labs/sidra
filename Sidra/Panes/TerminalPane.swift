@@ -270,7 +270,7 @@ struct TerminalPane: View {
                 ownsPrompt = true
                 defer { ownsPrompt = false }
                 let connection = app.connection(for: profile)
-                if profile.mosh != nil, command == nil { s = try await connection.openMosh(cols: 80, rows: 24) }
+                if profile.mosh != nil, !profile.isThisMac, command == nil { s = try await connection.openMosh(cols: 80, rows: 24) }
                 else { s = try await connection.openShell(cols: 80, rows: 24, command: command) }
             }
             guard link.attempt == mine, TerminalLink.isCurrent(link, for: pane.id) else { s.close(); return }

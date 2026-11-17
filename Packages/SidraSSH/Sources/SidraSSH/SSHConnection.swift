@@ -82,15 +82,21 @@ public final class PTYSession: @unchecked Sendable {
     func prependStartup(_ data: Data) { lock.lock(); startup = data; lock.unlock() }
 
     func attach(_ writer: TTYStdinWriter) {
+        attach(write: { try? await writer.write(ByteBuffer(bytes: $0)) },
+               resize: { try? await writer.changeSize(cols: $0, rows: $1, pixelWidth: 0, pixelHeight: 0) })
+    }
+
+    /// Drains the outbound queue into any byte sink: an SSH channel or this Mac's own PTY.
+    func attach(write: @escaping @Sendable (Data) async -> Void, resize: @escaping @Sendable (Int, Int) async -> Void) {
         lock.lock(); defer { lock.unlock() }
         guard pump == nil else { return }
         let first = startup
         pump = Task { [outbound] in
-            if let first { try? await writer.write(ByteBuffer(bytes: first)) }
+            if let first { await write(first) }
             for await item in outbound {
                 switch item {
-                case .data(let d): try? await writer.write(ByteBuffer(bytes: d))
-                case .size(let c, let r): try? await writer.changeSize(cols: c, rows: r, pixelWidth: 0, pixelHeight: 0)
+                case .data(let d): await write(d)
+                case .size(let c, let r): await resize(c, r)
                 }
             }
         }
@@ -114,6 +120,7 @@ public final class PTYSession: @unchecked Sendable {
     func emit(_ buffer: ByteBuffer) {
         outputContinuation.yield(Data(buffer.readableBytesView))
     }
+    func emit(_ data: Data) { outputContinuation.yield(data) }
 
     func finish(exitCode: Int?) {
         lock.lock()
@@ -185,7 +192,7 @@ public actor SSHConnection {
         self.servesVMAgent = servesVMAgent
     }
 
-    public var isConnected: Bool { client?.isConnected == true }
+    public var isConnected: Bool { profile.isThisMac || client?.isConnected == true }
 
     public func states() -> AsyncStream<SSHConnectionState> {
         let id = UUID()
@@ -207,6 +214,7 @@ public actor SSHConnection {
 
     /// Callers that race here share one in-flight attempt instead of each opening a client.
     public func connect() async throws {
+        if profile.isThisMac { if state != .connected { setState(.connected) }; return }   // no SSH to this Mac
         if client?.isConnected == true { return }
         if let t = connecting { try await t.value; return }
         let t = Task { try await self.connectOnce() }
@@ -373,6 +381,13 @@ public actor SSHConnection {
 
     /// Opens an interactive shell with a PTY. The returned session streams output until closed.
     public func openShell(cols: Int, rows: Int, command: String? = nil) async throws -> PTYSession {
+        #if os(macOS)
+        if profile.isThisMac {
+            try await connect()
+            let startup = command ?? (profile.startupCommand.isEmpty ? nil : profile.startupCommand)
+            return LocalShell.open(cols: cols, rows: rows, startup: startup)
+        }
+        #endif
         try await connect()
         guard let client else { throw SSHError.notConnected }
         let session = PTYSession()
@@ -425,6 +440,9 @@ public actor SSHConnection {
 
     /// Runs a non-interactive command and collects its output.
     public func run(_ command: String, timeout: Duration = .seconds(600)) async throws -> CommandResult {
+        #if os(macOS)
+        if profile.isThisMac { try await connect(); return try await LocalShell.run(command, timeout: timeout) }
+        #endif
         try await connect()
         guard let client else { throw SSHError.notConnected }
         let work = Task<CommandResult, Error> {
