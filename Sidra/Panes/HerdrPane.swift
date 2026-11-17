@@ -213,7 +213,7 @@ struct MuxSpacesBar: View {
 
     private func chip(_ ws: MuxSnapshot.Workspace, pill: String?, on: Bool, status: MuxStatus?, m: MuxMonitor) -> some View {
         HStack(spacing: 7) {
-            HerdrLogoView(name: ws.label, image: m.logo(for: ws), size: 16)
+            HerdrLogoView(name: ws.label, image: m.logo(for: ws), size: 18.5)   // 16 + 15% (2026-11-17)
             Text(ws.label).font(SidraFont.ui(12.5, weight: on ? .bold : .regular))
                 .foregroundStyle(on ? SidraColor.text : SidraColor.muted).lineLimit(1)
             if let pill {
