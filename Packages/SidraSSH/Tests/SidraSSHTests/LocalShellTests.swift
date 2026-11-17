@@ -39,6 +39,13 @@ final class LocalShellTests: XCTestCase {
         await fulfillment(of: [exit], timeout: 10)
     }
 
+    /// The shell gets a fresh login environment, not Sidra's (which may carry herdr's or tmux's variables).
+    func testShellEnvironmentIsFresh() {
+        let env = LocalShell.environment
+        XCTAssertTrue(env.contains { $0.hasPrefix("HOME=") })
+        XCTAssertFalse(env.contains { $0.hasPrefix("HERDR_") || $0.hasPrefix("TMUX") || $0.hasPrefix("CLAUDE") })
+    }
+
     /// A daemon that keeps stdout open does not hold run past the shell's exit.
     func testRunReturnsWhenADaemonKeepsThePipe() async throws {
         let started = Date()

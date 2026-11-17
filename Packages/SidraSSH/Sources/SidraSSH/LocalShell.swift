@@ -11,8 +11,15 @@ enum LocalShell {
         return ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
     }
 
+    /// A fresh login environment, as login(1) gives Terminal's shells: only the user's basics pass through.
+    /// Sidra's own environment does not, so a Sidra started from inside herdr or tmux does not make every
+    /// local shell look nested. PATH starts at the system default; the login shell's profile extends it.
     static var environment: [String] {
-        var env = ProcessInfo.processInfo.environment
+        let inherited = ProcessInfo.processInfo.environment
+        let keep = ["HOME", "USER", "LOGNAME", "SHELL", "TMPDIR", "LANG", "SSH_AUTH_SOCK", "__CF_USER_TEXT_ENCODING"]
+        var env = inherited.filter { keep.contains($0.key) || $0.key.hasPrefix("LC_") }
+        env["SHELL"] = shell
+        env["PATH"] = "/usr/bin:/bin:/usr/sbin:/sbin"
         env["TERM"] = "xterm-256color"
         env["COLORTERM"] = "truecolor"
         env["TERM_PROGRAM"] = "Sidra"
