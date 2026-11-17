@@ -19,9 +19,7 @@ public final class HostStore {
     }
 
     public nonisolated static var defaultURL: URL? {
-        guard let dir = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
-                                                     appropriateFor: nil, create: true) else { return nil }
-        return dir.appendingPathComponent("hosts.json")
+        FileManager.default.sshSupport?.appendingPathComponent("hosts.json")
     }
 
     public func host(_ id: UUID) -> SSHHostProfile? { hosts.first { $0.id == id } }

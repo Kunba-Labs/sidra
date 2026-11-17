@@ -34,9 +34,7 @@ public final class WorkspaceStore {
     }
 
     public nonisolated static var defaultStorageURL: URL? {
-        guard let dir = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
-                                                     appropriateFor: nil, create: true) else { return nil }
-        return dir.appendingPathComponent("workspace.json")
+        FileManager.default.sidraSupport?.appendingPathComponent("workspace.json")
     }
 
     /// Storage for an additional window scene, keyed by the scene session's persistent identifier.

@@ -176,7 +176,7 @@ struct PlatformBanners: View {
 /// Folders that must stay out of iCloud backup. Documents stays backed up.
 enum DataLayout {
     static func folder(_ name: String) -> URL? {
-        guard let base = try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true) else { return nil }
+        guard let base = FileManager.default.sidraSupport else { return nil }
         let url = base.appendingPathComponent(name, isDirectory: true)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url

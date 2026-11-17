@@ -7,8 +7,7 @@ import NIOSSH
 /// Application Support/known_hosts (not secret, not in the repo).
 public enum KnownHosts {
     public static var url: URL? {
-        (try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true))?
-            .appendingPathComponent("known_hosts")
+        FileManager.default.sshSupport?.appendingPathComponent("known_hosts")
     }
 
     static func lines() -> [String] {

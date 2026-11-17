@@ -79,8 +79,7 @@ public enum SSHKeyManager {
     static let defaultID = UUID(uuidString: "00000000-0000-0000-0000-0000000000ED")!
 
     public static var indexURL: URL? {
-        (try? FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true))?
-            .appendingPathComponent("ssh-keys.json")
+        FileManager.default.sshSupport?.appendingPathComponent("ssh-keys.json")
     }
 
     public static func keys() -> [SSHKeyRecord] {

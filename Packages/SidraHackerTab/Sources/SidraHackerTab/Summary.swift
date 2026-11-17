@@ -1,5 +1,6 @@
 import SwiftUI
 import FoundationModels
+import SidraDesign
 
 @Generable struct ThreadNote {
     @Guide(description: "The thread number, as given in the input") var thread: Int
@@ -36,7 +37,7 @@ struct ThreadSummary: Codable {
     private static let chunkChars = 5000    // about 1,500 tokens of a 4,096-token context
 
     private func file(_ id: Int) -> URL {
-        URL.cachesDirectory.appending(path: "hackertab-summary-\(id).json")
+        URL.sidraCaches.appending(path: "hackertab-summary-\(id).json")
     }
 
     func cancel() {

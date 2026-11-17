@@ -156,3 +156,29 @@ public extension View {
         #endif
     }
 }
+
+public extension URL {
+    /// Sidra's caches: the app's own on iOS, a bundle-id folder in the shared ~/Library/Caches on the Mac.
+    static var sidraCaches: URL {
+        #if os(macOS)
+        let dir = URL.cachesDirectory.appending(path: Bundle.main.bundleIdentifier ?? "nl.sadiq.sidra.mac", directoryHint: .isDirectory)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+        #else
+        URL.cachesDirectory
+        #endif
+    }
+}
+
+public extension FileManager {
+    /// Sidra's Application Support folder. iOS gives each app its own container; an unsandboxed Mac
+    /// app shares ~/Library/Application Support with every other app, so there it is a bundle-id folder.
+    var sidraSupport: URL? {
+        guard var dir = try? url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true) else { return nil }
+        #if os(macOS)
+        dir.append(path: Bundle.main.bundleIdentifier ?? "nl.sadiq.sidra.mac", directoryHint: .isDirectory)
+        try? createDirectory(at: dir, withIntermediateDirectories: true)
+        #endif
+        return dir
+    }
+}
