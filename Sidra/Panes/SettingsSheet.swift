@@ -45,6 +45,10 @@ struct SettingsSheet: View {
                 }
             }
 
+            #if os(macOS)
+            TerminalFontSection(query: query)
+            #endif
+
             TerminalKeysSection(query: query)
 
             if show("Keys", "SSH", "key", "identity", "fingerprint") || SSHKeyManager.keys().contains(where: { show($0.name) }) {
@@ -114,6 +118,25 @@ struct HostEditor: View {
     private var usesExtras: Bool { profile.trustOnFirstUse || profile.mosh != nil || profile.jumpHostID != nil || profile.rawConfig != nil }
     /// localhost on a Mac runs its shell directly: user, keys and SSH options do not apply.
     private var local: Bool { profile.isThisMac }
+    @FocusState private var hostFocused: Bool
+
+    /// "host:port", or "[v6]:port" for IPv6, typed into Host: the port moves to its own field. A bare
+    /// IPv6 address (more than one colon, no brackets) is left alone.
+    private func splitHostPort() {
+        let v = profile.host.trimmingCharacters(in: .whitespaces)
+        var host: Substring, port: Substring
+        if v.hasPrefix("["), let close = v.firstIndex(of: "]"), v[v.index(after: close)...].hasPrefix(":") {
+            host = v[v.index(after: v.startIndex)..<close]; port = v[v.index(close, offsetBy: 2)...]
+        } else if v.filter({ $0 == ":" }).count == 1, let c = v.firstIndex(of: ":") {
+            host = v[..<c]; port = v[v.index(after: c)...]
+        } else { return }
+        guard !host.isEmpty, let n = Int(port), (1...65535).contains(n) else { return }
+        profile.host = String(host); profile.port = n
+        if profile.isLocalhost { profile.viaSSH = true }
+    }
+
+    /// The "Connect over SSH" switch: only for localhost on a Mac.
+    private var showsSSHSwitch: Bool { Platform.isMac && profile.isLocalhost }
 
     var body: some View {
         ScrollView {
@@ -121,9 +144,22 @@ struct HostEditor: View {
             Text(profile.alias.isEmpty ? "New host" : profile.alias).font(SidraFont.ui(19, weight: .bold)).foregroundStyle(SidraColor.text)
             field("Alias", $profile.alias)
             HStack {
+                // "localhost:45" or "[::1]:45" splits into host and port when editing ends; a typed port means SSH.
                 field("Host", $profile.host)
-                // Shown for localhost too: a port other than 22 makes it SSH (a tunnel or a second sshd).
-                field("Port", Binding(get: { String(profile.port) }, set: { profile.port = Int($0) ?? 22 })).frame(width: 110)
+                    .focused($hostFocused)
+                    .onSubmit(splitHostPort)
+                    .onChange(of: hostFocused) { _, on in if !on { splitHostPort() } }
+                if !local {
+                    field("Port", Binding(get: { String(profile.port) }, set: { v in
+                        profile.port = Int(v) ?? 22
+                        if profile.isLocalhost, profile.port != 22 { profile.viaSSH = true }
+                    })).frame(width: 110)
+                }
+            }
+            if showsSSHSwitch {
+                Toggle("Connect over SSH", isOn: Binding(get: { !local }, set: { profile.viaSSH = $0 }))
+                    .toggleStyle(GradientToggleStyle()).font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
+                    .accessibilityHint("Off runs this Mac's shell directly. On connects through an SSH server, such as a tunnel on another port.")
             }
             if local {
                 field("Run on connect (e.g. tmux new -A -s sidra)", $profile.startupCommand)
@@ -176,7 +212,12 @@ struct HostEditor: View {
                 if let testResult { FooterChip([.init(testResult, color: SidraColor.jade)]) }
                 Spacer()
                 Button("Cancel") { dismiss() }.buttonStyle(.sidraSecondary)
-                Button("Save") { onSave(profile, password); dismiss() }.buttonStyle(.sidraPrimary)
+                Button("Save") {
+                    // Split first, then check again: "localhost:45" turns SSH on, which needs a user.
+                    splitHostPort()
+                    guard !(profile.user.isEmpty && !local) else { return }
+                    onSave(profile, password); dismiss()
+                }.buttonStyle(.sidraPrimary)
                     .disabled(profile.alias.isEmpty || profile.host.isEmpty || (profile.user.isEmpty && !local))
             }
         }
@@ -316,3 +357,41 @@ struct TerminalKeysSection: View {
         }
     }
 }
+
+#if os(macOS)
+/// Terminal font and size for every pane. The default is the user's Ghostty font when there is one.
+struct TerminalFontSection: View {
+    let query: String
+    @AppStorage(TerminalFont.familyKey) private var family: String?
+    @AppStorage(TerminalFont.sizeKey) private var size: Double = 0
+    private func show(_ words: String...) -> Bool { query.isEmpty || words.contains { $0.localizedCaseInsensitiveContains(query) } }
+
+    var body: some View {
+        if show("Terminal", "font", "size", "text") {
+            SectionLabel("Terminal")
+            let d = TerminalFont.defaults
+            SettingRow("Font", detail: "Default: \(d.family)", isDefault: family == nil, reset: { family = nil }) {
+                SidraMenu([
+                    SidraMenuSection(nil, [SidraMenuItem("Default (\(d.family))") { family = nil }]),
+                    SidraMenuSection("Monospaced", TerminalFont.monospacedFamilies.map { f in SidraMenuItem(f) { family = f } }),
+                ]) {
+                    HStack(spacing: 6) {
+                        Text(family ?? d.family).font(SidraFont.ui(13)).foregroundStyle(SidraColor.text).lineLimit(1)
+                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(SidraColor.muted)
+                    }
+                    .padding(.horizontal, 10).frame(height: 30)
+                    .background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
+                }
+                .accessibilityLabel("Terminal font")
+            }
+            SettingRow("Size", detail: "⌘+ and ⌘− change it from any terminal; ⌘0 resets it", isDefault: size == 0, reset: { size = 0 }) {
+                HStack(spacing: 8) {
+                    Button { TerminalFont.step(-1) } label: { Image(systemName: "minus") }.buttonStyle(.sidraSecondary).accessibilityLabel("Smaller text")
+                    Text("\(Int(TerminalFont.size)) pt").font(SidraFont.mono(13)).foregroundStyle(SidraColor.text).frame(width: 52)
+                    Button { TerminalFont.step(1) } label: { Image(systemName: "plus") }.buttonStyle(.sidraSecondary).accessibilityLabel("Bigger text")
+                }
+            }
+        }
+    }
+}
+#endif

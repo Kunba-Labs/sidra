@@ -39,7 +39,7 @@ public struct TerminalPaneView: NSViewRepresentable {
 
     public func makeNSView(context: Context) -> GhosttyMacView {
         if let kept = Self.surfaces[ObjectIdentifier(io)] { return kept }
-        let v = GhosttyMacView(io: io, fontSize: SidraFont.monoSize)
+        let v = GhosttyMacView(io: io)
         Self.surfaces[ObjectIdentifier(io)] = v
         return v
     }

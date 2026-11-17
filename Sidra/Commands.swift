@@ -3,6 +3,7 @@ import SwiftUI
 import UIKit
 #endif
 import SidraWorkspace
+import SidraTerminal
 
 /// Menu bar and Cmd-HUD shortcuts. Every command is registered in `CommandRegistry`, so the
 /// palette (⌘⇧P) and the shortcuts sheet show the same names and keys.
@@ -25,6 +26,7 @@ struct WorkspaceCommands: Commands {
 
     var body: some Commands {
         CommandGroup(replacing: .textEditing) {}   // the system Find items would take Cmd-F from the terminal's find bar
+        CommandGroup(before: .toolbar) { items("View") }   // Bigger / Smaller / Default Text Size (Mac)
         CommandMenu("Tab") { items("Tab") }
         CommandMenu("Pane") { items("Pane") }
         CommandMenu("Go") { items("Go") }
@@ -71,6 +73,14 @@ struct WorkspaceCommands: Commands {
             .init("go.newWindow", "New Window", area: "Go") { app.openNewWindow?() },
             .init("go.settings", "Settings…", area: "Go", key: ",") { app.sheet = .settings },
         ]
+        #if os(macOS)
+        // Terminal text size for every pane, as in Ghostty and Terminal.
+        c += [
+            .init("view.biggerText", "Bigger Text", area: "View", key: "=", label: "⌘+") { TerminalFont.step(1) },
+            .init("view.smallerText", "Smaller Text", area: "View", key: "-") { TerminalFont.step(-1) },
+            .init("view.actualSize", "Default Text Size", area: "View", key: "0") { TerminalFont.resetSize() },
+        ]
+        #endif
         c += TheasaCommands.all(app)
         return c
     }

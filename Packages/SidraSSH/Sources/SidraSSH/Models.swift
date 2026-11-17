@@ -26,6 +26,9 @@ public struct SSHHostProfile: Codable, Identifiable, Hashable, Sendable {
     public var jumpHostID: UUID?
     /// The ssh_config text the user pasted; `SSHConfigText` applies it to the fields above on save.
     public var rawConfig: String?
+    /// localhost on a Mac: true connects over SSH (a tunnel, another sshd), false runs this Mac's
+    /// shell directly. Nil, as in hosts saved before the switch: SSH only on a port other than 22.
+    public var viaSSH: Bool?
 
     public init(id: UUID = UUID(), alias: String, host: String, port: Int = 22, user: String,
                 auth: Auth = .key, startupCommand: String = "", trustOnFirstUse: Bool = true, keyID: UUID? = nil,
@@ -90,11 +93,14 @@ public enum SSHConnectionState: Equatable, Sendable {
 }
 
 public extension SSHHostProfile {
-    /// On a Mac, localhost on port 22 is this Mac: Sidra runs its shell and commands directly, without
-    /// SSH. Any other port is SSH as usual, for a tunnel or a second sshd forwarded to localhost.
+    /// localhost, 127.0.0.1 or ::1.
+    var isLocalhost: Bool { ["localhost", "127.0.0.1", "::1"].contains(host.trimmingCharacters(in: .whitespaces).lowercased()) }
+
+    /// On a Mac, localhost is this Mac unless the host's "Connect over SSH" switch is on: Sidra runs its
+    /// shell and commands directly, without SSH.
     var isThisMac: Bool {
         #if os(macOS)
-        port == 22 && ["localhost", "127.0.0.1", "::1"].contains(host.trimmingCharacters(in: .whitespaces).lowercased())
+        isLocalhost && !(viaSSH ?? (port != 22))
         #else
         false
         #endif

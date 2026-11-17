@@ -132,24 +132,27 @@ struct MuxSpacesBar: View {
     private func tabsBar(_ m: MuxMonitor, _ s: MuxSnapshot, space: String) -> some View {
         HStack(spacing: 4) {
             Rectangle().fill(SidraColor.hairline2).frame(width: 1, height: 18).padding(.horizontal, 6)
-            Menu {
-                Section("Tab") {
-                    Button { Task { await m.newTab(app, in: space) } } label: { Label("New tab", systemImage: "plus.rectangle.on.rectangle") }
-                    Button { Task { if await !m.splitFocusedPane(app, down: false) { app.toast("herdr did not split the pane") } } } label: { Label("Split right", systemImage: "rectangle.split.2x1") }
-                        .accessibilityIdentifier("herdr-split-right")
-                    Button { Task { if await !m.splitFocusedPane(app, down: true) { app.toast("herdr did not split the pane") } } } label: { Label("Split down", systemImage: "rectangle.split.1x2") }
-                        .accessibilityIdentifier("herdr-split-down")
-                    Button { Task { if await !m.moveFocusedPane(app, to: nil) { app.toast("herdr did not move the pane") } } } label: { Label("Move to tab", systemImage: "rectangle.portrait.and.arrow.forward") }
-                }
-                Section("Space") {
-                    Button { pickerShown = true } label: { Label("New space", systemImage: "rectangle.stack.badge.plus") }
-                    Button { newSpaceMoving = true; newSpaceLabel = ""; newSpaceShown = true } label: { Label("Move to space", systemImage: "arrow.up.right.square") }
-                }
-                Section("Agents") {
-                    Button { broadcastShown = true } label: { Label("Broadcast", systemImage: "dot.radiowaves.left.and.right") }
-                        .accessibilityIdentifier("herdr-broadcast")
-                }
-            } label: {
+            SidraMenu([
+                SidraMenuSection("Tab", [
+                    SidraMenuItem("New tab", systemImage: "plus.rectangle.on.rectangle") { Task { await m.newTab(app, in: space) } },
+                    SidraMenuItem("Split right", systemImage: "rectangle.split.2x1", identifier: "herdr-split-right") {
+                        Task { if await !m.splitFocusedPane(app, down: false) { app.toast("herdr did not split the pane") } }
+                    },
+                    SidraMenuItem("Split down", systemImage: "rectangle.split.1x2", identifier: "herdr-split-down") {
+                        Task { if await !m.splitFocusedPane(app, down: true) { app.toast("herdr did not split the pane") } }
+                    },
+                    SidraMenuItem("Move to tab", systemImage: "rectangle.portrait.and.arrow.forward") {
+                        Task { if await !m.moveFocusedPane(app, to: nil) { app.toast("herdr did not move the pane") } }
+                    },
+                ]),
+                SidraMenuSection("Space", [
+                    SidraMenuItem("New space", systemImage: "rectangle.stack.badge.plus") { pickerShown = true },
+                    SidraMenuItem("Move to space", systemImage: "arrow.up.right.square") { newSpaceMoving = true; newSpaceLabel = ""; newSpaceShown = true },
+                ]),
+                SidraMenuSection("Agents", [
+                    SidraMenuItem("Broadcast", systemImage: "dot.radiowaves.left.and.right", identifier: "herdr-broadcast") { broadcastShown = true },
+                ]),
+            ]) {
                 Image(systemName: "plus").font(.system(size: 12, weight: .semibold)).foregroundStyle(SidraColor.muted).frame(width: 28, height: 24).contentShape(Rectangle())
             }
             .accessibilityLabel("New herdr tab or space")

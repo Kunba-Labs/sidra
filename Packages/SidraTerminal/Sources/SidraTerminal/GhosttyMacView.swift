@@ -14,8 +14,9 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
     private var frame_: TerminalFrame?
     private var linkGrid: [[Character]] = [], linkCellsCache: Set<Int> = []
     private var cellSize = CGSize(width: 8, height: 20)
-    private let font: NSFont
-    private let boldFont: NSFont
+    private var font: NSFont
+    private var boldFont: NSFont
+    private var fontObserver: NSObjectProtocol?
     public var onTitle: ((String) -> Void)?
     public var onFind: (() -> Void)?
     public var onOpenLink: ((URL) -> Void)?
@@ -30,13 +31,16 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
     /// A program may fill the clipboard on its own only right after a copy-shaped gesture (see iOS).
     private var copyGrant: Date?
 
-    public init(io: TerminalIO, fontSize: CGFloat = SidraFont.monoSize) {
+    public init(io: TerminalIO) {
         self.io = io
-        font = NSFont(name: "JetBrainsMono-Regular", size: fontSize) ?? .monospacedSystemFont(ofSize: fontSize, weight: .regular)
-        boldFont = NSFont(name: "JetBrainsMonoRoman-Bold", size: fontSize) ?? .monospacedSystemFont(ofSize: fontSize, weight: .bold)
+        (font, boldFont) = TerminalFont.faces(family: TerminalFont.family, size: TerminalFont.size)
         engine = GhosttyEngine(cols: 80, rows: 24)
         super.init(frame: .zero)
         measureCell()
+        // Settings and ⌘+ ⌘− ⌘0 change the font for every pane at once.
+        fontObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.applyFontSetting() }
+        }
         engine.onReply = { [weak self] data in self?.io.write(data) }
         engine.onCopy = { [weak self] text in
             guard let self else { return false }
@@ -63,7 +67,11 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
     }
 
     required init?(coder: NSCoder) { fatalError() }
-    deinit { readTask?.cancel(); rotTimer?.invalidate(); blinkTimer?.invalidate(); windowObservers.forEach(NotificationCenter.default.removeObserver) }
+    deinit {
+        readTask?.cancel(); rotTimer?.invalidate(); blinkTimer?.invalidate()
+        windowObservers.forEach(NotificationCenter.default.removeObserver)
+        fontObserver.map(NotificationCenter.default.removeObserver)
+    }
 
     public override var isFlipped: Bool { true }
     public override var isOpaque: Bool { true }
@@ -128,19 +136,35 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
     }
 
 
+    /// The font's own line height, as Ghostty does, plus its adjust-cell-height when set there.
     private func measureCell() {
         let size = ("M" as NSString).size(withAttributes: [.font: font])
-        cellSize = CGSize(width: ceil(size.width), height: ceil(SidraFont.monoLineHeight * font.pointSize / SidraFont.monoSize))
+        // At least a point each way: a large negative adjust-cell-height must not make the grid divide by zero.
+        cellSize = CGSize(width: max(1, ceil(size.width)), height: max(1, ceil(fontLineHeight + TerminalFont.defaults.extraLineHeight)))
+    }
+
+    private func applyFontSetting() {
+        let family = TerminalFont.family, size = TerminalFont.size
+        guard family != font.familyName || size != font.pointSize else { return }
+        (font, boldFont) = TerminalFont.faces(family: family, size: size)
+        measureCell()
+        fitGrid(bounds.size, force: true)
     }
     private var fontLineHeight: CGFloat { font.ascender - font.descender + font.leading }
 
     public override func setFrameSize(_ newSize: NSSize) {
         super.setFrameSize(newSize)
         placeCopyOffer()
-        let cols = max(Int(newSize.width / cellSize.width), 2), rows = max(Int(newSize.height / cellSize.height), 1)
-        guard cols != engine.cols || rows != engine.rows else { return }
-        engine.resize(cols: cols, rows: rows, cellWidth: Int(cellSize.width), cellHeight: Int(cellSize.height))
-        io.resize(cols: cols, rows: rows)
+        fitGrid(newSize)
+    }
+
+    /// Columns and rows that fit `size` at the current cell; the program hears of a change.
+    private func fitGrid(_ size: NSSize, force: Bool = false) {
+        let cols = max(Int(size.width / cellSize.width), 2), rows = max(Int(size.height / cellSize.height), 1)
+        if force || cols != engine.cols || rows != engine.rows {
+            engine.resize(cols: cols, rows: rows, cellWidth: Int(cellSize.width), cellHeight: Int(cellSize.height))
+            io.resize(cols: cols, rows: rows)
+        }
         needsDisplay = true
     }
 
