@@ -18,12 +18,7 @@ struct RootView: View {
         WorkspaceView(store: store, provider: provider, newTabMenu: slot(newTabButton), emptyHero: slot(NewTabCards()),
                       compactTrailing: slot(HStack(spacing: 6) { TheasaPill(compact: true); HerdrTitleCounts(); commandMenu }),
                       // Title bar design B (design/html/13-title-bar.html): what needs you as labelled pills.
-                      machine: slot(HStack(spacing: 2) {
-                          #if os(macOS)
-                          VoiceButton()
-                          #endif
-                          commandMenu
-                      })) {
+                      machine: slot(HStack(spacing: 2) { commandMenu })) {
             TheasaPill()
             HerdrTitleCounts()
         }
@@ -33,9 +28,8 @@ struct RootView: View {
         .background { KeyboardGuideProbe(dock: keyboard).ignoresSafeArea().allowsHitTesting(false) }
         #endif
         .overlay(alignment: .top) { PlatformBanners() }
-        #if os(macOS)
-        .overlay(alignment: .bottom) { VoiceOverlay().animation(.easeOut(duration: 0.18), value: VoiceInput.shared.isActive) }
-        #endif
+        // The floating green mic: hold to talk into the focused terminal (iPad and Mac).
+        .overlay(alignment: .bottomTrailing) { FloatingMic(showMic: focusedIsTerminal) }
         .overlay(alignment: .bottom) {
             if let msg = app.toastMessage {
                 Text(msg)
@@ -79,6 +73,14 @@ struct RootView: View {
             store.attention = { [app] in MuxMonitors.shared.count(.blocked, live: Set(app.allWorkspaces.flatMap { $0.tabs.flatMap { $0.panes.map(\.id) } })) }
             PipelinesHub.shared.start()
             if UserDefaults.standard.bool(forKey: "hackertab.open") { app.openSingle(.hackertab) }
+        }
+    }
+
+    /// A terminal or herdr pane has focus: there is a cursor for dictated words.
+    private var focusedIsTerminal: Bool {
+        switch store.focusedPane?.kind {
+        case .terminal, .herdr: true
+        default: false
         }
     }
 

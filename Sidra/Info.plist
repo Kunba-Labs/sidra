@@ -30,6 +30,10 @@
 	<string>Sidra asks for Face ID before an SSH key marked confirm on use signs.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Sidra connects to the SSH hosts, herdr machines and Theasa servers you add on your local network.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Sidra listens while you hold the mic to dictate into a terminal. Speech is turned into text on this device.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Sidra turns your dictation into text on this device.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Inter-Regular.ttf</string>

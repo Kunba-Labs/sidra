@@ -758,10 +758,13 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
         stopRepeat(presses); super.pressesCancelled(presses, with: event)
     }
 
+    /// The terminal that last had the keys: where the floating mic's words go.
+    public private(set) static weak var lastFocused: GhosttyTerminalView?
+
     public override func becomeFirstResponder() -> Bool {
         if FloatingKeyboard.shared.enabled { inputAssistantItem.leadingBarButtonGroups = []; inputAssistantItem.trailingBarButtonGroups = [] }
         let r = super.becomeFirstResponder()
-        if r { FloatingKeyboard.shared.focus(self); reportFocus(window?.windowScene?.activationState == .foregroundActive) }
+        if r { Self.lastFocused = self; FloatingKeyboard.shared.focus(self); reportFocus(window?.windowScene?.activationState == .foregroundActive) }
         setNeedsDisplay()
         return r
     }

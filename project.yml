@@ -46,6 +46,8 @@ targets:
       - package: SidraTheasa
       - package: SidraHackerTab
       - package: SidraChess
+      - package: Argmax
+        product: WhisperKit
     info:
       path: Sidra/Info.plist
       properties:
@@ -73,6 +75,8 @@ targets:
         NSLocalNetworkUsageDescription: Sidra connects to the SSH hosts, herdr machines and Theasa servers you add on your local network.
         NSBonjourServices: [_ssh._tcp]
         NSFaceIDUsageDescription: Sidra asks for Face ID before an SSH key marked confirm on use signs.
+        NSMicrophoneUsageDescription: Sidra listens while you hold the mic to dictate into a terminal. Speech is turned into text on this device.
+        NSSpeechRecognitionUsageDescription: Sidra turns your dictation into text on this device.
         ITSAppUsesNonExemptEncryption: false
     entitlements:
       path: Sidra/Sidra.entitlements

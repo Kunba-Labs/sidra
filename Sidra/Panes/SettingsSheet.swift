@@ -47,8 +47,8 @@ struct SettingsSheet: View {
 
             #if os(macOS)
             TerminalFontSection(query: query)
-            VoiceSection(query: query)
             #endif
+            VoiceSection(query: query)
 
             TerminalKeysSection(query: query)
 
@@ -397,7 +397,6 @@ struct TerminalFontSection: View {
 }
 #endif
 
-#if os(macOS)
 /// Dictation: Apple's on-device model by default; Whisper large-v3 as an optional download.
 struct VoiceSection: View {
     let query: String
@@ -407,7 +406,7 @@ struct VoiceSection: View {
     var body: some View {
         if show("Voice", "dictation", "dictate", "Whisper", "speech", "microphone") {
             SectionLabel("Voice")
-            SettingRow("Dictation", detail: "⌥⌘V or the mic in the title bar. Speech stays on this Mac.", isDefault: voice.engine == .apple, reset: { voice.engine = .apple }) {
+            SettingRow("Dictation", detail: Platform.isMac ? "Hold the green mic, or ⌥⌘V. Speech stays on this Mac." : "Hold the green mic. Speech stays on this iPad.", isDefault: voice.engine == .apple, reset: { voice.engine = .apple }) {
                 SidraMenu([SidraMenuSection(nil, [
                     SidraMenuItem("Apple dictation") { voice.engine = .apple },
                     voice.whisperOnDisk
@@ -439,4 +438,3 @@ struct VoiceSection: View {
         }
     }
 }
-#endif

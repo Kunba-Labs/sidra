@@ -1,5 +1,8 @@
-#if os(macOS)
+#if canImport(AppKit)
 import AppKit
+#else
+import UIKit
+#endif
 import AVFoundation
 import Accelerate
 import Speech
@@ -8,10 +11,16 @@ import SidraDesign
 import SidraTerminal
 import WhisperKit
 
-/// Dictation into the focused terminal on the Mac. ⌥⌘V or the title bar's mic starts it; Return or
-/// the same key inserts the words at the cursor (bracketed paste, so a newline does not run them),
-/// Esc drops them. Speech becomes text on this Mac: Apple's dictation model by default, or Whisper
-/// large-v3 once its model is downloaded (Settings → Voice; 626 MB, optional).
+#if os(macOS)
+typealias DictationSurface = GhosttyMacView
+#else
+typealias DictationSurface = GhosttyTerminalView
+#endif
+
+/// Hold-to-talk dictation into the focused terminal, on iPad and Mac: hold the floating green mic, speak,
+/// release to insert the words at the cursor (one line, so nothing runs), slide left to cancel. Speech
+/// becomes text on the device: Apple's dictation model by default, or Whisper large-v3 once its model is
+/// downloaded (Settings → Voice; 626 MB, optional). On the Mac ⌥⌘V toggles it too (Return inserts, Esc drops).
 @MainActor @Observable
 final class VoiceInput {
     static let shared = VoiceInput()
@@ -19,7 +28,7 @@ final class VoiceInput {
     enum Engine: String, CaseIterable { case apple, whisper }
     enum Phase: Equatable {
         case idle
-        case preparing(String)       // a language pack or the Whisper model loading
+        case preparing(String)       // the microphone prompt, a language pack or the Whisper model loading
         case recording
         case transcribing
         case failed(String)
@@ -29,8 +38,12 @@ final class VoiceInput {
     /// Words heard so far: Apple's volatile results, or Whisper's live pass.
     private(set) var partial = ""
     private(set) var elapsed: TimeInterval = 0
-    /// Recent input levels, 0…1, newest last: the overlay's bars.
-    private(set) var levels: [Float] = []
+    /// Spectrogram columns, newest last; each `bins` magnitudes 0…1, low frequencies first.
+    private(set) var columns: [[Float]] = []
+    nonisolated static let bins = 48
+    static let maxColumns = 160
+    /// Slid left far enough while held: release drops the words.
+    var cancelling = false
     /// Whisper model download progress, 0…1; nil when not downloading.
     private(set) var downloadProgress: Double?
     var downloadError: String?
@@ -43,14 +56,20 @@ final class VoiceInput {
     private var activeEngine: Engine { engine == .whisper && whisperOnDisk ? .whisper : .apple }
 
     private let audio = AVAudioEngine()
-    /// 16 kHz mono for Whisper, written from the microphone's thread, so a buffer still on its way when
-    /// recording stops is not dropped.
+    /// 16 kHz mono, written from the microphone's thread, so a buffer on its way when recording stops is
+    /// not dropped. Whisper reads all of it; the spectrogram its newest frames.
     private let audioStore = SampleStore()
-    private var samples: [Float] { audioStore.all }
     private var started = Date()
     private var clock: Task<Void, Never>?
     private var liveTask: Task<Void, Never>?
+    private var fftWindow: [Float] = []
+    #if os(macOS)
     private var keyMonitor: Any?
+    /// The window dictating; its terminal is looked up when speaking stops.
+    private(set) var window: NSWindow?
+    #else
+    private(set) var window: UIWindow?
+    #endif
 
     // Apple
     private var analyzer: SpeechAnalyzer?
@@ -64,55 +83,92 @@ final class VoiceInput {
     static let whisperVariant = "large-v3-v20240930_626MB"
     static let whisperSize = "626 MB"
 
-    var isActive: Bool { phase != .idle }
-    /// Preparing or writing out: the mic has nothing to do until that ends.
-    var isBusy: Bool { if case .preparing = phase { true } else { phase == .transcribing } }
-
-    // MARK: Start / stop
-
-    /// ⌥⌘V and the mic button: start, or insert what was said.
-    func toggle() {
-        // From another window: show the one that is dictating rather than finish its recording.
-        if isActive, let w = window, NSApp.keyWindow !== w { w.makeKeyAndOrderFront(nil); return }
-        switch phase {
-        case .recording: finish(insert: true)
-        case .idle, .failed: start()
-        default: break
-        }
-    }
-
-    /// The window dictating; its terminal is looked up again when the words are inserted.
-    private(set) var window: NSWindow?
     /// The engine this recording uses, fixed at start: a settings change mid-recording does not switch it.
     private var sessionEngine: Engine = .apple
     private var prep: Task<Void, Never>?
     private var session = UUID()
+    /// The mic is held down: preparation that ends after release does not open the microphone.
+    private var held = false
 
-    /// The terminal focused in the dictating window now, or the one that last had focus there (a click on
-    /// the mic can take first responder). Hidden terminals (another tab) do not count. Nil: the clipboard.
-    var currentTarget: GhosttyMacView? {
+    var isActive: Bool { phase != .idle }
+    /// Preparing or writing out: the mic has nothing to do until that ends.
+    var isBusy: Bool { if case .preparing = phase { true } else { phase == .transcribing } }
+
+    // MARK: Target
+
+    /// The terminal focused in the dictating window, or the one that last had focus there. Hidden
+    /// terminals (another tab) and lost ones do not count. Nil: the words go to the clipboard.
+    var currentTarget: DictationSurface? {
         guard let w = window else { return nil }
+        #if os(macOS)
         let t = (w.firstResponder as? GhosttyMacView) ?? GhosttyMacView.lastFocused.flatMap { $0.window === w ? $0 : nil }
-        return t.flatMap { $0.isHiddenOrHasHiddenAncestor ? nil : $0 }
+        return t.flatMap { $0.isHiddenOrHasHiddenAncestor || $0.lost ? nil : $0 }
+        #else
+        let t = GhosttyTerminalView.lastFocused.flatMap { $0.window === w ? $0 : nil }
+        return t.flatMap { $0.isHidden || $0.lost ? nil : $0 }
+        #endif
     }
     var hasTarget: Bool { currentTarget != nil }
 
-    func start() {
-        window = NSApp.keyWindow
+    // MARK: Hold to talk
+
+    /// The mic went down: get ready and listen while it stays down.
+    func press(in window: PlatformWindow? = nil) {
+        switch phase {
+        case .idle, .failed: break
+        default: return
+        }
+        held = true
+        start(in: window)
+    }
+
+    /// The mic came up: insert what was said, or drop it.
+    func release(cancel: Bool) {
+        held = false
+        finish(insert: !cancel)
+        cancelling = false
+    }
+
+    /// ⌥⌘V on the Mac: start, or insert what was said.
+    func toggle() {
+        #if os(macOS)
+        // From another window: show the one that is dictating rather than finish its recording.
+        if isActive, let w = window, NSApp.keyWindow !== w { w.makeKeyAndOrderFront(nil); return }
+        #endif
+        switch phase {
+        case .recording: finish(insert: true)
+        case .idle, .failed: held = true; start(in: nil)
+        default: break
+        }
+    }
+
+    private func start(in w: PlatformWindow?) {
+        #if os(macOS)
+        window = w ?? NSApp.keyWindow
+        #else
+        window = w ?? GhosttyTerminalView.lastFocused?.window
+        #endif
         sessionEngine = activeEngine
         let id = UUID(); session = id
-        phase = .preparing("Listening soon…")
+        phase = .preparing("Getting ready…")
         installKeys()   // Esc cancels while preparing too
         prep = Task {
-            let allowed = await AVCaptureDevice.requestAccess(for: .audio)
+            let allowed = await AVAudioApplication.requestRecordPermission()
             guard !Task.isCancelled, session == id else { return }   // cancelled during the prompt
             guard allowed else {
+                #if os(macOS)
                 return fail("Sidra may not use the microphone. Allow it in System Settings → Privacy & Security → Microphone.")
+                #else
+                return fail("Sidra may not use the microphone. Turn it on in Settings › Sidra › Microphone.")
+                #endif
             }
             do {
-                if sessionEngine == .whisper { try await loadWhisper() } else { try await prepareApple(session: id) }
-                // Cancelled, or a newer start took over, while this was loading: do not open the microphone.
-                guard !Task.isCancelled, session == id, case .preparing = phase else { return }
+                if sessionEngine == .whisper { try await loadWhisper(session: id) } else { try await prepareApple(session: id) }
+                // Cancelled, released, or a newer start took over while this was loading: no microphone.
+                guard !Task.isCancelled, session == id, held, case .preparing = phase else {
+                    if session == id, !held { cleanUp(); reset() }
+                    return
+                }
                 try startAudio()
             } catch {
                 if session == id, !Task.isCancelled { fail("Could not start listening: \(error.localizedDescription)") }
@@ -120,22 +176,25 @@ final class VoiceInput {
         }
     }
 
-    /// Return inserts, Esc drops.
+    /// Release, Return or the key again: insert. Slide left, Esc: drop.
     func finish(insert: Bool) {
-        if case .preparing = phase { prep?.cancel(); session = UUID(); stopAudio(); Task { [analyzer] in await analyzer?.cancelAndFinishNow() }; reset(); return }
+        if case .preparing = phase {
+            if insert, held { return }                  // ⌥⌘V / Return while preparing: wait for it
+            prep?.cancel(); session = UUID(); cleanUp(); reset(); return
+        }
         guard phase == .recording else { if case .failed = phase { removeKeys(); phase = .idle }; return }
         let live = liveTask
         // Where the words go is fixed now, when speaking stops: switching panes while they are written
         // out does not move them.
         let dest = currentTarget
         stopAudio()
-        guard insert else { Task { [analyzer] in await analyzer?.cancelAndFinishNow() }; reset(); return }
+        guard insert else { cleanUp(); reset(); return }
         phase = .transcribing
         Task {
             let text: String
             await live?.value   // one decode at a time on the Whisper instance
             do {
-                if sessionEngine == .whisper, let whisper { text = Self.tidy(try await Self.decode(whisper, samples, final: true)) }
+                if sessionEngine == .whisper, let whisper { text = Self.tidy(try await Self.decode(whisper, audioStore.all, final: true)) }
                 else { text = Self.tidy(await finishApple()) }
             } catch {
                 return fail("Whisper could not write it out: \(error.localizedDescription)")
@@ -145,45 +204,81 @@ final class VoiceInput {
         }
     }
 
-    private func place(_ text: String, in dest: GhosttyMacView?) {
-        if let target = dest, target.window != nil, !target.isHiddenOrHasHiddenAncestor, !target.lost {   // lost: the host went away
-            target.window?.makeFirstResponder(target)
-            target.pasteText(text)
+    func dismissMessage() { if case .failed = phase { removeKeys(); phase = .idle } }
+
+    private func place(_ text: String, in dest: DictationSurface?) {
+        #if os(macOS)
+        if let t = dest, t.window != nil, !t.isHiddenOrHasHiddenAncestor, !t.lost {
+            t.window?.makeFirstResponder(t)
+            t.pasteText(text)
         } else {
             Platform.pasteString = text
-            NSSound.beep()   // ponytail: no toast service on the Mac yet; the overlay already said where it went
+            NSSound.beep()   // ponytail: no toast service on the Mac yet; the card said where it would go
         }
+        #else
+        if let t = dest, t.window != nil, !t.isHidden, !t.lost {
+            t.pasteText(text)
+            t.offerSend()   // dictated text waits for a Send tap, as on the keyboard's mic
+        } else {
+            Platform.pasteString = text
+        }
+        #endif
     }
 
-    private func fail(_ message: String) { stopAudio(); phase = .failed(message) }
+    /// Stops everything this session started (audio, the Apple analyzer and its results), so a retry
+    /// starts clean, then shows why.
+    private func fail(_ message: String) {
+        cleanUp()
+        partial = ""; finalText = ""
+        phase = .failed(message)
+    }
+
+    private func cleanUp() {
+        stopAudio()
+        resultsTask?.cancel(); resultsTask = nil
+        Task { [analyzer] in await analyzer?.cancelAndFinishNow() }
+        analyzer = nil; feed = nil; appleFormat = nil
+    }
 
     private func reset() {
-        phase = .idle; partial = ""; levels = []; elapsed = 0; finalText = ""; audioStore.clear()
+        phase = .idle; partial = ""; columns = []; elapsed = 0; finalText = ""; cancelling = false
+        audioStore.clear(); fftWindow = []
         analyzer = nil; feed = nil; resultsTask?.cancel(); resultsTask = nil
+        removeKeys()
     }
 
     // MARK: Audio
 
     private func startAudio() throws {
-        audioStore.clear(); levels.removeAll(); partial = ""; finalText = ""
+        audioStore.clear(); columns.removeAll(); fftWindow.removeAll(); partial = ""; finalText = ""
+        #if os(iOS)
+        let s = AVAudioSession.sharedInstance()
+        try s.setCategory(.record, mode: .measurement, options: [.duckOthers])
+        try s.setActive(true)
+        #endif
         let input = audio.inputNode
         let format = input.outputFormat(forBus: 0)
         guard let mono16k = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16_000, channels: 1, interleaved: false),
-              let toWhisper = AVAudioConverter(from: format, to: mono16k) else { throw VoiceError.audioFormat }
+              let to16k = AVAudioConverter(from: format, to: mono16k) else { throw VoiceError.audioFormat }
         let toApple = appleFormat.flatMap { AVAudioConverter(from: format, to: $0) }
-        let appleFormat = appleFormat
-        let feed = feed
-        let whisperNeedsAudio = sessionEngine == .whisper
-        let store = audioStore
+        // Apple's engine needs its converter; without it nothing would reach the analyzer.
+        if sessionEngine == .apple, toApple == nil { throw VoiceError.audioFormat }
+        let appleFormat = appleFormat, feed = feed, store = audioStore
+        let keepAudio = sessionEngine == .whisper   // Apple reads the stream itself; only Whisper needs the recording
         input.installTap(onBus: 0, bufferSize: 2048, format: format) { buffer, _ in
-            let level = Self.level(buffer)
-            if whisperNeedsAudio { store.append(Self.convert(buffer, with: toWhisper, to: mono16k)) }
+            let pcm = Self.convert(buffer, with: to16k, to: mono16k)
+            if keepAudio { store.append(pcm) }
             if let toApple, let appleFormat, let out = Self.convertBuffer(buffer, with: toApple, to: appleFormat) { feed?.yield(AnalyzerInput(buffer: out)) }
-            Task { @MainActor in VoiceInput.shared.append(level: level) }
+            Task { @MainActor in VoiceInput.shared.spectrum(pcm) }
         }
         audio.prepare()
-        do { try audio.start() } catch { input.removeTap(onBus: 0); throw error }
-        installKeys()
+        do { try audio.start() } catch {
+            input.removeTap(onBus: 0)
+            #if os(iOS)
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            #endif
+            throw error
+        }
         started = Date(); elapsed = 0
         phase = .recording
         clock = Task { while !Task.isCancelled { elapsed = Date().timeIntervalSince(started); try? await Task.sleep(for: .milliseconds(100)) } }
@@ -191,23 +286,32 @@ final class VoiceInput {
     }
 
     private func stopAudio() {
-        if audio.isRunning { audio.inputNode.removeTap(onBus: 0); audio.stop() }
+        if audio.isRunning {
+            audio.inputNode.removeTap(onBus: 0); audio.stop()
+            #if os(iOS)
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            #endif
+        }
         clock?.cancel(); liveTask?.cancel()
         feed?.finish()
-        removeKeys()
     }
 
-    private func append(level: Float) {
+    private func spectrum(_ pcm: [Float]) {
         guard phase == .recording else { return }
-        levels.append(level)
-        if levels.count > 48 { levels.removeFirst(levels.count - 48) }
+        fftWindow += pcm
+        while fftWindow.count >= Self.fftSize {
+            columns.append(Self.spectrum(Array(fftWindow.prefix(Self.fftSize))))
+            fftWindow.removeFirst(Self.fftSize / 2)
+            if columns.count > Self.maxColumns { columns.removeFirst(columns.count - Self.maxColumns) }
+        }
     }
 
-    /// Return and Esc belong to the overlay while it listens, not to the terminal under it.
+    #if os(macOS)
+    /// ⌥⌘V: Return and Esc belong to the card while it listens, not to the terminal under it; only plain
+    /// keys, only in the dictating window.
     private func installKeys() {
         removeKeys()
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { e in
-            // Only plain Return / Esc, and only in the window that is dictating.
             let mods = e.modifierFlags.intersection([.command, .option, .control, .shift])
             guard mods.isEmpty, MainActor.assumeIsolated({ e.window === VoiceInput.shared.window }) else { return e }
             switch e.keyCode {
@@ -216,12 +320,16 @@ final class VoiceInput {
                     guard VoiceInput.shared.phase == .recording else { return e }
                     VoiceInput.shared.finish(insert: true); return nil
                 }
-            case 53: MainActor.assumeIsolated { VoiceInput.shared.finish(insert: false) }; return nil
+            case 53: MainActor.assumeIsolated { VoiceInput.shared.held = false; VoiceInput.shared.finish(insert: false) }; return nil
             default: return e
             }
         }
     }
     private func removeKeys() { if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }; keyMonitor = nil }
+    #else
+    private func installKeys() {}
+    private func removeKeys() {}
+    #endif
 
     // MARK: Apple dictation
 
@@ -229,8 +337,9 @@ final class VoiceInput {
     /// cancelled preparation must not overwrite a newer session's state.
     private func prepareApple(session id: UUID) async throws {
         let locale = await DictationTranscriber.supportedLocale(equivalentTo: .current) ?? Locale(identifier: "en_US")
+        guard !Task.isCancelled, session == id else { return }
         let transcriber = DictationTranscriber(locale: locale, preset: .progressiveShortDictation)
-        // The language pack downloads once, through macOS, the first time a language is used.
+        // The language pack downloads once, through the system, the first time a language is used.
         if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
             guard !Task.isCancelled, session == id else { return }   // every await: a newer session may own the state now
             phase = .preparing("Getting the \(locale.localizedString(forIdentifier: locale.identifier) ?? "speech") model from Apple…")
@@ -268,6 +377,10 @@ final class VoiceInput {
     private static var whisperBase: URL {
         let dir = (FileManager.default.sidraSupport ?? URL.temporaryDirectory).appending(path: "whisper", directoryHint: .isDirectory)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        #if os(iOS)
+        var values = URLResourceValues(); values.isExcludedFromBackup = true
+        var d = dir; try? d.setResourceValues(values)
+        #endif
         return dir
     }
     private static var whisperFolder: URL? {
@@ -311,20 +424,22 @@ final class VoiceInput {
         engine = .apple
     }
 
-    private func loadWhisper() async throws {
+    private func loadWhisper(session id: UUID) async throws {
         guard whisper == nil, let folder = Self.whisperFolder else { return }
-        phase = .preparing("Loading Whisper (the first time compiles it for this Mac)…")
-        whisper = try await WhisperKit(WhisperKitConfig(modelFolder: folder.path, tokenizerFolder: Self.whisperBase,
-                                                        verbose: false, logLevel: .error, prewarm: false, load: true, download: false))
+        phase = .preparing("Loading Whisper (the first time compiles it for this device)…")
+        let w = try await WhisperKit(WhisperKitConfig(modelFolder: folder.path, tokenizerFolder: Self.whisperBase,
+                                                      verbose: false, logLevel: .error, prewarm: false, load: true, download: false))
+        if whisper == nil { whisper = w }   // loaded either way; a newer session uses the same instance
+        _ = id
     }
 
     private var busy = false
     private func whisperLive() async {
         while !Task.isCancelled, phase == .recording {
             try? await Task.sleep(for: .milliseconds(1200))
-            guard phase == .recording, samples.count > 8_000, !busy, let whisper else { continue }
+            guard phase == .recording, audioStore.count > 8_000, !busy, let whisper else { continue }
             busy = true
-            let text = (try? await Self.decode(whisper, Array(samples.suffix(16_000 * 28)), final: false)) ?? ""
+            let text = (try? await Self.decode(whisper, Array(audioStore.all.suffix(16_000 * 28)), final: false)) ?? ""
             busy = false
             if phase == .recording, !text.isEmpty { partial = text }
         }
@@ -349,13 +464,6 @@ final class VoiceInput {
         return t
     }
 
-    nonisolated static func level(_ buffer: AVAudioPCMBuffer) -> Float {
-        guard let ch = buffer.floatChannelData?[0], buffer.frameLength > 0 else { return 0 }
-        let rms = vDSP.rootMeanSquare(UnsafeBufferPointer(start: ch, count: Int(buffer.frameLength)))
-        let db = 20 * log10(max(rms, 1e-6))
-        return min(1, max(0, (db + 55) / 45))
-    }
-
     nonisolated static func convertBuffer(_ buffer: AVAudioPCMBuffer, with converter: AVAudioConverter, to format: AVAudioFormat) -> AVAudioPCMBuffer? {
         let ratio = format.sampleRate / buffer.format.sampleRate
         guard let out = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(Double(buffer.frameLength) * ratio) + 32) else { return nil }
@@ -372,7 +480,36 @@ final class VoiceInput {
         return Array(UnsafeBufferPointer(start: ch, count: Int(out.frameLength)))
     }
 
-    /// Whisper's audio, appended from the tap's thread under a lock.
+    nonisolated static let fftSize = 512
+    nonisolated(unsafe) private static let fft = vDSP.FFT(log2n: 9, radix: .radix2, ofType: DSPSplitComplex.self)!
+    nonisolated private static let hann = vDSP.window(ofType: Float.self, usingSequence: .hanningDenormalized, count: fftSize, isHalfWindow: false)
+
+    /// Magnitudes on a log-frequency axis from ~80 Hz to 8 kHz, in decibels mapped to 0…1.
+    nonisolated static func spectrum(_ frame: [Float]) -> [Float] {
+        let windowed = vDSP.multiply(frame, hann)
+        var real = [Float](repeating: 0, count: fftSize / 2), imag = real
+        var mags = [Float](repeating: 0, count: fftSize / 2)
+        real.withUnsafeMutableBufferPointer { r in
+            imag.withUnsafeMutableBufferPointer { i in
+                var split = DSPSplitComplex(realp: r.baseAddress!, imagp: i.baseAddress!)
+                windowed.withUnsafeBufferPointer { w in
+                    w.baseAddress!.withMemoryRebound(to: DSPComplex.self, capacity: fftSize / 2) { vDSP_ctoz($0, 2, &split, 1, vDSP_Length(fftSize / 2)) }
+                }
+                fft.forward(input: split, output: &split)
+                vDSP.absolute(split, result: &mags)
+            }
+        }
+        let half = fftSize / 2   // bin k is k * 31.25 Hz at 16 kHz
+        return (0..<bins).map { b in
+            let lo = 80 * pow(100, Float(b) / Float(bins)), hi = 80 * pow(100, Float(b + 1) / Float(bins))
+            let a = max(1, Int(lo / 31.25)), z = min(half - 1, max(a, Int(hi / 31.25)))
+            let m = mags[a...z].max() ?? 0
+            let db = 20 * log10(max(m, 1e-6))
+            return min(1, max(0, (db + 10) / 60))
+        }
+    }
+
+    /// The recording's 16 kHz audio, appended from the tap's thread under a lock.
     final class SampleStore: @unchecked Sendable {
         private let lock = NSLock(); private var data: [Float] = []
         func append(_ s: [Float]) { lock.withLock { data += s } }
@@ -386,4 +523,9 @@ final class VoiceInput {
         var errorDescription: String? { "the microphone format is not supported" }
     }
 }
+
+#if os(macOS)
+typealias PlatformWindow = NSWindow
+#else
+typealias PlatformWindow = UIWindow
 #endif
