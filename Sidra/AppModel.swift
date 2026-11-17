@@ -31,13 +31,13 @@ final class AppModel {
     private var connections: [UUID: SSHConnection] = [:]
     private var toastTask: Task<Void, Never>?
 
-    init() {
+    init(hosts: HostStore? = nil) {   // tests pass HostStore(url: nil) so hosts.json stays untouched
         if CommandLine.arguments.contains("-sidra.resetWorkspace") {   // UI tests that need a saved workspace in a known state
             if let url = WorkspaceStore.defaultStorageURL { try? FileManager.default.removeItem(at: url) }
         }
         let fresh = CommandLine.arguments.contains("-sidra.freshWorkspace")
         workspace = WorkspaceStore(storageURL: fresh ? nil : WorkspaceStore.defaultStorageURL)
-        hosts = HostStore(url: fresh ? nil : HostStore.defaultURL)
+        self.hosts = hosts ?? HostStore(url: fresh ? nil : HostStore.defaultURL)
         SSHConnection.setKeyUseConfirmation { host in await KeyUsePrompter.shared.ask(host) }
     }
 

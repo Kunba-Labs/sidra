@@ -23,12 +23,11 @@ final class SmokeTests: XCTestCase {
 
     /// herdr runs on several machines at once, next to plain SSH tabs: each tab keeps its own host.
     @MainActor func testHerdrOnSeveralHostsNextToSSH() {
-        let app = AppModel()
+        let app = AppModel(hosts: HostStore(url: nil))
         app.workspace = WorkspaceStore(state: WorkspaceState(), storageURL: nil)
         let a = SSHHostProfile(alias: "devbox", host: "devbox.example", user: "dev")
         let b = SSHHostProfile(alias: "buildbox", host: "buildbox.example", user: "dev")
         app.hosts.upsert(a); app.hosts.upsert(b)
-        defer { app.hosts.remove(a.id); app.hosts.remove(b.id) }
 
         app.openTab(kind: .herdr(target: .ssh(hostID: a.id), session: nil))
         app.openTab(kind: .herdr(target: .ssh(hostID: b.id), session: "ops"))
