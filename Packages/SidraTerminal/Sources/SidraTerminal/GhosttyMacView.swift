@@ -58,6 +58,7 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
             for await chunk in io.output {
                 guard let self else { return }
                 await MainActor.run {
+                    if self.focusWatch.turnsOn(chunk) { self.reportedFocus = nil }
                     self.engine.feed(chunk)
                     self.outputArrived()
                     if self.searching { self.refreshSearch() } else { self.redrawGate.request { [weak self] in self?.needsDisplay = true } }
@@ -77,7 +78,14 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
     public override var isOpaque: Bool { true }
     public override var acceptsFirstResponder: Bool { true }
     public override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-    public override func becomeFirstResponder() -> Bool { defer { restartBlink(); reportFocus() }; return super.becomeFirstResponder() }
+    /// The window installs this view as first responder only after this returns, so focus comes from the
+    /// call's result and the window's key state, and the blink restarts once the change has landed.
+    public override func becomeFirstResponder() -> Bool {
+        let r = super.becomeFirstResponder()
+        if r { reportFocus(window?.isKeyWindow == true) }
+        DispatchQueue.main.async { [weak self] in self?.restartBlink() }
+        return r
+    }
     public override func resignFirstResponder() -> Bool {
         let r = super.resignFirstResponder()
         restartBlink(); reportFocus(false)
@@ -86,6 +94,7 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
 
     /// The last focus state the program heard, so a window change and a first-responder change do not both send it.
     private var reportedFocus: Bool?
+    private var focusWatch = FocusModeWatch()
     private func reportFocus(_ on: Bool? = nil) {
         let focused = on ?? isFocused
         guard focused != reportedFocus, !lost else { return }

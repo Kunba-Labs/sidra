@@ -76,10 +76,11 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
                 guard let self else { return }
                 await MainActor.run {
                     if GhosttyTerminalView.dumpVT { try? FileHandle(forWritingAtPath: GhosttyTerminalView.dumpPath).map { $0.seekToEndOfFile(); $0.write(chunk); try? $0.close() } }
+                    if self.focusWatch.turnsOn(chunk) { self.reportedFocus = nil }
                     self.engine.feed(chunk)
                     // Mode 1004 off: forget what was reported, so turning it on again hears the current focus.
                     if !self.engine.focusReporting { self.reportedFocus = nil }
-                    else if self.reportedFocus == nil { self.reportFocus(self.isFirstResponder) }
+                    else if self.reportedFocus == nil { self.reportFocus(self.hasFocus) }
                     self.echoArrived()
                     if self.sendOffered { self.placeSendOffer() }   // follows the cursor as the paste echoes back
                     if self.searching { self.refreshSearch() } else { self.redrawGate.request { [weak self] in self?.setNeedsDisplay() } }
@@ -87,6 +88,15 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
             }
         }
         HardwareKeyboard.observe(self, #selector(keyboardChanged))
+        // An app switch keeps first responder: the program hears focus out, and in again on return.
+        for (name, active) in [(UIScene.willDeactivateNotification, false), (UIScene.didActivateNotification, true)] {
+            sceneObservers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+                MainActor.assumeIsolated {
+                    guard let self, let scene = note.object as? UIScene, scene === self.window?.windowScene else { return }
+                    self.reportFocus(active && self.isFirstResponder)
+                }
+            })
+        }
         keyRow.onKey = { [weak self] key, ctrl, alt in
             guard let self else { return }
             switch key {
@@ -279,6 +289,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     required init?(coder: NSCoder) { fatalError() }
 
     deinit {
+        sceneObservers.forEach(NotificationCenter.default.removeObserver)
         readTask?.cancel()
         displayLink?.invalidate()
         rotTimer?.invalidate()
@@ -619,6 +630,10 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
 
     /// CSI I / CSI O when the program asked for focus reports (mode 1004), once per change.
     private var reportedFocus: Bool?
+    private var focusWatch = FocusModeWatch()
+    private var sceneObservers: [NSObjectProtocol] = []
+    /// Focused for the program: first responder in a scene that is in front.
+    private var hasFocus: Bool { isFirstResponder && window?.windowScene?.activationState == .foregroundActive }
     private func reportFocus(_ focused: Bool) {
         guard focused != reportedFocus, !lost else { return }
         let bytes = engine.encodeFocus(focused)
@@ -746,7 +761,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     public override func becomeFirstResponder() -> Bool {
         if FloatingKeyboard.shared.enabled { inputAssistantItem.leadingBarButtonGroups = []; inputAssistantItem.trailingBarButtonGroups = [] }
         let r = super.becomeFirstResponder()
-        if r { FloatingKeyboard.shared.focus(self); reportFocus(true) }
+        if r { FloatingKeyboard.shared.focus(self); reportFocus(window?.windowScene?.activationState == .foregroundActive) }
         setNeedsDisplay()
         return r
     }

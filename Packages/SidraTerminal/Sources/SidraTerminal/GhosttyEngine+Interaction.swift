@@ -23,6 +23,7 @@ public extension GhosttyEngine {
     /// herdr and tmux use it to redraw, and herdr to make the focused client the one panes are sized
     /// for; without it a second client only counted once it sent a key or a click.
     var focusReporting: Bool { mode(1004) }
+
     func encodeFocus(_ focused: Bool) -> Data {
         mode(1004) ? Data((focused ? "\u{1b}[I" : "\u{1b}[O").utf8) : Data()
     }
@@ -249,5 +250,26 @@ public extension GhosttyEngine {
             out.append(Match(x0: Int(a.x), x1: Int(b.x), y: Int(a.y)))
         }
         return out
+    }
+}
+
+/// Sees output turn focus reporting on (CSI ? … 1004 … h, grouped modes too), even when the sequence is
+/// split across chunks: the program then wants a fresh focus report, though the mode may never have
+/// read as off between two checks.
+struct FocusModeWatch {
+    private var tail = Data()
+    private static let pattern = try! NSRegularExpression(pattern: "\u{1b}\\[\\?(?:[0-9]+;)*1004(?:;[0-9]+)*h")
+
+    mutating func turnsOn(_ chunk: Data) -> Bool {
+        let joined = tail + chunk
+        let text = String(decoding: joined, as: UTF8.self)
+        // Carry over only an unfinished CSI at the end (ESC [ and parameters, no final letter yet),
+        // so a sequence seen whole is never matched twice.
+        if let esc = joined.lastIndex(of: 0x1b) {
+            let rest = joined[esc...]
+            let done = rest.dropFirst().contains { (0x40...0x7e).contains($0) && $0 != 0x5b }   // a final byte after ESC [
+            tail = done || rest.count > 32 ? Data() : Data(rest)
+        } else { tail = Data() }
+        return Self.pattern.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil
     }
 }
