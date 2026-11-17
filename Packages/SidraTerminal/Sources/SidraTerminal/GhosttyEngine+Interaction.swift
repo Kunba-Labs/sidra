@@ -19,6 +19,14 @@ public extension GhosttyEngine {
     /// The program asked for mouse events (X10, normal, button or any-event tracking).
     var mouseTracking: Bool { mode(9) || mode(1000) || mode(1002) || mode(1003) }
 
+    /// Focus in or out, as CSI I / CSI O, when the program turned on focus reporting (mode 1004).
+    /// herdr and tmux use it to redraw, and herdr to make the focused client the one panes are sized
+    /// for; without it a second client only counted once it sent a key or a click.
+    var focusReporting: Bool { mode(1004) }
+    func encodeFocus(_ focused: Bool) -> Data {
+        mode(1004) ? Data((focused ? "\u{1b}[I" : "\u{1b}[O").utf8) : Data()
+    }
+
     // MARK: Selection
 
     private func gridRef(x: Int, y: Int) -> GhosttyGridRef? {

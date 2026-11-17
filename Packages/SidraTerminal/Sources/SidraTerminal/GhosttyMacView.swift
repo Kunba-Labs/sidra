@@ -77,14 +77,31 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
     public override var isOpaque: Bool { true }
     public override var acceptsFirstResponder: Bool { true }
     public override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-    public override func becomeFirstResponder() -> Bool { defer { restartBlink() }; return super.becomeFirstResponder() }
-    public override func resignFirstResponder() -> Bool { defer { restartBlink() }; return super.resignFirstResponder() }
+    public override func becomeFirstResponder() -> Bool { defer { restartBlink(); reportFocus() }; return super.becomeFirstResponder() }
+    public override func resignFirstResponder() -> Bool {
+        let r = super.resignFirstResponder()
+        restartBlink(); reportFocus(false)
+        return r
+    }
+
+    /// The last focus state the program heard, so a window change and a first-responder change do not both send it.
+    private var reportedFocus: Bool?
+    private func reportFocus(_ on: Bool? = nil) {
+        let focused = on ?? isFocused
+        guard focused != reportedFocus, !lost else { return }
+        let bytes = engine.encodeFocus(focused)
+        guard !bytes.isEmpty else { return }   // mode off: nothing heard, so nothing recorded
+        reportedFocus = focused
+        io.write(bytes)
+    }
 
     // MARK: Cursor blink
 
     /// Output may move the cursor: show it solid and start the blink phase over. (Whether to blink at
     /// all is read in draw, from the frame it already has: asking the engine here would clear its dirty flag.)
     private func outputArrived() {
+        // Mode 1004 off: forget what was reported, so turning it on again hears the current focus.
+        if !engine.focusReporting { reportedFocus = nil } else if reportedFocus == nil { reportFocus() }
         blinkOff = false
         blinkTimer?.fireDate = Date().addingTimeInterval(0.6)
     }
@@ -118,7 +135,7 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
         guard let window else { blinkTimer?.invalidate(); blinkTimer = nil; return }
         for name in [NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification] {
             windowObservers.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.restartBlink() }
+                MainActor.assumeIsolated { self?.restartBlink(); self?.reportFocus() }
             })
         }
         restartBlink()

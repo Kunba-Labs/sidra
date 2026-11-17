@@ -77,6 +77,9 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
                 await MainActor.run {
                     if GhosttyTerminalView.dumpVT { try? FileHandle(forWritingAtPath: GhosttyTerminalView.dumpPath).map { $0.seekToEndOfFile(); $0.write(chunk); try? $0.close() } }
                     self.engine.feed(chunk)
+                    // Mode 1004 off: forget what was reported, so turning it on again hears the current focus.
+                    if !self.engine.focusReporting { self.reportedFocus = nil }
+                    else if self.reportedFocus == nil { self.reportFocus(self.isFirstResponder) }
                     self.echoArrived()
                     if self.sendOffered { self.placeSendOffer() }   // follows the cursor as the paste echoes back
                     if self.searching { self.refreshSearch() } else { self.redrawGate.request { [weak self] in self?.setNeedsDisplay() } }
@@ -614,6 +617,16 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
 
     public func deleteBackward() { FloatingKeyboard.shared.externalInput(); send(.backspace) }
 
+    /// CSI I / CSI O when the program asked for focus reports (mode 1004), once per change.
+    private var reportedFocus: Bool?
+    private func reportFocus(_ focused: Bool) {
+        guard focused != reportedFocus, !lost else { return }
+        let bytes = engine.encodeFocus(focused)
+        guard !bytes.isEmpty else { return }   // mode off: nothing heard, so nothing recorded
+        reportedFocus = focused
+        io.write(bytes)
+    }
+
     public func send(_ key: TerminalKey) {
         withdrawSend()
         guard !lost else { return }
@@ -733,7 +746,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     public override func becomeFirstResponder() -> Bool {
         if FloatingKeyboard.shared.enabled { inputAssistantItem.leadingBarButtonGroups = []; inputAssistantItem.trailingBarButtonGroups = [] }
         let r = super.becomeFirstResponder()
-        if r { FloatingKeyboard.shared.focus(self) }
+        if r { FloatingKeyboard.shared.focus(self); reportFocus(true) }
         setNeedsDisplay()
         return r
     }
@@ -741,7 +754,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     public override func resignFirstResponder() -> Bool {
         repeatTimer?.invalidate(); repeatTimer = nil; repeatCode = nil
         let r = super.resignFirstResponder()
-        if r { FloatingKeyboard.shared.blur(self) }
+        if r { FloatingKeyboard.shared.blur(self); reportFocus(false) }
         setNeedsDisplay()
         return r
     }
