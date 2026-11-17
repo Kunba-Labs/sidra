@@ -60,9 +60,9 @@ final class PipelinesTests: XCTestCase {
     }
 
     func testGroupsByTopNamespace() throws {
-        let json = #"[{"id":1,"name":"aktes","path_with_namespace":"spqr/kvk/aktes","web_url":"x","avatar_url":null,"namespace":{"id":2,"kind":"group","full_path":"spqr/kvk"},"last_activity_at":"2026-11-14T10:00:00.000Z"},{"id":3,"name":"shop","path_with_namespace":"acme/shop","web_url":"x","avatar_url":null,"namespace":{"id":4,"kind":"group","full_path":"shop"},"last_activity_at":null}]"#
+        let json = #"[{"id":1,"name":"aktes","path_with_namespace":"spqr/kvk/aktes","web_url":"x","avatar_url":null,"namespace":{"id":2,"kind":"group","full_path":"spqr/kvk"},"last_activity_at":"2026-11-14T10:00:00.000Z"},{"id":3,"name":"shop","path_with_namespace":"acme/shop","web_url":"x","avatar_url":null,"namespace":{"id":4,"kind":"group","full_path":"acme"},"last_activity_at":null}]"#
         let projects = try GitLabClient.decoder.decode([GitLabProject].self, from: Data(json.utf8))
-        XCTAssertEqual(projects.map(\.group), ["spqr", "shop"])
+        XCTAssertEqual(projects.map(\.group), ["spqr", "acme"])
         XCTAssertNotNil(projects[0].last_activity_at)
     }
 }
