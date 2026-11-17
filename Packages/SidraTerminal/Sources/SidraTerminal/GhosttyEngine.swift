@@ -92,7 +92,14 @@ public final class GhosttyEngine {
         _ = ghostty_key_encoder_new(nil, &k)
         encoder = k
         installCallbacks()
+        // Blink unless the program asks for a steady cursor, as Ghostty does by default (cursor-style-blink).
+        var blink = Self.defaultCursorBlink
+        if let term { _ = withUnsafePointer(to: &blink) { ghostty_terminal_set(term, GHOSTTY_TERMINAL_OPT_DEFAULT_CURSOR_BLINK, UnsafeRawPointer($0)) } }
+        feed(Data("\u{1b}[0 q".utf8))   // the option covers DECSCUSR resets: reset once so the first cursor takes it too
     }
+
+    /// The cursor's blink when no program has chosen one. The Mac reads the user's Ghostty setting.
+    nonisolated(unsafe) public static var defaultCursorBlink = true
 
     deinit {
         if let searchHandle { ghostty_search_free(searchHandle) }
@@ -160,6 +167,28 @@ public final class GhosttyEngine {
         _ = ghostty_terminal_scroll_viewport(term, b)
     }
 
+    /// The cursor now. A cursor that only moved (arrow keys) leaves the render state clean, so `frame`
+    /// returns nil and its last cursor is stale: the views read this on every draw.
+    public func cursor() -> TerminalCursor? {
+        guard let term, let render else { return nil }
+        _ = ghostty_render_state_update(render, term)
+        return readCursor(render)
+    }
+
+    private func readCursor(_ render: GhosttyRenderState) -> TerminalCursor? {
+        var cur = GhosttyRenderStateCursor()
+        cur.size = MemoryLayout<GhosttyRenderStateCursor>.size
+        guard ghostty_render_state_get(render, GHOSTTY_RENDER_STATE_DATA_CURSOR, &cur) == GHOSTTY_SUCCESS, cur.viewport_has_value else { return nil }
+        let style: TerminalCursor.Style
+        switch cur.visual_style {
+        case GHOSTTY_CURSOR_STYLE_BAR: style = .bar
+        case GHOSTTY_CURSOR_STYLE_UNDERLINE: style = .underline
+        case GHOSTTY_CURSOR_STYLE_BLOCK_HOLLOW: style = .hollow
+        default: style = .block
+        }
+        return TerminalCursor(x: Int(cur.viewport_x), y: Int(cur.viewport_y), style: style, visible: cur.visible, blinking: cur.blinking)
+    }
+
     /// Snapshot of the viewport. Returns nil when nothing changed since the last call.
     public func frame(force: Bool = false) -> TerminalFrame? {
         guard let term, let render, let rowIterator, let cells else { return nil }
@@ -180,8 +209,11 @@ public final class GhosttyEngine {
         var outRows: [TerminalRow] = []
         outRows.reserveCapacity(rows)
         while ghostty_render_state_row_iterator_next(rowIterator) {
-            var rowID: UInt64 = 0
-            _ = ghostty_render_state_row_get(rowIterator, GHOSTTY_RENDER_STATE_ROW_DATA_ID, &rowID)
+            // GhosttyRenderStateRowId is two words: a UInt64 here let the library write 8 bytes past it,
+            // over whatever the stack held next (it crashed `frame` once the layout changed).
+            var rid = GhosttyRenderStateRowId()
+            _ = ghostty_render_state_row_get(rowIterator, GHOSTTY_RENDER_STATE_ROW_DATA_ID, &rid)
+            let rowID = rid.bits.0 ^ (rid.bits.1 &* 0x9E37_79B9_7F4A_7C15)
             var sel = GhosttyRenderStateRowSelection()
             sel.size = MemoryLayout<GhosttyRenderStateRowSelection>.size
             let hasSel = ghostty_render_state_row_get(rowIterator, GHOSTTY_RENDER_STATE_ROW_DATA_SELECTION, &sel) == GHOSTTY_SUCCESS
@@ -240,19 +272,7 @@ public final class GhosttyEngine {
             outRows.append(TerminalRow(id: rowID, cells: rowCells))
         }
 
-        var cursor: TerminalCursor?
-        var cur = GhosttyRenderStateCursor()
-        cur.size = MemoryLayout<GhosttyRenderStateCursor>.size
-        if ghostty_render_state_get(render, GHOSTTY_RENDER_STATE_DATA_CURSOR, &cur) == GHOSTTY_SUCCESS, cur.viewport_has_value {
-            let style: TerminalCursor.Style
-            switch cur.visual_style {
-            case GHOSTTY_CURSOR_STYLE_BAR: style = .bar
-            case GHOSTTY_CURSOR_STYLE_UNDERLINE: style = .underline
-            case GHOSTTY_CURSOR_STYLE_BLOCK_HOLLOW: style = .hollow
-            default: style = .block
-            }
-            cursor = TerminalCursor(x: Int(cur.viewport_x), y: Int(cur.viewport_y), style: style, visible: cur.visible, blinking: cur.blinking)
-        }
+        let cursor = readCursor(render)
         _ = ghostty_render_state_clean(render)
         return TerminalFrame(cols: cols, rows: outRows, cursor: cursor, background: bg, foreground: fg)
     }

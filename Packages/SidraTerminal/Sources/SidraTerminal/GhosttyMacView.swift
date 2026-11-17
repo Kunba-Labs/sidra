@@ -34,6 +34,7 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
     public init(io: TerminalIO) {
         self.io = io
         (font, boldFont) = TerminalFont.faces(family: TerminalFont.family, size: TerminalFont.size)
+        GhosttyEngine.defaultCursorBlink = TerminalFont.defaults.cursorBlink
         engine = GhosttyEngine(cols: 80, rows: 24)
         super.init(frame: .zero)
         measureCell()
@@ -489,7 +490,7 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
 
     public override func draw(_ dirtyRect: NSRect) {
         guard let ctx = NSGraphicsContext.current?.cgContext else { return }
-        if let f = engine.frame(force: frame_ == nil) { frame_ = f }
+        if let f = engine.frame(force: frame_ == nil) { frame_ = f } else { frame_?.cursor = engine.cursor() }   // a cursor-only move
         guard let frame = frame_ else { NSColor(SidraColor.pane).setFill(); bounds.fill(); return }
         // The program turned blinking on or off (DECSCUSR): start or stop the timer after this pass.
         if shouldBlink(frame) != (blinkTimer != nil) {

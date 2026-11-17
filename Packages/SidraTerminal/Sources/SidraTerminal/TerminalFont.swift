@@ -10,7 +10,11 @@ public enum TerminalFont {
     public static let sizeKey = "sidra.terminalFontSize"
     public static let sizes: ClosedRange<CGFloat> = 8...40
 
-    public struct Defaults: Sendable { public var family: String; public var size: CGFloat; public var extraLineHeight: CGFloat }
+    public struct Defaults: Sendable {
+        public var family: String; public var size: CGFloat; public var extraLineHeight: CGFloat
+        /// Ghostty's cursor-style-blink: blink unless a program asks for a steady cursor.
+        public var cursorBlink = true
+    }
     /// Read once: Ghostty's config, if any, else Sidra's own font.
     public static let defaults: Defaults = {
         var d = Defaults(family: "JetBrains Mono", size: 14, extraLineHeight: 0)
@@ -24,6 +28,7 @@ public enum TerminalFont {
             if let s = c.first("font-size").flatMap(Double.init), s > 0 { d.size = CGFloat(s) }
             // Only the absolute form (points); a percentage is left at the font's own height.
             if let a = c.first("adjust-cell-height"), !a.hasSuffix("%"), let v = Double(a) { d.extraLineHeight = CGFloat(v) }
+            if c.first("cursor-style-blink") == "false" { d.cursorBlink = false }
             break
         }
         return d

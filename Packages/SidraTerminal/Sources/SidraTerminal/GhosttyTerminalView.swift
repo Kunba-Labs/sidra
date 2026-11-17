@@ -504,7 +504,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
 
     public override func draw(_ rect: CGRect) {
         guard let ctx = UIGraphicsGetCurrentContext() else { return }
-        if let f = engine.frame(force: frame_ == nil) { frame_ = f }
+        if let f = engine.frame(force: frame_ == nil) { frame_ = f } else { frame_?.cursor = engine.cursor() }   // a cursor-only move
         guard let frame = frame_ else { return }
         thumbnails.update(rows: frame.rows, cell: cellSize)
         ctx.setFillColor(UIColor(rgb: frame.background).cgColor)
