@@ -36,6 +36,7 @@ struct RootView: View {
                     .overlay(RoundedRectangle(cornerRadius: SidraRadius.card, style: .continuous).strokeBorder(SidraColor.hairline2))
                     .padding(.bottom, 24)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .allowsHitTesting(false)   // a toast over the keyboard or key row must not swallow taps
             }
         }
         .animation(.easeOut(duration: 0.2), value: app.toastMessage)
