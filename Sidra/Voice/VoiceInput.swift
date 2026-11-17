@@ -122,9 +122,12 @@ final class VoiceInput {
         start(in: window)
     }
 
-    /// The mic came up: insert what was said, or drop it.
+    /// The mic came up: insert what was said, or drop it. Up while still getting ready (the microphone
+    /// prompt, a model download, the first load): the setup finishes anyway, without opening the
+    /// microphone, so the next hold starts at once. Esc is the way to stop a setup.
     func release(cancel: Bool) {
         held = false
+        if case .preparing = phase { cancelling = false; return }
         finish(insert: !cancel)
         cancelling = false
     }
@@ -256,6 +259,7 @@ final class VoiceInput {
         try s.setCategory(.record, mode: .measurement, options: [.duckOthers])
         try s.setActive(true)
         #endif
+        MicInputs.apply(to: audio)   // the microphone picked in Settings → Voice, before the format is read
         let input = audio.inputNode
         let format = input.outputFormat(forBus: 0)
         guard let mono16k = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16_000, channels: 1, interleaved: false),

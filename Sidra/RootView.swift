@@ -76,11 +76,13 @@ struct RootView: View {
         }
     }
 
-    /// A terminal or herdr pane has focus: there is a cursor for dictated words.
+    /// A terminal or herdr pane has focus: there is a cursor for dictated words. The iPad's SwiftTerm
+    /// fallback engine takes no dictation (only the Ghostty view does), so no mic there.
     private var focusedIsTerminal: Bool {
+        if !Platform.isMac, app.terminalEngine == .swiftTerm { return false }
         switch store.focusedPane?.kind {
-        case .terminal, .herdr: true
-        default: false
+        case .terminal, .herdr: return true
+        default: return false
         }
     }
 

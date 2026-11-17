@@ -23,7 +23,9 @@ struct FloatingMic: View {
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
             if showMic || (voice.isActive && voice.window === window) {
-                MicKey(voice: voice, window: window)
+                // Another window is dictating: this one's mic waits, so its release cannot end that recording.
+                let elsewhere = voice.isActive && voice.window != nil && voice.window !== window
+                MicKey(voice: voice, window: window).disabled(elsewhere).opacity(elsewhere ? 0.4 : 1)
             }
         }
         .padding(.trailing, 24).padding(.bottom, 24 + SidraSpace.paneFooterHeight).padding(.leading, 16)   // above the pane footer
@@ -103,8 +105,8 @@ struct VoiceCard: View {
             }
         }
         .padding(14)
-        .background(SidraColor.popup, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(SidraColor.hairline2))
+        .background(SidraColor.popup, in: RoundedRectangle(cornerRadius: SidraRadius.card, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: SidraRadius.card, style: .continuous).strokeBorder(SidraColor.hairline2))
         .shadow(color: .black.opacity(0.55), radius: 30, y: 16)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Dictation")

@@ -15,6 +15,7 @@
 		09BA2A23DFCCC4B4EE7E9C53 /* KeysSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9020BCA2AC1F7D913937CCA7 /* KeysSection.swift */; };
 		0A47E38329AB8B1E7FE10DEC /* JetBrainsMono-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9FAFFC0DA4889FFFC37607E5 /* JetBrainsMono-Variable.ttf */; };
 		0B771BBB5C32A631AE2F7F35 /* LifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A958E2D546170231CBA9D2C /* LifecycleTests.swift */; };
+		0D6E679C1BEBF058AA5C70D0 /* MicInputs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2D83C2FE1831D1C584C9D1 /* MicInputs.swift */; };
 		0F781B2E06D7BF291D71494C /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = B037505C87287B42AE7A192B /* WhisperKit */; };
 		10A62F11BFDFD7A86CAC198D /* DemoMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D40EFDF6FF49F49A56FDCE /* DemoMode.swift */; };
 		16D1038431AD1E8CCBBDF296 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 680898FB51F66C3B3F13859C /* Inter-Regular.ttf */; };
@@ -92,6 +93,7 @@
 		A00E800E23C3A4E230CEAEC3 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1F4667A0E51BA7C24D920DD /* Assets.xcassets */; };
 		A0D9EDEC398C69C5867E4301 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1F4667A0E51BA7C24D920DD /* Assets.xcassets */; };
 		A623DEEE53B4ACFE19518F59 /* HerdrPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4477F8E3EBA916104FCB99C5 /* HerdrPane.swift */; };
+		A660E1D5A45121EC37490B83 /* MicInputs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2D83C2FE1831D1C584C9D1 /* MicInputs.swift */; };
 		AA68CCB35DF9EB7A9A8186B4 /* TheasaMarkdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DCC141B15F493AF564C38B /* TheasaMarkdown.swift */; };
 		ADCABBA0CE88A581FEF55939 /* TheasaAgents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FA4FA59DD2513883467739 /* TheasaAgents.swift */; };
 		AFEAFDC623409ACE12493055 /* SidraChess in Frameworks */ = {isa = PBXBuildFile; productRef = 0CE9EE125C9A286548263F3C /* SidraChess */; };
@@ -170,6 +172,7 @@
 		4BC5697584C293B136FA2FB2 /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 		4D0FE091994F8AC053191522 /* SidraDesign */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraDesign; path = Packages/SidraDesign; sourceTree = SOURCE_ROOT; };
 		5878234E78CAE96CF386F927 /* HackerTabUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HackerTabUITests.swift; sourceTree = "<group>"; };
+		5A2D83C2FE1831D1C584C9D1 /* MicInputs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicInputs.swift; sourceTree = "<group>"; };
 		5B41E3C7C2BA941E511861CB /* TheasaConnectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaConnectSheet.swift; sourceTree = "<group>"; };
 		600EBD10A930EB3B4F2C55DB /* SSHConnectionLiveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHConnectionLiveTests.swift; sourceTree = "<group>"; };
 		61631DB9FAA738AF8DC58B30 /* SidraAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidraAlert.swift; sourceTree = "<group>"; };
@@ -380,6 +383,7 @@
 			isa = PBXGroup;
 			children = (
 				FC861FD0DBC61E527D1B8C68 /* FloatingMic.swift */,
+				5A2D83C2FE1831D1C584C9D1 /* MicInputs.swift */,
 				FEFA0D447FC952F4060C8301 /* VoiceInput.swift */,
 			);
 			path = Voice;
@@ -662,6 +666,7 @@
 				23B1D3A4F06299705064EE14 /* HerdrConnectSheet.swift in Sources */,
 				2A0AF26EBCB074CA82E49DE1 /* HerdrPane.swift in Sources */,
 				09BA2A23DFCCC4B4EE7E9C53 /* KeysSection.swift in Sources */,
+				0D6E679C1BEBF058AA5C70D0 /* MicInputs.swift in Sources */,
 				1C643ACAAC77FF82968BC5E9 /* NewTab.swift in Sources */,
 				B913C402DDBB59A495B59D5A /* Notifier.swift in Sources */,
 				581C44F4C2A14CB879759F93 /* PaneBodies.swift in Sources */,
@@ -706,6 +711,7 @@
 				BE265D46DCFEE3E497F53DF0 /* HerdrConnectSheet.swift in Sources */,
 				A623DEEE53B4ACFE19518F59 /* HerdrPane.swift in Sources */,
 				61EB8A69879C57BB3BAFB34A /* KeysSection.swift in Sources */,
+				A660E1D5A45121EC37490B83 /* MicInputs.swift in Sources */,
 				C5213763CE84F01419C2B518 /* NewTab.swift in Sources */,
 				91BBE159888E6DC08DC564FC /* Notifier.swift in Sources */,
 				E5795E4C4649FF14ADF7A896 /* PaneBodies.swift in Sources */,

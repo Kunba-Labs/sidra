@@ -401,12 +401,13 @@ struct TerminalFontSection: View {
 struct VoiceSection: View {
     let query: String
     @State private var voice = VoiceInput.shared
+    @AppStorage(MicInputs.key) private var micChoice: String?
     private func show(_ words: String...) -> Bool { query.isEmpty || words.contains { $0.localizedCaseInsensitiveContains(query) } }
 
     var body: some View {
-        if show("Voice", "dictation", "dictate", "Whisper", "speech", "microphone") {
+        if show("Voice", "dictation", "dictate", "Whisper", "speech", "microphone", "input") {
             SectionLabel("Voice")
-            SettingRow("Dictation", detail: Platform.isMac ? "Hold the green mic, or ⌥⌘V. Speech stays on this Mac." : "Hold the green mic. Speech stays on this iPad.", isDefault: voice.engine == .apple, reset: { voice.engine = .apple }) {
+            SettingRow("Dictation", detail: Platform.isMac ? "Hold the green mic, or ⌥⌘V. Speech stays on this Mac." : "Hold the green mic. Speech stays on this \(Platform.deviceName).", isDefault: voice.engine == .apple, reset: { voice.engine = .apple }) {
                 SidraMenu([SidraMenuSection(nil, [
                     SidraMenuItem("Apple dictation") { voice.engine = .apple },
                     voice.whisperOnDisk
@@ -421,6 +422,23 @@ struct VoiceSection: View {
                     .background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
                 }
                 .accessibilityLabel("Dictation engine")
+            }
+            let inputs = MicInputs.all()
+            let picked = inputs.first { $0.id == micChoice }
+            SettingRow("Microphone", detail: micChoice != nil && picked == nil ? "The chosen microphone is not connected; the default is used." : "What dictation listens to.",
+                       isDefault: micChoice == nil, reset: { micChoice = nil }) {
+                SidraMenu([
+                    SidraMenuSection(nil, [SidraMenuItem("System default", systemImage: "mic") { micChoice = nil }]),
+                    SidraMenuSection("Inputs", inputs.map { d in SidraMenuItem(d.name) { micChoice = d.id } }),
+                ]) {
+                    HStack(spacing: 6) {
+                        Text(picked?.name ?? "System default").font(SidraFont.ui(13)).foregroundStyle(SidraColor.text).lineLimit(1)
+                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(SidraColor.muted)
+                    }
+                    .padding(.horizontal, 10).frame(height: 30)
+                    .background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
+                }
+                .accessibilityLabel("Microphone, \(picked?.name ?? "system default")")
             }
             SettingRow("Whisper model", detail: voice.downloadError ?? "Optional. Better with code words and mixed languages. \(VoiceInput.whisperSize), downloaded once.",
                        isDefault: !voice.whisperOnDisk, reset: { voice.removeWhisper() }) {
