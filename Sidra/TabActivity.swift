@@ -28,9 +28,8 @@ struct TabActivity: View {
             if blocked > 0 { parts.append("\(blocked) need you") }
             if working > 0 { parts.append("\(working) working") }
             return (parts.joined(separator: ", "), blocked > 0 ? SidraColor.gold : working > 0 ? SidraColor.orange : SidraColor.dim)
-        case .pipelines:
-            let p = PipelinesStore.shared
-            guard p.connected else { return ("Not connected", SidraColor.dim) }
+        case .pipelines(let id):
+            guard let p = PipelinesHub.shared.store(id), p.connected else { return ("Not connected", SidraColor.dim) }
             return ("\(p.running.count) running, \(p.failedCount) failed", p.failedCount > 0 ? SidraColor.red : p.running.isEmpty ? SidraColor.jade : SidraColor.orange)
         case .hackertab:
             return HackerNews.shared.fresh ? ("New stories in the top 30", SidraColor.blue) : ("Nothing new", SidraColor.dim)

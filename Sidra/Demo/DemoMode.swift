@@ -36,7 +36,7 @@ enum DemoMode {
         guard app.workspace.tabs.isEmpty else { return }
         app.openTab(kind: .herdr(target: .ssh(hostID: hostID), session: nil))
         app.openTab(kind: .terminal(.ssh(hostID: hostID)))
-        app.openTab(kind: .pipelines)
+        app.openTab(kind: .pipelines(connection: nil))
         app.openSingle(.chess)
         if let first = app.workspace.tabs.first { app.workspace.select(tab: first.id) }
     }

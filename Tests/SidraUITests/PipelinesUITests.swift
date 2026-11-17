@@ -15,6 +15,10 @@ final class PipelinesUITests: XCTestCase {
         XCTAssertTrue(app.buttons["New tab"].waitForExistence(timeout: 20))
         app.buttons["New tab"].tap()
         app.buttons["newtab-pipelines"].firstMatch.tap()
+        // The card lists the saved connections; the seeded GitLab one opens its tab.
+        let gitlab = app.buttons["pipelines-open-gitlab"].firstMatch
+        XCTAssertTrue(gitlab.waitForExistence(timeout: 10), "the saved GitLab connection is listed")
+        gitlab.tap()
         let row = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'pipeline-'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 30), "the list shows pipelines")
         sleep(8)   // jobs, log and avatars

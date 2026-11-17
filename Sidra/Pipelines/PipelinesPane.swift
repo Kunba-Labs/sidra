@@ -4,16 +4,17 @@ import UIKit
 #endif
 import SidraDesign
 import SidraWorkspace
+import SidraSSH
 
-/// GitLab pipelines: the user's recent pipelines grouped by namespace on the left, the picked run on
-/// the right (stages, then the job log with the failing section open at the error).
+/// One connection's pipelines (GitLab or GitHub): recent runs grouped by namespace on the left, the
+/// picked run on the right (stages, then the job log with the failing section open at the error).
 struct PipelinesPane: View {
     let pane: Pane
+    let store: PipelinesStore
     @Environment(AppModel.self) private var app
 
     @State private var width: CGFloat = 1000
     @State private var showList = false
-    private var store: PipelinesStore { .shared }
     private var selected: Int? { get { store.selected } nonmutating set { store.selected = newValue } }
     private var expanded: Set<String> { get { store.expanded } nonmutating set { store.expanded = newValue } }
     /// Below this the list and the run take turns: a split pane can be as narrow as 160 pt.
@@ -24,10 +25,10 @@ struct PipelinesPane: View {
             if !store.connected {
                 VStack(spacing: 10) {
                     ProcessIcon(.pipelines, size: 34)
-                    Text("Connect GitLab").font(SidraFont.ui(15, weight: .bold)).foregroundStyle(SidraColor.text)
-                    Text("Sidra reads your projects' pipelines and job logs with a personal access token (read_api).")
+                    Text("\(store.connection.title) needs its token again").font(SidraFont.ui(15, weight: .bold)).foregroundStyle(SidraColor.text)
+                    Text("Sidra reads your pipelines and job logs with a personal access token, kept in the Keychain.")
                         .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted).multilineTextAlignment(.center).frame(maxWidth: 380)
-                    Button("Connect…") { app.sheet = .pipelines }.buttonStyle(.sidraPrimary)
+                    Button("Connect…") { app.sheet = .pipelinesEdit(store.connection.id) }.buttonStyle(.sidraPrimary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -44,7 +45,7 @@ struct PipelinesPane: View {
                                     .buttonStyle(.plain).foregroundStyle(SidraColor.muted)
                                     .padding(.horizontal, 12).frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
                             }
-                            PipelineRun(pipeline: p).id(p.id)
+                            PipelineRun(pipeline: p, store: store).id(p.id)
                         }
                     } else if !narrow {
                         Text(store.loading && store.pipelines.isEmpty ? "Reading pipelines…" : "Pick a pipeline")
@@ -139,7 +140,7 @@ struct PipelinesPane: View {
         .accessibilityIdentifier("pipeline-\(p.id)")
     }
 
-    /// ↑↓ move through the list, ⌘R refreshes, ⌘O opens the pipeline in GitLab; only while this pane has focus.
+    /// ↑↓ move through the list, ⌘R refreshes, ⌘O opens the pipeline on the web; only while this pane has focus.
     @ViewBuilder private var keys: some View {
         if app.workspace.focusedPane?.id == pane.id, store.connected {
             Group {
@@ -184,14 +185,14 @@ struct PipelinesPane: View {
 
 struct PipelineRun: View {
     let pipeline: GitLabPipeline
+    let store: PipelinesStore
     @State private var jobs: [GitLabJob] = []
     @State private var loadingJobs = true
-    private var job: Int? { get { PipelinesStore.shared.selectedJob[pipeline.id] } nonmutating set { PipelinesStore.shared.selectedJob[pipeline.id] = newValue } }
+    private var job: Int? { get { store.selectedJob[pipeline.id] } nonmutating set { store.selectedJob[pipeline.id] = newValue } }
     @State private var log: JobLog?
     @State private var logError: String?
     @State private var open: Set<Int> = []
     @State private var showAll: Set<Int> = []
-    private var store: PipelinesStore { .shared }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -212,7 +213,7 @@ struct PipelineRun: View {
             Text(project?.name ?? "").font(SidraFont.ui(15, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
         }
         let open = Button { if let u = URL(string: pipeline.web_url) { Platform.open(u) } } label: {
-            Label("Open in GitLab", systemImage: "arrow.up.forward.square").labelStyle(.titleAndIcon)
+            Label("Open in \(store.connection.provider.name)", systemImage: "arrow.up.forward.square").labelStyle(.titleAndIcon)
         }
         .buttonStyle(.sidraDark)
         // Wide: every chip on one row. Narrow: name and status, then the open button alone.
@@ -415,7 +416,7 @@ struct PipelineStatusChip: View {
     }
 }
 
-/// GitLab's own avatar for a project or group, or its first letter.
+/// The service's own avatar for a project or group, or its first letter.
 struct PipelineAvatar: View {
     let image: PlatformImage?
     let name: String
@@ -424,13 +425,13 @@ struct PipelineAvatar: View {
 }
 
 struct PipelinesFooter: View {
-    private var store: PipelinesStore { .shared }
+    let store: PipelinesStore?
     var body: some View {
-        if store.connected {
+        if let store, store.connected {
             FooterChip([.init("\(store.running.count)", label: "running"), .init("\(store.failedCount)", label: "failed", color: store.failedCount > 0 ? SidraColor.red : SidraColor.text),
                         .init("\(store.projects.count)", label: "projects")])
             Spacer()
-            FooterChip([.init("↑↓", label: "pipeline"), .init("⌘R", label: "refresh"), .init("⌘O", label: "open in GitLab")])
+            FooterChip([.init("↑↓", label: "pipeline"), .init("⌘R", label: "refresh"), .init("⌘O", label: "open in \(store.connection.provider.name)")])
         } else {
             FooterItem("Not connected")
         }
@@ -439,50 +440,143 @@ struct PipelinesFooter: View {
 
 // MARK: - Connect
 
-/// Pane header: the GitLab host, opening the connect sheet (replace the token, disconnect).
+/// Pane header: the connection's name, opening its sheet (replace the token, disconnect).
 struct PipelinesConnectionButton: View {
+    let connection: PipelineConnection?
     @Environment(AppModel.self) private var app
     var body: some View {
-        Button { app.sheet = .pipelines } label: {
-            Label(PipelinesStore.shared.host ?? "Connect", systemImage: "key").labelStyle(.titleAndIcon).font(SidraFont.ui(12))
+        Button { app.sheet = connection.map { .pipelinesEdit($0.id) } ?? .pipelines } label: {
+            Label(connection?.title ?? "Connect", systemImage: "key").labelStyle(.titleAndIcon).font(SidraFont.ui(12))
         }
         .buttonStyle(.sidraSecondary)
-        .accessibilityLabel("GitLab connection")
+        .accessibilityLabel("\(connection?.provider.name ?? "Pipelines") connection")
     }
 }
 
+/// New tab → Pipelines: the saved connections (open one) and a form for another. Editing a connection
+/// (from its tab's header) shows only the form, filled in.
 struct PipelinesConnectSheet: View {
+    var editing: UUID?
     @Environment(\.dismiss) private var dismiss
     @Environment(AppModel.self) private var app
-    @State private var url = PipelinesStore.shared.url
+    @State private var provider: PipelineConnection.Provider = .gitlab
+    @State private var selfHosted = false
+    @State private var url = ""
     @State private var token = ""
     @State private var checking = false
     @State private var error: String?
-    private var store: PipelinesStore { .shared }
+    @State private var adding = false
+    private var hub: PipelinesHub { .shared }
+    private var existing: PipelineConnection? { editing.flatMap { id in hub.connections.first { $0.id == id } } }
 
     var body: some View {
+        ScrollView {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
                 ProcessIcon(.pipelines, size: 30)
-                Text("Connect GitLab").font(SidraFont.ui(19, weight: .bold)).foregroundStyle(SidraColor.text)
+                Text(existing.map { "\($0.title) pipelines" } ?? "Pipelines").font(SidraFont.ui(19, weight: .bold)).foregroundStyle(SidraColor.text)
             }
-            Text("A personal access token with the read_api scope. Sidra keeps it in the Keychain and talks to GitLab directly.")
-                .font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted)
-            field("GitLab URL") { TextField("https://gitlab.example.com", text: $url).urlKeyboard().plainTextEntry().autocorrectionDisabled() }
-            field("Token") { SecureField(store.connected ? "Saved; type to replace it" : "glpat-…", text: $token) }
-            if let error { Text(error).font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.yellow) }
-            HStack {
-                if store.connected { Button("Disconnect") { store.disconnect(); dismiss() }.buttonStyle(.sidraSecondary) }
-                Spacer()
-                Button("Cancel") { dismiss() }.buttonStyle(.sidraSecondary)
-                Button(checking ? "Checking…" : "Connect") { Task { await connect() } }
-                    .buttonStyle(.sidraPrimary).disabled(checking || url.isEmpty || (token.isEmpty && !store.connected))
-                    .accessibilityIdentifier("pipelines-connect")
+            if existing == nil, !hub.connections.isEmpty, !adding {
+                Text("Open a connection, or add another: GitLab and GitHub tabs sit side by side.")
+                    .font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted)
+                ForEach(hub.connections) { c in
+                    Button { dismiss(); app.openPipelines(connection: c.id) } label: {
+                        HStack(spacing: 12) {
+                            ProviderMark(provider: c.provider)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(c.title).font(SidraFont.ui(14, weight: .bold)).foregroundStyle(SidraColor.text)
+                                Text(c.url).font(SidraFont.ui(12)).foregroundStyle(SidraColor.muted)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(SidraColor.dim)
+                        }
+                        .padding(12)
+                        .background(SidraColor.raised, in: RoundedRectangle(cornerRadius: SidraRadius.card, style: .continuous))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("pipelines-open-\(c.provider.rawValue)")
+                }
+                HStack {
+                    Spacer()
+                    Button("Cancel") { dismiss() }.buttonStyle(.sidraSecondary)
+                    Button("Add connection") { adding = true }.buttonStyle(.sidraPrimary).accessibilityIdentifier("pipelines-add")
+                }
+            } else {
+                form
             }
         }
         .padding(24)
-        .frame(maxWidth: 520)   // narrower on an iPhone
+        }
+        .frame(maxWidth: 560)   // narrower on an iPhone
+        .frame(maxHeight: 640)
         .background(SidraColor.popup)
+        .onAppear {
+            guard let c = existing else { return }
+            provider = c.provider; selfHosted = !c.isHosted; url = c.isHosted ? "" : c.url
+        }
+    }
+
+    @ViewBuilder private var form: some View {
+        // Which service: a select, then hosted or self-hosted.
+        field("Service") {
+            SidraMenu([SidraMenuSection(nil, PipelineConnection.Provider.allCases.map { p in
+                SidraMenuItem(p.name) { provider = p; error = nil }
+            })]) {
+                HStack(spacing: 8) {
+                    ProviderMark(provider: provider, size: 18)
+                    Text(provider.name).font(SidraFont.ui(14)).foregroundStyle(SidraColor.text)
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(SidraColor.muted)
+                }
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
+            }
+            .disabled(existing != nil)   // a connection keeps its service; add another for the other one
+            .accessibilityLabel("Service, \(provider.name)")
+        }
+        VStack(alignment: .leading, spacing: 8) {
+            radio(provider == .gitlab ? "GitLab.com" : "GitHub.com", on: !selfHosted) { selfHosted = false }
+            radio(provider == .gitlab ? "Self-hosted GitLab" : "GitHub Enterprise Server", on: selfHosted) { selfHosted = true }
+        }
+        if selfHosted {
+            field("Server URL") {
+                TextField(provider == .gitlab ? "https://gitlab.example.com" : "https://github.example.com", text: $url)
+                    .urlKeyboard().plainTextEntry().autocorrectionDisabled().textFieldStyle(.plain)
+            }
+        }
+        field("Token") {
+            SecureField(existing != nil ? "Saved; type to replace it" : provider == .gitlab ? "glpat-…" : "github_pat_… or ghp_…", text: $token).textFieldStyle(.plain)
+        }
+        Text(provider == .gitlab
+             ? "A personal access token with the read_api scope."
+             : "A fine-grained token with read access to Actions and Metadata on the repositories, or a classic token with the repo scope.")
+            .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
+        Text("Sidra keeps it in the Keychain and talks to \(provider.name) directly.").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.dim)
+        if let error { Text(error).font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.yellow) }
+        HStack {
+            if let c = existing { Button("Disconnect") { hub.remove(c.id); dismiss() }.buttonStyle(.sidraSecondary) }
+            Spacer()
+            Button("Cancel") { if adding { adding = false } else { dismiss() } }.buttonStyle(.sidraSecondary)
+            Button(checking ? "Checking…" : "Connect") { Task { await connect() } }
+                .buttonStyle(.sidraPrimary).disabled(checking || (selfHosted && url.isEmpty) || (token.isEmpty && existing == nil))
+                .accessibilityIdentifier("pipelines-connect")
+        }
+    }
+
+    private func radio(_ label: String, on: Bool, _ pick: @escaping () -> Void) -> some View {
+        Button(action: pick) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle().strokeBorder(on ? SidraColor.jade : SidraColor.dim, lineWidth: 1.5).frame(width: 16, height: 16)
+                    if on { Circle().fill(SidraColor.jade).frame(width: 8, height: 8) }
+                }
+                Text(label).font(SidraFont.ui(13.5)).foregroundStyle(SidraColor.text)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
     }
 
     private func field(_ label: String, @ViewBuilder _ content: () -> some View) -> some View {
@@ -499,24 +593,54 @@ struct PipelinesConnectSheet: View {
         checking = true; error = nil
         defer { checking = false }
         do {
-            let t = token.isEmpty ? (store.client?.token ?? "") : token
-            try await store.save(url: url, token: t)
+            let t = token.isEmpty ? (existing.flatMap { KeychainStore.string(for: $0.tokenKey) } ?? "") : token
+            let c = try await hub.save(id: existing?.id, provider: provider, url: selfHosted ? url : provider.hostedURL, token: t)
             dismiss()
-            app.openPipelines()   // connected from New tab: show the pipelines right away
+            app.openPipelines(connection: c.id)   // show its pipelines right away
         } catch {
             self.error = describeError(error)
         }
     }
 }
 
+/// GitLab's or GitHub's own logo, from the asset catalog.
+struct ProviderMark: View {
+    let provider: PipelineConnection.Provider
+    var size: CGFloat = 24
+    var body: some View {
+        Image(provider == .gitlab ? "brand-gitlab" : "brand-github").resizable().scaledToFit().frame(width: size, height: size)
+            .accessibilityHidden(true)
+    }
+}
+
 extension AppModel {
-    /// One Pipelines tab: brings an open one to the front, else opens it (or the connect sheet first).
-    func openPipelines(reveal pipeline: Int? = nil) {
-        if let id = pipeline { PipelinesStore.shared.reveal = id }
-        if !PipelinesStore.shared.connected { sheet = .pipelines; return }
+    /// A Pipelines tab for `connection` (nil: the first): brings an open one to the front, else opens it.
+    /// `reveal` picks a pipeline once it has loaded. With no connection at all, the connect sheet.
+    func openPipelines(connection id: UUID? = nil, reveal pipeline: Int? = nil) {
+        let hub = PipelinesHub.shared
+        guard let c = hub.connection(id) else { sheet = .pipelines; return }
+        if let pipeline { hub.store(c.id)?.reveal = pipeline }
+        let first = hub.connections.first?.id
         for store in allWorkspaces {
-            if let tab = store.tabs.first(where: { $0.icon == .pipelines }), let p = tab.panes.first { open(.pane(p.id)); return }
+            for tab in store.tabs {
+                if let p = tab.panes.first(where: { if case .pipelines(let cid) = $0.kind { (cid ?? first) == c.id } else { false } }) {
+                    open(.pane(p.id)); return
+                }
+            }
         }
-        openTab(kind: .pipelines)
+        openTab(kind: .pipelines(connection: c.id))
+    }
+}
+
+/// A Pipelines tab whose connection was removed: one button to set one up.
+struct PipelinesNoConnection: View {
+    @Environment(AppModel.self) private var app
+    var body: some View {
+        VStack(spacing: 10) {
+            ProcessIcon(.pipelines, size: 34)
+            Text("No pipelines connection").font(SidraFont.ui(15, weight: .bold)).foregroundStyle(SidraColor.text)
+            Button("Connect GitLab or GitHub…") { app.sheet = .pipelines }.buttonStyle(.sidraPrimary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

@@ -59,7 +59,7 @@ final class PaneTreeTests: XCTestCase {
     }
 
     func testStateRoundTripsThroughJSON() throws {
-        let a = Pane(kind: .pipelines, title: "x")
+        let a = Pane(kind: .pipelines(connection: nil), title: "x")
         let b = Pane(kind: .terminal(.ssh(hostID: UUID())), title: "y")
         let root = PaneNode.split(id: UUID(), axis: .vertical, ratio: 0.3, first: .leaf(a), second: .leaf(b))
         let tab = WorkspaceTab(title: "t", subtitle: "s", icon: .agent, root: root)
@@ -85,5 +85,16 @@ extension PaneTreeTests {
         store.select(tab: t1.id)
         store.close(pane: b.id, inTab: t2.id)     // inactive tab, pane in a split
         XCTAssertEqual(store.tabs.first { $0.id == t2.id }?.panes.map(\.title), ["P"])
+    }
+}
+
+final class PipelinesKindCodingTests: XCTestCase {
+    /// A Pipelines tab saved before connections ({"pipelines":{}}) still opens, on the first connection.
+    func testOldPipelinesKindDecodes() throws {
+        let old = Data(#"{"pipelines":{}}"#.utf8)
+        XCTAssertEqual(try JSONDecoder().decode(PaneKind.self, from: old), .pipelines(connection: nil))
+        let id = UUID()
+        let round = try JSONDecoder().decode(PaneKind.self, from: JSONEncoder().encode(PaneKind.pipelines(connection: id)))
+        XCTAssertEqual(round, .pipelines(connection: id))
     }
 }

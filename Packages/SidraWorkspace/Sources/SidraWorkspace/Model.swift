@@ -11,8 +11,9 @@ public enum PaneKind: Codable, Hashable, Sendable {
     case theasa(connection: UUID)
     /// HackerTab: Hacker News, comments first.
     case hackertab
-    /// GitLab pipelines of the user's projects, with each run's stages and failing log.
-    case pipelines
+    /// CI pipelines (GitLab or GitHub) of one saved connection, with each run's stages and failing log.
+    /// Nil: the first connection (tabs saved before there could be several).
+    case pipelines(connection: UUID?)
     /// Chess against Sidra's own engine.
     case chess
 

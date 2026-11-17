@@ -224,20 +224,17 @@ struct JobLog: Sendable {
 
 // MARK: - Store
 
-/// The GitLab connection (URL in defaults, token in the Keychain), recent pipelines of the user's
-/// projects, and avatars. Polls every 15 s while a Pipelines pane is on screen, every 60 s otherwise
-/// (the title bar's working pill counts running pipelines).
+/// One connection's recent pipelines, projects and avatars. Polls while the app runs, faster while a
+/// tab of this connection is on screen (the title bar's working pill counts running pipelines).
 @MainActor @Observable
 final class PipelinesStore {
-    static let shared = PipelinesStore()
-    private let urlKey = "pipelines.url", tokenKey = "pipelines.token"
-
-    private(set) var url: String = UserDefaults.standard.string(forKey: "pipelines.url") ?? ""
+    let connection: PipelineConnection
     private(set) var projects: [Int: GitLabProject] = [:]
     private(set) var pipelines: [GitLabPipeline] = []
     private(set) var error: String?
     private(set) var loading = false
-    private var loadingGeneration: Int?
+    private var refreshing = false
+    private var round = 0
     private(set) var lastRefresh: Date?
     private(set) var avatars: [String: PlatformImage] = [:]   // "p<id>" or "g<id>"
     private var groupIDs: [String: Int] = [:]           // full_path → id, for groups with an avatar
@@ -254,10 +251,19 @@ final class PipelinesStore {
     var visiblePanes = 0
     private var poller: Task<Void, Never>?
 
-    var host: String? { client.flatMap { $0.base.host } }
-    var client: GitLabClient? {
-        guard let base = GitLabClient.normalize(url), let token = KeychainStore.string(for: tokenKey), !token.isEmpty else { return nil }
-        return GitLabClient(base: base, token: token)
+    init(connection: PipelineConnection) {
+        self.connection = connection
+        seenFailed = Set(UserDefaults.standard.array(forKey: "sidra.pipelines.seenFailed.\(connection.id.uuidString)") as? [Int] ?? [])
+    }
+
+    var host: String { connection.host }
+    /// Set when the connection's URL or token changes or it is removed: this store makes no more clients,
+    /// so a pane still holding it never sends the new token to the old server.
+    private(set) var retired = false
+    func retire() { retired = true; stop() }
+    var client: (any CIClient)? {
+        guard !retired, let token = KeychainStore.string(for: connection.tokenKey), !token.isEmpty else { return nil }
+        return connection.client(token: token)
     }
     var connected: Bool { client != nil }
     var running: [GitLabPipeline] { pipelines.filter(\.isActive) }
@@ -267,7 +273,8 @@ final class PipelinesStore {
         return latestPerProject.filter { $0.status == "failed" && $0.updated_at > since }.count
     }
     /// Failed pipelines you opened: the title bar's red dot leaves them out until a new one fails (2026-11-14).
-    private(set) var seenFailed = Set(UserDefaults.standard.array(forKey: "sidra.pipelines.seenFailed") as? [Int] ?? [])
+    private var seenKey: String { "sidra.pipelines.seenFailed.\(connection.id.uuidString)" }
+    private(set) var seenFailed: Set<Int>
     var unseenFailedCount: Int {
         let since = Date().addingTimeInterval(-7 * 86400)
         return latestPerProject.filter { $0.status == "failed" && $0.updated_at > since && !seenFailed.contains($0.id) }.count
@@ -276,7 +283,7 @@ final class PipelinesStore {
         guard pipelines.contains(where: { $0.id == id && $0.status == "failed" }), seenFailed.insert(id).inserted else { return }
         let listed = Set(pipelines.map(\.id))
         seenFailed = seenFailed.filter(listed.contains)   // forget pipelines that left the list
-        UserDefaults.standard.set(Array(seenFailed), forKey: "sidra.pipelines.seenFailed")
+        UserDefaults.standard.set(Array(seenFailed), forKey: seenKey)
     }
     /// The newest pipeline of each project.
     var latestPerProject: [GitLabPipeline] {
@@ -284,80 +291,35 @@ final class PipelinesStore {
         return pipelines.filter { seen.insert($0.project_id).inserted }
     }
 
-    func save(url raw: String, token: String) async throws {
-        guard let base = GitLabClient.normalize(raw) else {
-            throw GitLabError(message: raw.lowercased().hasPrefix("http://") ? "Use https://: the token would travel unencrypted." : "That is not a URL.")
-        }
-        let t = token.trimmingCharacters(in: .whitespacesAndNewlines)
-        let probe = GitLabClient(base: base, token: t)
-        // /version answers without a token; /user needs a valid one.
-        struct User: Decodable { let username: String }
-        _ = try await probe.get("/user") as User
-        try KeychainStore.set(t, for: tokenKey)
-        url = base.absoluteString
-        UserDefaults.standard.set(url, forKey: urlKey)
-        reset()
-        await refresh()
-    }
-
-    func disconnect() {
-        KeychainStore.remove(tokenKey)
-        url = ""
-        UserDefaults.standard.removeObject(forKey: urlKey)
-        reset()
-    }
-
-    /// Bumped whenever the connection changes; a refresh that started under an older one drops its results.
-    private var generation = 0
-
-    private func reset() {
-        generation += 1
-        projects = [:]; pipelines = []; avatars = [:]; avatarTried = []; groupIDs = [:]; jobsCache = [:]; error = nil
-        logCache = [:]; logOrder = []; selectedJob = [:]; selected = nil; expanded = []
-    }
-
     func start() {
         guard poller == nil else { return }
-        #if DEBUG
-        // -sidra.gitlab URL with SIDRA_GITLAB_TOKEN in the environment (Simulator checks): saves that connection.
-        if let u = UserDefaults.standard.string(forKey: "sidra.gitlab"), let t = ProcessInfo.processInfo.environment["SIDRA_GITLAB_TOKEN"], !t.isEmpty {
-            try? KeychainStore.set(t, for: tokenKey)
-            url = GitLabClient.normalize(u)?.absoluteString ?? u
-            UserDefaults.standard.set(url, forKey: urlKey)
-        }
-        #endif
         poller = Task { [weak self] in
             while !Task.isCancelled {
                 guard let self else { return }
                 if self.connected { await self.refresh() }
-                try? await Task.sleep(for: .seconds(self.visiblePanes > 0 ? 15 : 60))
+                let p = self.client?.pollSeconds ?? (visible: 15, hidden: 60)
+                try? await Task.sleep(for: .seconds(self.visiblePanes > 0 ? p.visible : p.hidden))
             }
         }
     }
 
-    // ponytail: projects active in the last 30 days, at most 40, three pipelines each (the TUI's shape); a GitLab events feed if this grows
+    func stop() { poller?.cancel(); poller = nil }
+
+    // ponytail: GitLab reads every member project (eight at a time), GitHub the 30 most recently pushed repositories; an events feed if this grows
     func refresh() async {
-        // One refresh per connection: one still running for an old connection does not block the new one.
-        guard let client, loadingGeneration != generation else { return }
-        let gen = generation
-        loadingGeneration = gen
-        loading = true
-        defer { if loadingGeneration == gen { loadingGeneration = nil; loading = false }; if gen == generation { lastRefresh = Date() } }
+        guard let client, !refreshing else { return }
+        refreshing = true; loading = true
+        defer { refreshing = false; loading = false; lastRefresh = Date() }
         do {
             if projects.isEmpty || lastRefresh.map({ Date().timeIntervalSince($0) > 300 }) ?? true {
-                let list: [GitLabProject] = try await client.all("/projects", ["membership": "true", "simple": "true", "order_by": "last_activity_at"])
-                guard gen == generation else { return }
+                let list = try await client.projects()
                 projects = Dictionary(list.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-                struct Group: Decodable { let id: Int; let full_path: String; let avatar_url: String? }
-                if let groups: [Group] = try? await client.all("/groups"), gen == generation {
-                    groupIDs = Dictionary(groups.filter { $0.avatar_url != nil }.map { ($0.full_path, $0.id) }, uniquingKeysWith: { a, _ in a })
-                }
+                groupIDs = await client.groupsWithAvatar()
             }
-            // Every project, eight requests at a time: a project's activity date says nothing about its CI,
-            // so a running pipeline in a quiet project still shows.
-            // ponytail: one request per project per refresh; GitLab's events or a per-group pipelines API if accounts grow past a few hundred projects
-            let active = Array(projects.values)
-            // A project whose request fails keeps its last pipelines; the failures are reported, not hidden.
+            // Every project: a project's activity date says nothing about its CI, so a running pipeline
+            // in a quiet project still shows. A project whose request fails keeps its last pipelines.
+            let active = client.pollSet(Array(projects.values), round: round)
+            round += 1
             let results = await withTaskGroup(of: (Int, [GitLabPipeline]?, String?).self) { group in
                 var started = 0
                 var all: [(Int, [GitLabPipeline]?, String?)] = []
@@ -365,16 +327,18 @@ final class PipelinesStore {
                     if started >= 8, let r = await group.next() { all.append(r) }
                     started += 1
                     group.addTask {
-                        do { return (p.id, try await client.get("/projects/\(p.id)/pipelines", ["per_page": "3", "order_by": "updated_at", "sort": "desc"]), nil) }
+                        do { return (p.id, try await client.pipelines(of: p), nil) }
                         catch { return (p.id, nil, describeError(error)) }
                     }
                 }
                 for await r in group { all.append(r) }
                 return all
             }
-            guard gen == generation else { return }   // disconnected or reconnected meanwhile
             let previous = Dictionary(grouping: pipelines, by: \.project_id)
-            let fetched = results.flatMap { pid, list, _ in list ?? previous[pid] ?? [] }
+            let polled = Set(active.map(\.id))
+            // Projects not asked this round keep their last pipelines.
+            let kept = previous.filter { !polled.contains($0.key) && projects[$0.key] != nil }.flatMap(\.value)
+            let fetched = kept + results.flatMap { pid, list, _ in list ?? previous[pid] ?? [] }
             pipelines = fetched.sorted { $0.updated_at > $1.updated_at }
             for id in Set(pipelines.filter(\.isActive).map(\.id)) { jobsCache[id] = nil }   // running jobs change
             let failures = results.compactMap { pid, _, e in e.map { (pid, $0) } }
@@ -382,28 +346,22 @@ final class PipelinesStore {
                 : "\(failures.count) of \(results.count) projects did not answer; their last pipelines stay. \(failures[0].1)"
             Task { await loadAvatars() }
         } catch {
-            if gen == generation { self.error = describeError(error) }
+            self.error = describeError(error)
         }
     }
 
     func jobs(_ p: GitLabPipeline) async throws -> [GitLabJob] {
         if let j = jobsCache[p.id], !p.isActive { return j }
         guard let client else { throw GitLabError(message: "Not connected") }
-        let gen = generation
-        let j: [GitLabJob] = try await client.get("/projects/\(p.project_id)/pipelines/\(p.id)/jobs", ["per_page": "100", "include_retried": "false"])
-        let sorted = j.sorted { $0.id < $1.id }
-        guard gen == generation else { throw GitLabError(message: "The GitLab connection changed.") }
-        jobsCache[p.id] = sorted
-        return sorted
+        let j = try await client.jobs(of: p, in: projects[p.project_id]).sorted { $0.id < $1.id }
+        jobsCache[p.id] = j
+        return j
     }
 
     func log(_ job: GitLabJob, project: Int) async throws -> JobLog {
         if let l = logCache[job.id], !GitLabStatus.active.contains(job.status) { return l }
         guard let client else { throw GitLabError(message: "Not connected") }
-        let gen = generation
-        let raw = String(decoding: try await client.data("/projects/\(project)/jobs/\(job.id)/trace"), as: UTF8.self)
-        let parsed = await Task.detached { JobLog.parse(raw) }.value
-        guard gen == generation else { throw GitLabError(message: "The GitLab connection changed.") }
+        let parsed = try await client.log(of: job, in: projects[project])
         logCache[job.id] = parsed
         logOrder.removeAll { $0 == job.id }; logOrder.append(job.id)
         if logOrder.count > 8 { logCache[logOrder.removeFirst()] = nil }   // ponytail: the last 8 logs; a big log is a few MB of lines
@@ -418,7 +376,13 @@ final class PipelinesStore {
         guard let p = projects[id] else { return nil }
         return groupKey(for: p.namespace.full_path).flatMap { avatars[$0] }
     }
-    func avatar(group name: String) -> PlatformImage? { groupIDs[name].flatMap { avatars["g\($0)"] } }
+    /// A group's avatar; on GitHub the owner's, which is the repositories' avatar.
+    func avatar(group name: String) -> PlatformImage? {
+        if let id = groupIDs[name] { return avatars["g\(id)"] }
+        // GitHub: the owner's avatar is every one of its repositories' avatar. GitLab: a group without one has none.
+        guard connection.provider == .github else { return nil }
+        return projects.values.first { $0.group == name }.flatMap { avatars["p\($0.id)"] }
+    }
 
     private func groupKey(for path: String) -> String? {
         var parts = path.split(separator: "/").map(String.init)
@@ -431,17 +395,114 @@ final class PipelinesStore {
 
     private func loadAvatars() async {
         guard let client else { return }
-        let gen = generation
-        var wanted: [(String, String)] = []   // key, API path
         for pid in Set(pipelines.map(\.project_id)) {
             guard let p = projects[pid] else { continue }
-            if p.avatar_url != nil { wanted.append(("p\(pid)", "/projects/\(pid)/avatar")) }
-            if let g = groupKey(for: p.namespace.full_path) { wanted.append((g, "/groups/\(g.dropFirst())/avatar")) }
-            if let id = groupIDs[p.group] { wanted.append(("g\(id)", "/groups/\(id)/avatar")) }
+            if !avatarTried.contains("p\(pid)") {
+                avatarTried.insert("p\(pid)")
+                if let d = await client.projectAvatar(p), let img = PlatformImage(data: d) { avatars["p\(pid)"] = img }
+            }
+            for g in [groupKey(for: p.namespace.full_path), groupIDs[p.group].map { "g\($0)" }].compactMap({ $0 }) where !avatarTried.contains(g) {
+                avatarTried.insert(g)
+                if let id = Int(g.dropFirst()), let d = await client.groupAvatar(id: id), let img = PlatformImage(data: d) { avatars[g] = img }
+            }
         }
-        for (key, path) in wanted where !avatarTried.contains(key) {
-            avatarTried.insert(key)
-            if let d = try? await client.data(path), let img = PlatformImage(data: d), gen == generation { avatars[key] = img }
+    }
+}
+
+/// Every Pipelines connection: the saved list, one store each, and the sums the title bar shows.
+@MainActor @Observable
+final class PipelinesHub {
+    static let shared = PipelinesHub()
+    private let key = "sidra.pipelines.connections"
+    private(set) var connections: [PipelineConnection] = []
+    private var stores: [UUID: PipelinesStore] = [:]
+
+    private init() {
+        connections = (UserDefaults.standard.data(forKey: key)).flatMap { try? JSONDecoder().decode([PipelineConnection].self, from: $0) } ?? []
+        migrateSingleGitLab()
+    }
+
+    /// The one GitLab connection of earlier builds (pipelines.url, token under pipelines.token) becomes
+    /// the first entry of the list.
+    private func migrateSingleGitLab() {
+        #if DEBUG
+        // -sidra.gitlab URL with SIDRA_GITLAB_TOKEN in the environment (Simulator checks): saves that connection.
+        if let u = UserDefaults.standard.string(forKey: "sidra.gitlab"), let t = ProcessInfo.processInfo.environment["SIDRA_GITLAB_TOKEN"], !t.isEmpty {
+            try? KeychainStore.set(t, for: "pipelines.token")
+            UserDefaults.standard.set(u, forKey: "pipelines.url")
         }
+        #endif
+        guard let url = UserDefaults.standard.string(forKey: "pipelines.url"), !url.isEmpty,
+              let token = KeychainStore.string(for: "pipelines.token"), !token.isEmpty else { return }
+        let c = PipelineConnection(provider: .gitlab, url: PipelineConnection.normalize(url)?.absoluteString ?? url)
+        guard (try? KeychainStore.set(token, for: c.tokenKey)) != nil else { return }
+        if let seen = UserDefaults.standard.array(forKey: "sidra.pipelines.seenFailed") {
+            UserDefaults.standard.set(seen, forKey: "sidra.pipelines.seenFailed.\(c.id.uuidString)")
+        }
+        connections.append(c); save()
+        KeychainStore.remove("pipelines.token")
+        UserDefaults.standard.removeObject(forKey: "pipelines.url")
+        UserDefaults.standard.removeObject(forKey: "sidra.pipelines.seenFailed")
+    }
+
+    private func save() {
+        if let d = try? JSONEncoder().encode(connections) { UserDefaults.standard.set(d, forKey: key) }
+    }
+
+    /// The connection with `id`; nil asks for the first (tabs saved before there were several). A removed
+    /// connection is gone: its tabs show none rather than another account's pipelines.
+    func connection(_ id: UUID?) -> PipelineConnection? {
+        guard let id else { return connections.first }
+        return connections.first { $0.id == id }
+    }
+
+    /// The store of a connection (the first one for a tab saved before there were several).
+    func store(_ id: UUID?) -> PipelinesStore? {
+        guard let c = connection(id) else { return nil }
+        if let s = stores[c.id] { return s }
+        let s = PipelinesStore(connection: c)
+        stores[c.id] = s
+        s.start()
+        return s
+    }
+    var all: [PipelinesStore] { connections.compactMap { store($0.id) } }
+
+    var connected: Bool { all.contains(where: \.connected) }
+    var runningCount: Int { all.reduce(0) { $0 + $1.running.count } }
+    var unseenFailedCount: Int { all.reduce(0) { $0 + $1.unseenFailedCount } }
+    var loading: Bool { all.contains(where: \.loading) }
+
+    func start() { _ = all }
+
+    /// Checks the token against the service, then keeps the connection (a new one, or `id` replaced).
+    @discardableResult
+    func save(id: UUID?, provider: PipelineConnection.Provider, url raw: String, token: String) async throws -> PipelineConnection {
+        guard let base = PipelineConnection.normalize(raw) else {
+            throw GitLabError(message: raw.lowercased().hasPrefix("http://") ? "Use https://: the token would travel unencrypted." : "That is not a URL.")
+        }
+        var c = PipelineConnection(provider: provider, url: base.absoluteString, tokenID: UUID())
+        if let id { c.id = id }
+        let t = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let client = c.client(token: t) else { throw GitLabError(message: "That is not a URL.") }
+        try await client.verify()
+        // The new token goes to its own entry first; the old store keeps reading the old entry, so it never
+        // sees the new token, and a failed write leaves the connection as it was.
+        try KeychainStore.set(t, for: c.tokenKey)
+        let old = connections.first { $0.id == c.id }
+        stores[c.id]?.retire(); stores[c.id] = nil
+        if let i = connections.firstIndex(where: { $0.id == c.id }) { connections[i] = c } else { connections.append(c) }
+        save()
+        if let old, old.tokenKey != c.tokenKey { KeychainStore.remove(old.tokenKey) }
+        _ = store(c.id)
+        return c
+    }
+
+    func remove(_ id: UUID) {
+        guard let c = connections.first(where: { $0.id == id }) else { return }
+        KeychainStore.remove(c.tokenKey)
+        UserDefaults.standard.removeObject(forKey: "sidra.pipelines.seenFailed.\(id.uuidString)")
+        stores[id]?.retire(); stores[id] = nil
+        connections.removeAll { $0.id == id }
+        save()
     }
 }

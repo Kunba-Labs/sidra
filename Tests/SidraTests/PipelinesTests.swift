@@ -65,4 +65,69 @@ final class PipelinesTests: XCTestCase {
         XCTAssertEqual(projects.map(\.group), ["spqr", "acme"])
         XCTAssertNotNil(projects[0].last_activity_at)
     }
+
+    // MARK: GitHub
+
+    func testGitHubStatusesMapToPipelineStatuses() {
+        XCTAssertEqual(GitHubClient.status("in_progress", nil), "running")
+        XCTAssertEqual(GitHubClient.status("queued", nil), "pending")
+        XCTAssertEqual(GitHubClient.status("completed", "success"), "success")
+        XCTAssertEqual(GitHubClient.status("completed", "failure"), "failed")
+        XCTAssertEqual(GitHubClient.status("completed", "timed_out"), "failed")
+        XCTAssertEqual(GitHubClient.status("completed", "cancelled"), "canceled")
+        XCTAssertEqual(GitHubClient.status("completed", "skipped"), "skipped")
+    }
+
+    func testGitHubLogGroupsAndErrors() {
+        let raw = """
+        2026-11-17T10:00:00.0000000Z ##[group]Run actions/checkout@v4
+        2026-11-17T10:00:01.0000000Z Syncing repository
+        2026-11-17T10:00:02.0000000Z ##[endgroup]
+        2026-11-17T10:00:03.0000000Z ##[group]Run swift test
+        2026-11-17T10:00:04.0000000Z Test Suite passed
+        2026-11-17T10:00:05.0000000Z ##[error]Process completed with exit code 1.
+        2026-11-17T10:00:06.0000000Z ##[endgroup]
+        """
+        let log = JobLog.parseGitHub(raw)
+        let named = log.sections.filter { !$0.name.isEmpty }
+        XCTAssertEqual(named.map(\.title), ["Run actions/checkout@v4", "Run swift test"])
+        XCTAssertEqual(named[0].lines.map(\.text), ["Syncing repository"])   // timestamps off
+        XCTAssertTrue(named[1].lines.last?.isError == true)
+        XCTAssertEqual(named[1].lines.last?.text, "Process completed with exit code 1.")
+        XCTAssertEqual(log.failingSectionID, named[1].id)
+    }
+
+    func testConnectionURLsAndTitles() {
+        XCTAssertEqual(PipelineConnection.normalize("github.example.com/api/v3/")?.absoluteString, "https://github.example.com")
+        XCTAssertNil(PipelineConnection.normalize("http://gitlab.example.com"), "the token never goes over plain HTTP")
+        let hub = PipelineConnection(provider: .github, url: "https://github.com")
+        XCTAssertTrue(hub.isHosted)
+        XCTAssertEqual(hub.title, "GitHub")
+        XCTAssertEqual((hub.client(token: "t") as? GitHubClient)?.api.absoluteString, "https://api.github.com")
+        let ghe = PipelineConnection(provider: .github, url: "https://github.example.com")
+        XCTAssertEqual(ghe.title, "github.example.com")
+        XCTAssertEqual((ghe.client(token: "t") as? GitHubClient)?.api.absoluteString, "https://github.example.com/api/v3")
+        XCTAssertEqual(PipelineConnection(provider: .gitlab, url: "https://gitlab.com").title, "GitLab")
+    }
+
+    func testGitHubNestedGroupsResumeTheParent() {
+        let raw = "##[group]Outer\nfirst\n##[group]Inner\ninner line\n##[endgroup]\nback in outer\n##[endgroup]\nafter"
+        let log = JobLog.parseGitHub(raw)
+        let outer = log.sections.first { $0.title == "Outer" }
+        XCTAssertEqual(outer?.lines.map(\.text), ["first", "back in outer"])
+        XCTAssertEqual(log.sections.first { $0.title == "Inner" }?.lines.map(\.text), ["inner line"])
+        XCTAssertEqual(log.sections.last?.lines.map(\.text), ["after"])
+    }
+
+    func testGitHubPollsRecentAndRotatesTheRest() {
+        let projects = (0..<60).map { i in
+            GitLabProject(id: i, name: "r\(i)", path_with_namespace: "o/r\(i)", web_url: "", avatar_url: nil,
+                          namespace: .init(id: 1, kind: "user", full_path: "o"), last_activity_at: Date(timeIntervalSince1970: Double(1000 - i)))
+        }
+        let gh = GitHubClient(web: URL(string: "https://github.com")!, token: "t")
+        let r0 = gh.pollSet(projects, round: 0).map(\.id), r1 = gh.pollSet(projects, round: 1).map(\.id)
+        XCTAssertEqual(Array(r0.prefix(30)), Array(0..<30))          // the 30 most recent every round
+        XCTAssertEqual(Set(r0.dropFirst(30)), Set(30..<50))
+        XCTAssertEqual(Set(r1.dropFirst(30)), Set((50..<60).map { $0 } + (30..<40).map { $0 }))   // the rest in turn
+    }
 }

@@ -35,7 +35,7 @@ enum NewTabKind: String, CaseIterable, Identifiable {
         case .herdr: "Your coding agents in herdr on another machine. Spaces and agents show as tabs."
         case .ssh: "A terminal on a machine you reach over SSH, with mosh when the host has it."
         case .theasa: "The pulse of your Claude Code agents, from a Theasa server you run."
-        case .pipelines: "GitLab pipelines of your projects, with the log of each failed job."
+        case .pipelines: "GitLab or GitHub pipelines of your projects, with the log of each failed job."
         case .hackertab: "Hacker News, comments first."
         case .chess: "A game against Sidra's own engine, on this device."
         }
@@ -48,7 +48,7 @@ extension AppModel {
         switch kind {
         case .herdr: sheet = .herdr
         case .theasa: sheet = .theasa
-        case .pipelines: openPipelines()
+        case .pipelines: sheet = .pipelines   // the saved connections, or a form for the first
         case .hackertab: openSingle(.hackertab)
         case .chess: openSingle(.chess)
         case .ssh: break   // NewTabSheet shows the host list
@@ -103,8 +103,7 @@ struct NewTabSheet: View {
         }
         // A kind with its own sheet replaces this one; the rest open a tab and close it.
         switch kind {
-        case .herdr, .theasa: app.startTab(kind)
-        case .pipelines where !PipelinesStore.shared.connected: app.startTab(kind)
+        case .herdr, .theasa, .pipelines: app.startTab(kind)
         default: dismiss(); app.startTab(kind)
         }
     }

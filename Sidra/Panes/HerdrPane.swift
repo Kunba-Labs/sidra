@@ -361,23 +361,24 @@ struct HerdrTitleCounts: View {
         let monitors = MuxMonitors.shared
         let live = live
         let working = monitors.count(.working, live: live)
-        let pipelines = PipelinesStore.shared.running.count   // their own count: a pipeline is no agent
-        let failed = PipelinesStore.shared.unseenFailedCount   // only failures you have not opened yet
+        let hub = PipelinesHub.shared                       // every connection: GitLab, GitHub, self-hosted
+        let pipelines = hub.runningCount                    // their own count: a pipeline is no agent
+        let failed = hub.unseenFailedCount                  // only failures you have not opened yet
         // Waiting agents keep the menu reachable even with nothing working and GitLab off (their count is on the Theasa pill).
         let waiting = monitors.count(.blocked, live: live) > 0
-        if working > 0 || pipelines > 0 || PipelinesStore.shared.connected || waiting {
+        if working > 0 || pipelines > 0 || hub.connected || waiting {
             Button { open.toggle() } label: {
                 HStack(spacing: 8) {
                     // No separate waiting pill: the Theasa pill shows "N waiting" (2026-11-14).
                     // One working pill for agents and pipelines; its dropdown has a tab for each. With nothing
                     // running but GitLab connected, just the pipelines icon opens the same dropdown (no "0 working").
-                    if working + pipelines > 0 || PipelinesStore.shared.connected || waiting {
+                    if working + pipelines > 0 || hub.connected || waiting {
                         HStack(spacing: 6) {
                             if working + pipelines > 0 {
                                 HerdrStatusIcon(status: .working, size: 10)
                                 Text("\(working + pipelines)").font(SidraFont.ui(12.5, weight: .bold)).foregroundStyle(SidraColor.text)
                                 Text("working").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
-                            } else if PipelinesStore.shared.connected {
+                            } else if hub.connected {
                                 ProcessIcon(.pipelines, size: 14)
                             } else {
                                 HerdrStatusIcon(status: .blocked, size: 9)
@@ -422,13 +423,13 @@ struct MuxAgentsMenu: View {
 
     var body: some View {
         let sources = sources
-        let pipes = PipelinesStore.shared
+        let pipes = PipelinesHub.shared
         let shown = section ?? (sources.isEmpty && pipes.connected ? .pipelines : .agents)
         VStack(alignment: .leading, spacing: 6) {
             if pipes.connected {
                 HStack(spacing: 4) {
                     sectionButton("Agents", icon: .agent, count: sources.reduce(0) { $0 + $1.snapshot.agents.count }, on: shown == .agents) { section = .agents }
-                    sectionButton("Pipelines", icon: .pipelines, count: pipes.running.count, on: shown == .pipelines) { section = .pipelines }
+                    sectionButton("Pipelines", icon: .pipelines, count: pipes.runningCount, on: shown == .pipelines) { section = .pipelines }
                     Spacer()
                 }
                 .padding(.horizontal, 4)
@@ -463,15 +464,30 @@ struct MuxAgentsMenu: View {
         .accessibilityIdentifier("section-\(title.lowercased())")
     }
 
-    /// Recent pipelines, finished ones too, grouped by namespace like the pipelines TUI, five per group.
+    /// Recent pipelines of every connection, finished ones too: per connection (when there are several),
+    /// grouped by namespace like the pipelines TUI, five per group.
     @ViewBuilder private var allPipelines: some View {
-        let store = PipelinesStore.shared
-        let groups = Dictionary(grouping: store.pipelines) { store.projects[$0.project_id]?.group ?? "?" }
-            .sorted { $0.value[0].updated_at > $1.value[0].updated_at }
-        if store.pipelines.isEmpty {
-            Text(store.loading ? "Reading pipelines…" : store.error ?? "No pipelines yet.")
+        let hub = PipelinesHub.shared
+        let stores = hub.all.filter(\.connected)
+        if stores.allSatisfy({ $0.pipelines.isEmpty }) {
+            Text(hub.loading ? "Reading pipelines…" : stores.compactMap(\.error).first ?? "No pipelines yet.")
                 .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted).padding(10)
         }
+        ForEach(stores, id: \.connection.id) { store in
+            if stores.count > 1, !store.pipelines.isEmpty {
+                HStack(spacing: 8) {
+                    ProviderMark(provider: store.connection.provider, size: 14)
+                    Text(store.connection.title).font(SidraFont.ui(12, weight: .bold)).foregroundStyle(SidraColor.text)
+                }
+                .padding(.horizontal, 10).padding(.top, 12)
+            }
+            pipelineGroups(store)
+        }
+    }
+
+    @ViewBuilder private func pipelineGroups(_ store: PipelinesStore) -> some View {
+        let groups = Dictionary(grouping: store.pipelines) { store.projects[$0.project_id]?.group ?? "?" }
+            .sorted { $0.value[0].updated_at > $1.value[0].updated_at }
         ForEach(groups, id: \.key) { name, list in
             HStack(spacing: 8) {
                 PipelineAvatar(image: store.avatar(group: name), name: name, size: 16)
@@ -482,7 +498,7 @@ struct MuxAgentsMenu: View {
             .padding(.horizontal, 10).padding(.top, 10).padding(.bottom, 2)
             ForEach(list.prefix(5)) { p in
                 let project = store.projects[p.project_id]?.name ?? "project \(p.project_id)"
-                Button { close(); app.openPipelines(reveal: p.id) } label: {
+                Button { close(); app.openPipelines(connection: store.connection.id, reveal: p.id) } label: {
                     HStack(spacing: 9) {
                         PipelineStatusIcon(status: p.status, size: 14)
                         PipelineAvatar(image: store.avatar(project: p.project_id), name: project, size: 14)

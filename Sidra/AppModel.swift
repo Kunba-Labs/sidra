@@ -9,8 +9,10 @@ import SidraSSH
 @MainActor
 @Observable
 final class AppModel {
-    enum Sheet: Identifiable {
+    enum Sheet: Identifiable, Hashable {
         case settings, shortcuts, herdr, theasa, pipelines, newTab
+        /// One Pipelines connection's sheet: replace its token, or disconnect.
+        case pipelinesEdit(UUID)
         var id: Self { self }
     }
 
@@ -121,7 +123,7 @@ final class AppModel {
             return Pane(kind: kind, title: "Theasa", project: host ?? c?.name)
         case .hackertab: return Pane(kind: kind, title: "HackerTab", project: nil)
         case .chess: return Pane(kind: kind, title: "Chess", project: nil)
-        case .pipelines: return Pane(kind: kind, title: "Pipelines", project: PipelinesStore.shared.host)
+        case .pipelines(let id): return Pane(kind: kind, title: "Pipelines", project: PipelinesHub.shared.connection(id)?.title)
         }
     }
 

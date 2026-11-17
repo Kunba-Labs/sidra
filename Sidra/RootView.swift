@@ -58,6 +58,7 @@ struct RootView: View {
             case .herdr: HerdrConnectSheet()
             case .theasa: TheasaConnectSheet()
             case .pipelines: PipelinesConnectSheet()
+            case .pipelinesEdit(let id): PipelinesConnectSheet(editing: id)
             case .newTab: NewTabSheet()
             } }
             // Handed on explicitly: on a Mac (Designed for iPad) a sheet's content did not inherit them, and
@@ -76,7 +77,7 @@ struct RootView: View {
             TheasaStore.shared.openFromLaunchArguments(app)
             store.tabDetail = { tab in AnyView(TabActivity(tab: tab)) }
             store.attention = { [app] in MuxMonitors.shared.count(.blocked, live: Set(app.allWorkspaces.flatMap { $0.tabs.flatMap { $0.panes.map(\.id) } })) }
-            PipelinesStore.shared.start()
+            PipelinesHub.shared.start()
             if UserDefaults.standard.bool(forKey: "hackertab.open") { app.openSingle(.hackertab) }
         }
     }

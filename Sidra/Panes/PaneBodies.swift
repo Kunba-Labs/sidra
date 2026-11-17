@@ -23,13 +23,14 @@ enum PaneBodies {
             } footer: {
                 HerdrFooter(pane: pane)
             }
-        case .pipelines:
+        case .pipelines(let id):
+            let store = PipelinesHub.shared.store(id)
             return PaneBody {
-                PipelinesPane(pane: pane)
+                if let store { PipelinesPane(pane: pane, store: store) } else { PipelinesNoConnection() }
             } extra: {
-                PipelinesConnectionButton()
+                PipelinesConnectionButton(connection: store?.connection)
             } footer: {
-                PipelinesFooter()
+                PipelinesFooter(store: store)
             }
         case .hackertab:
             return PaneBody {
