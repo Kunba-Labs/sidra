@@ -28,6 +28,7 @@ struct SidraApp: App {
         }
         #if os(macOS)
         .defaultSize(width: 1440, height: 920)
+        .windowStyle(.hiddenTitleBar)   // Sidra's tab bar is the title bar; the traffic lights sit in it (WindowChrome)
         #endif
         .commands {
             WorkspaceCommands(app: app)

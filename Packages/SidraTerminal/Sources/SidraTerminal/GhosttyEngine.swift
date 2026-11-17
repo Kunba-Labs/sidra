@@ -28,6 +28,8 @@ public struct TerminalCursor: Equatable {
     public var y: Int
     public var style: Style
     public var visible: Bool
+    /// The program asked for a blinking cursor (DECSCUSR 1, 3, 5).
+    public var blinking = false
 }
 
 public struct TerminalFrame {
@@ -249,7 +251,7 @@ public final class GhosttyEngine {
             case GHOSTTY_CURSOR_STYLE_BLOCK_HOLLOW: style = .hollow
             default: style = .block
             }
-            cursor = TerminalCursor(x: Int(cur.viewport_x), y: Int(cur.viewport_y), style: style, visible: cur.visible)
+            cursor = TerminalCursor(x: Int(cur.viewport_x), y: Int(cur.viewport_y), style: style, visible: cur.visible, blinking: cur.blinking)
         }
         _ = ghostty_render_state_clean(render)
         return TerminalFrame(cols: cols, rows: outRows, cursor: cursor, background: bg, foreground: fg)

@@ -55,6 +55,7 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
                 guard let self else { return }
                 await MainActor.run {
                     self.engine.feed(chunk)
+                    self.outputArrived()
                     if self.searching { self.refreshSearch() } else { self.redrawGate.request { [weak self] in self?.needsDisplay = true } }
                 }
             }
@@ -62,14 +63,59 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
     }
 
     required init?(coder: NSCoder) { fatalError() }
-    deinit { readTask?.cancel(); rotTimer?.invalidate() }
+    deinit { readTask?.cancel(); rotTimer?.invalidate(); blinkTimer?.invalidate(); windowObservers.forEach(NotificationCenter.default.removeObserver) }
 
     public override var isFlipped: Bool { true }
     public override var isOpaque: Bool { true }
     public override var acceptsFirstResponder: Bool { true }
     public override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-    public override func becomeFirstResponder() -> Bool { needsDisplay = true; return super.becomeFirstResponder() }
-    public override func resignFirstResponder() -> Bool { needsDisplay = true; return super.resignFirstResponder() }
+    public override func becomeFirstResponder() -> Bool { defer { restartBlink() }; return super.becomeFirstResponder() }
+    public override func resignFirstResponder() -> Bool { defer { restartBlink() }; return super.resignFirstResponder() }
+
+    // MARK: Cursor blink
+
+    /// Output may move the cursor: show it solid and start the blink phase over. (Whether to blink at
+    /// all is read in draw, from the frame it already has: asking the engine here would clear its dirty flag.)
+    private func outputArrived() {
+        blinkOff = false
+        blinkTimer?.fireDate = Date().addingTimeInterval(0.6)
+    }
+
+    /// Off half of a blink. Reset to on by every key, output and focus change, so a moving cursor shows.
+    private var blinkOff = false
+    private var blinkTimer: Timer?
+    private var windowObservers: [NSObjectProtocol] = []
+
+    /// The one rule restartBlink and draw share, so they cannot disagree and loop.
+    private func shouldBlink(_ f: TerminalFrame) -> Bool {
+        isFocused && f.cursor?.blinking == true && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+    }
+
+    /// Blinks only while focused and asked for by the program; otherwise the cursor stays on.
+    private func restartBlink() {
+        blinkTimer?.invalidate(); blinkTimer = nil
+        blinkOff = false
+        needsDisplay = true
+        guard let f = frame_, shouldBlink(f) else { return }
+        blinkTimer = Timer.scheduledTimer(withTimeInterval: 0.6, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { guard let self else { return }; self.blinkOff.toggle(); self.needsDisplay = true }
+        }
+    }
+
+    /// The window's key state decides filled or hollow: redraw when it changes.
+    public override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        windowObservers.forEach(NotificationCenter.default.removeObserver)
+        windowObservers = []
+        guard let window else { blinkTimer?.invalidate(); blinkTimer = nil; return }
+        for name in [NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification] {
+            windowObservers.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.restartBlink() }
+            })
+        }
+        restartBlink()
+        if window != nil { DispatchQueue.main.async { [weak self] in self?.applyFocus() } }
+    }
     private var isFocused: Bool { window?.firstResponder === self && window?.isKeyWindow == true }
 
     /// The pane has focus. Applied now if the view is in a window, else when it enters one.
@@ -80,10 +126,7 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
         if wantsFocus, window.firstResponder !== self { window.makeFirstResponder(self) }
         else if !wantsFocus, window.firstResponder === self { window.makeFirstResponder(nil) }
     }
-    public override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        if window != nil { DispatchQueue.main.async { [weak self] in self?.applyFocus() } }
-    }
+
 
     private func measureCell() {
         let size = ("M" as NSString).size(withAttributes: [.font: font])
@@ -314,6 +357,7 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
         guard !bytes.isEmpty else { return }
         io.write(bytes)
         engine.scrollToBottom()
+        if blinkTimer != nil { restartBlink() }   // typing holds the cursor on
     }
 
     public func pasteText(_ text: String) {
@@ -397,6 +441,10 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
         guard let ctx = NSGraphicsContext.current?.cgContext else { return }
         if let f = engine.frame(force: frame_ == nil) { frame_ = f }
         guard let frame = frame_ else { NSColor(SidraColor.pane).setFill(); bounds.fill(); return }
+        // The program turned blinking on or off (DECSCUSR): start or stop the timer after this pass.
+        if shouldBlink(frame) != (blinkTimer != nil) {
+            DispatchQueue.main.async { [weak self] in self?.restartBlink() }
+        }
         ctx.setFillColor(NSColor(rgb: frame.background).cgColor)
         ctx.fill(bounds)
         let defaultFg = NSColor(rgb: frame.foreground)
@@ -455,7 +503,7 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
             ctx.stroke(r.insetBy(dx: 0.75, dy: 0.75))
         }
 
-        if lostAt == nil, let cur = frame.cursor, cur.visible, cur.y >= 0, cur.y < frame.rows.count {
+        if lostAt == nil, !blinkOff, let cur = frame.cursor, cur.visible, cur.y >= 0, cur.y < frame.rows.count {
             let r = CGRect(x: CGFloat(cur.x) * cellSize.width, y: CGFloat(cur.y) * cellSize.height, width: cellSize.width, height: cellSize.height)
             let color = NSColor(SidraColor.text).cgColor
             ctx.setFillColor(color); ctx.setStrokeColor(color)

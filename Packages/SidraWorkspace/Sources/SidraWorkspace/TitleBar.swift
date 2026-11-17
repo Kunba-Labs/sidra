@@ -40,6 +40,11 @@ struct TitleBar<Trailing: View>: View {
             .fixedSize()
         }
         .padding(.horizontal, 16)
+        #if os(macOS)
+        // The traffic lights sit at the bar's left (WindowChrome); the empty bar drags the window.
+        .padding(.leading, WindowChrome.trafficLightsWidth)
+        .background { Color.clear.contentShape(Rectangle()).gesture(WindowDragGesture()).onTapGesture(count: 2) { WindowChrome.zoomOnDoubleClick() } }
+        #endif
         .frame(height: SidraSpace.titleBarHeight)
     }
 

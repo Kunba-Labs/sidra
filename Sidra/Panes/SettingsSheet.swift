@@ -122,7 +122,8 @@ struct HostEditor: View {
             field("Alias", $profile.alias)
             HStack {
                 field("Host", $profile.host)
-                if !local { field("Port", Binding(get: { String(profile.port) }, set: { profile.port = Int($0) ?? 22 })).frame(width: 110) }
+                // Shown for localhost too: a port other than 22 makes it SSH (a tunnel or a second sshd).
+                field("Port", Binding(get: { String(profile.port) }, set: { profile.port = Int($0) ?? 22 })).frame(width: 110)
             }
             if local {
                 field("Run on connect (e.g. tmux new -A -s sidra)", $profile.startupCommand)

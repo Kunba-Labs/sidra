@@ -90,11 +90,11 @@ public enum SSHConnectionState: Equatable, Sendable {
 }
 
 public extension SSHHostProfile {
-    /// On a Mac, localhost is this Mac: Sidra runs its shell and commands directly, without SSH.
-    /// ponytail: SSH to localhost as another user is not possible this way; use the machine's LAN name.
+    /// On a Mac, localhost on port 22 is this Mac: Sidra runs its shell and commands directly, without
+    /// SSH. Any other port is SSH as usual, for a tunnel or a second sshd forwarded to localhost.
     var isThisMac: Bool {
         #if os(macOS)
-        ["localhost", "127.0.0.1", "::1"].contains(host.trimmingCharacters(in: .whitespaces).lowercased())
+        port == 22 && ["localhost", "127.0.0.1", "::1"].contains(host.trimmingCharacters(in: .whitespaces).lowercased())
         #else
         false
         #endif

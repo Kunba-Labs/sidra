@@ -9,6 +9,8 @@ final class LocalShellTests: XCTestCase {
         XCTAssertTrue(p.isThisMac)
         var q = p; q.host = "devbox.local"
         XCTAssertFalse(q.isThisMac)
+        var tunnel = p; tunnel.port = 2223   // a forwarded port is SSH
+        XCTAssertFalse(tunnel.isThisMac)
     }
 
     func testRunCollectsOutputAndExitCode() async throws {

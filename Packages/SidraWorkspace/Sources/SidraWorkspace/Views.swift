@@ -46,6 +46,8 @@ public struct WorkspaceView<TitleTrailing: View>: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     /// The top bar hidden into the floating orb, until Show bar; kept across launches.
     @AppStorage("sidra.barHidden") private var barHidden = false
+    /// On the Mac the bar is the window's title bar and holds the traffic lights: it never hides.
+    private var barIsHidden: Bool { barHidden && !Platform.isMac }
 
     public init(store: WorkspaceStore, provider: PaneProvider,
                 newTabMenu: AnyView, hostMenu: AnyView? = nil, emptyHero: AnyView? = nil, compactTrailing: AnyView? = nil, machine: AnyView? = nil,
@@ -79,9 +81,9 @@ public struct WorkspaceView<TitleTrailing: View>: View {
     private var regular: some View {
         VStack(spacing: 0) {
             // The design's status bar is 26 pt, iPadOS 26's safe area 32: the title bar's own 11 pt of air absorbs the rest.
-            if !barHidden {
-                TitleBar(store: store, newTabMenu: newTabMenu, hostMenu: hostMenu, onHide: { withAnimation(.easeOut(duration: 0.2)) { barHidden = true } }, machine: machine, trailing: titleTrailing)
-                    .padding(.top, -6)
+            if !barIsHidden {
+                TitleBar(store: store, newTabMenu: newTabMenu, hostMenu: hostMenu, onHide: Platform.isMac ? nil : { withAnimation(.easeOut(duration: 0.2)) { barHidden = true } }, machine: machine, trailing: titleTrailing)
+                    .padding(.top, Platform.isMac ? 0 : -6)
             }
             Group {
                 if let tab = store.activeTab, let root = tab.root {
@@ -95,11 +97,11 @@ public struct WorkspaceView<TitleTrailing: View>: View {
                 }
             }
             .padding(SidraSpace.workspaceInset)
-            .padding(.top, barHidden ? 8 : 0)
-            .environment(\.paneHeaderTrailingInset, barHidden ? 56 : 0)   // ponytail: every pane header, not only the one under the orb
+            .padding(.top, barIsHidden ? 8 : 0)
+            .environment(\.paneHeaderTrailingInset, barIsHidden ? 56 : 0)   // ponytail: every pane header, not only the one under the orb
         }
         .overlay {
-            if barHidden {
+            if barIsHidden {
                 FloatingOrb(store: store, newTabMenu: newTabMenu, pills: { titleTrailing(); if let machine { machine } }) { withAnimation(.easeOut(duration: 0.2)) { barHidden = false } }   // machine holds the ⌘ menu: keep it when the bar is hidden
             }
         }

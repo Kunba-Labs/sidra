@@ -16,6 +16,9 @@ struct SceneRoot: View {
         if let store {
             RootView()
                 .environment(store)
+                #if os(macOS)
+                .ignoresSafeArea(.container, edges: .top)   // the hidden title bar's strip belongs to Sidra's tab bar
+                #endif
                 .onAppear { app.workspace = store }
                 .onChange(of: scenePhase) { _, phase in 
                     if phase == .active { app.workspace = store; DataLayout.apply(); BusyPanes.shared.endGrace() }
@@ -51,8 +54,9 @@ private struct SceneProbe: NSViewRepresentable {
         private var done = false
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
-            guard !done, let id = window?.identifier?.rawValue else { return }
+            guard !done, let window, let id = window.identifier?.rawValue else { return }
             done = true
+            WindowChrome.install(on: window)
             let cb = resolved
             DispatchQueue.main.async { cb?(id) }
         }
