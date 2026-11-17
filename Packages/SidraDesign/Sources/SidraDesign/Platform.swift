@@ -156,14 +156,3 @@ public extension View {
         #endif
     }
 }
-
-public extension View {
-    /// Swipeable pages on iOS. ponytail: the Mac keeps TabView's own style; add arrow keys if the image viewer needs paging there.
-    func pagedTabs(showIndex: Bool) -> some View {
-        #if os(iOS)
-        tabViewStyle(.page(indexDisplayMode: showIndex ? .always : .never))
-        #else
-        self
-        #endif
-    }
-}

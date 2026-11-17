@@ -32,8 +32,9 @@ struct SettingsSheet: View {
                 .background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
             }
 
-            if show("Terminal", "engine", "libghostty", "SwiftTerm") { SectionLabel("Terminal") }
-            if show("Terminal engine", "libghostty", "SwiftTerm", "terminal") {
+            // The Mac always runs libghostty-vt: SwiftTerm is the iPad's fallback only.
+            if !Platform.isMac, show("Terminal", "engine", "libghostty", "SwiftTerm") { SectionLabel("Terminal") }
+            if !Platform.isMac, show("Terminal engine", "libghostty", "SwiftTerm", "terminal") {
                 SettingRow("Terminal engine", detail: "libghostty-vt is the default; SwiftTerm is the fallback", isDefault: app.terminalEngine == .ghostty, reset: { app.terminalEngine = .ghostty }) {
                     Picker("Engine", selection: $app.terminalEngine) {
                         Text("libghostty-vt").tag(TerminalEngineKind.ghostty)

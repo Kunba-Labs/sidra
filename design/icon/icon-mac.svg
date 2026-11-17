@@ -1,0 +1,21 @@
+<!-- Mac app icon: icon.svg inside Apple's macOS grid (824 pt rounded square on a 1024 canvas, soft shadow). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <clipPath id="tile"><rect x="100" y="100" width="824" height="824" rx="185"/></clipPath>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="#101614" filter="url(#shadow)"/>
+  <g clip-path="url(#tile)">
+    <g transform="translate(100 100) scale(0.8046875)">
+      <rect width="1024" height="1024" fill="#101614"/>
+      <path d="M40 182 A620 620 0 0 1 720 512 A620 620 0 0 1 40 182 Z" fill="#5ad6a0"/>
+      <path d="M720 512 A620 620 0 0 1 40 842 A620 620 0 0 1 720 512 Z" fill="#3cb883"/>
+      <path d="M76 199 L684 495" stroke="#2c9a6a" stroke-width="14" stroke-linecap="round"/>
+      <path d="M684 529 L76 825" stroke="#22835a" stroke-width="14" stroke-linecap="round"/>
+      <rect x="760" y="750" width="150" height="56" rx="16" fill="#e8c46a"/>
+    </g>
+  </g>
+  <rect x="100.5" y="100.5" width="823" height="823" rx="184.5" fill="none" stroke="#fff" stroke-opacity="0.08"/>
+</svg>

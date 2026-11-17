@@ -806,6 +806,8 @@ extension UIColor {
     }
 }
 
+#endif
+
 extension Array {
     subscript(safe i: Int) -> Element? { indices.contains(i) ? self[i] : nil }
 }
@@ -821,4 +823,3 @@ func terminalTextPresentation(_ text: String) -> String {
     if s.properties.isEmoji && !s.properties.isEmojiPresentation { return text + "\u{FE0E}" }
     return text
 }
-#endif

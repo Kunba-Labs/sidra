@@ -548,15 +548,28 @@ struct TheasaImageViewer: View {
                 Text(images.indices.contains(index) ? images[index].name : "").font(SidraFont.ui(14, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
                 Text("\(index + 1) of \(images.count)").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.dim)
                 Spacer()
+                #if os(macOS)
+                // No swipe on a Mac: arrow buttons and the ← → keys page through.
+                if images.count > 1 {
+                    Button("Previous", systemImage: "chevron.left") { index = max(0, index - 1) }
+                        .labelStyle(.iconOnly).buttonStyle(.sidraSecondary).keyboardShortcut(.leftArrow, modifiers: []).disabled(index == 0)
+                    Button("Next", systemImage: "chevron.right") { index = min(images.count - 1, index + 1) }
+                        .labelStyle(.iconOnly).buttonStyle(.sidraSecondary).keyboardShortcut(.rightArrow, modifiers: []).disabled(index >= images.count - 1)
+                }
+                #endif
                 Button("Done") { dismiss() }.buttonStyle(.sidraPrimary).keyboardShortcut(.cancelAction)
             }
             .padding(.horizontal, 16).frame(height: 52)
+            #if os(macOS)
+            if images.indices.contains(index) { ZoomableImage(src: images[index].src, id: images[index].id).id(images[index].id) }
+            #else
             TabView(selection: $index) {
                 ForEach(Array(images.enumerated()), id: \.element.id) { i, a in
                     ZoomableImage(src: a.src, id: a.id).tag(i)
                 }
             }
-            .pagedTabs(showIndex: images.count > 1)
+            .tabViewStyle(.page(indexDisplayMode: images.count > 1 ? .always : .never))
+            #endif
         }
         .background(SidraColor.ground.ignoresSafeArea())
         .accessibilityIdentifier("theasa-viewer")

@@ -1,6 +1,8 @@
-#if os(iOS)   // macOS: MacTerminal.swift
-import UIKit
+import Foundation
 import SidraDesign
+#if os(iOS)
+import UIKit
+#endif
 
 /// Image paths printed in a terminal (Claude Code's `[image] /tmp/…/shot.png` lines), found on screen so
 /// Sidra can show a thumbnail beside each one. Programs wrap long paths onto the next row, often under a
@@ -101,6 +103,7 @@ public enum TerminalLinks {
 }
 
 /// Thumbnails at the terminal's right edge, one per image path on screen; a tap opens the image.
+#if os(iOS)   // thumbnails: iOS only for now
 @MainActor final class TerminalThumbnails {
     private weak var host: UIView?
     private var views: [String: UIImageView] = [:]

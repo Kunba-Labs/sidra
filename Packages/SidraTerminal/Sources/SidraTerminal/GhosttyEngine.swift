@@ -256,7 +256,9 @@ public final class GhosttyEngine {
     }
 
     /// Encodes a key for the host, honouring the terminal's current key modes.
-    public func encode(_ key: TerminalKey) -> Data {
+    /// `shift`, `alt` and `ctrl` add modifiers to a named key (Option-Left, Ctrl-F5); the encoder writes
+    /// them in whatever keyboard mode the program asked for (xterm, kitty).
+    public func encode(_ key: TerminalKey, shift: Bool = false, alt: Bool = false, ctrl: Bool = false) -> Data {
         guard let term, let keyEvent, let encoder else { return Data() }
         _ = ghostty_key_encoder_set_from_terminal(encoder, term)
         _ = ghostty_key_event_set_action(keyEvent, GHOSTTY_KEY_ACTION_PRESS)
@@ -290,6 +292,9 @@ public final class GhosttyEngine {
             utf8 = Data(String(c).utf8)
             ghosttyKey = letterKey(c)
         }
+        if shift { mods |= GhosttyMods(GHOSTTY_MODS_SHIFT) }
+        if alt { mods |= GhosttyMods(GHOSTTY_MODS_ALT) }
+        if ctrl { mods |= GhosttyMods(GHOSTTY_MODS_CTRL) }
         _ = ghostty_key_event_set_key(keyEvent, ghosttyKey)
         _ = ghostty_key_event_set_mods(keyEvent, mods)
         if let scalar = utf8.isEmpty ? nil : String(decoding: utf8, as: UTF8.self).unicodeScalars.first {

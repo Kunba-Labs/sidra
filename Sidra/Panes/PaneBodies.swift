@@ -75,6 +75,6 @@ struct TerminalFooter: View {
             if app.hosts.host(id)?.mosh != nil { FooterChip([.init("mosh-compatible", color: SidraColor.jade)]) }
         }
         Spacer()
-        FooterItem(app.terminalEngine == .ghostty ? "libghostty-vt" : "SwiftTerm")
+        FooterItem(app.terminalEngine == .ghostty || Platform.isMac ? "libghostty-vt" : "SwiftTerm")
     }
 }
