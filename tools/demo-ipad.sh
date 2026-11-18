@@ -26,7 +26,6 @@ xcodebuild build -project "$SRC/Sidra.xcodeproj" -scheme Sidra -configuration De
   -skipPackagePluginValidation -skipMacroValidation -allowProvisioningUpdates \
   -authenticationKeyPath "$KEY" -authenticationKeyID "$KEY_ID" -authenticationKeyIssuerID "$ISSUER" \
   PRODUCT_BUNDLE_IDENTIFIER=$BUNDLE SIDRA_DEMO=YES ENABLE_USER_SCRIPT_SANDBOXING=NO \
-  'SWIFT_ACTIVE_COMPILATION_CONDITIONS=DEBUG SIDRA_DEMO_ALWAYS' \
   > "$ROOT/build.log" 2>&1 || { grep -E "error:|\*\* BUILD" "$ROOT/build.log" | head -20; exit 1; }
 
 APP=$ROOT/dd/Build/Products/Debug-iphoneos/Sidra.app
