@@ -38,6 +38,7 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
         engine = GhosttyEngine(cols: 80, rows: 24)
         super.init(frame: .zero)
         measureCell()
+        registerForDraggedTypes([.fileURL, .string, .png, .tiff])
         // Settings and ⌘+ ⌘− ⌘0 change the font for every pane at once.
         fontObserver = NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.applyFontSetting() }
@@ -436,6 +437,36 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
             guard let path = await upload(data) else { return }
             if let self, self.window?.firstResponder === self { self.pasteText(path) } else { Platform.pasteString = path }
         }
+    }
+
+    // MARK: Drag and drop
+
+    // Files from Finder type their paths, shell-quoted and space-separated, as Terminal and Ghostty do;
+    // text types itself; an image with no file (from a browser) goes the way of a pasted image.
+    // ponytail: the path is this Mac's; upload the file instead when a remote host needs it
+    public override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation { lost ? [] : .copy }
+
+    public override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let pb = sender.draggingPasteboard
+        window?.makeFirstResponder(self)
+        if let urls = pb.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
+            pasteText(urls.map { Self.shellQuoted($0.path) }.joined(separator: " ") + " ")
+            return true
+        }
+        if let text = pb.string(forType: .string), !text.isEmpty { pasteText(text); return true }
+        if let upload = onPasteImage, let image = NSImage(pasteboard: pb), let tiff = image.tiffRepresentation,
+           let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
+            Task { @MainActor [weak self] in if let path = await upload(png) { self?.pasteText(path) } }
+            return true
+        }
+        return false
+    }
+
+    /// A path as one shell word: left bare when it is only safe characters, else in single quotes.
+    nonisolated static func shellQuoted(_ path: String) -> String {
+        let safe = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/._-+,:@%")
+        if !path.isEmpty, path.unicodeScalars.allSatisfy(safe.contains) { return path }
+        return "'" + path.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 
     public func validateMenuItem(_ item: NSMenuItem) -> Bool {

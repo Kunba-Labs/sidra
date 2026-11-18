@@ -244,6 +244,7 @@ final class TerminalLinksTests: XCTestCase {
     }
 }
 
+#if canImport(UIKit)   // the iPad view
 @MainActor final class TerminalLostTests: XCTestCase {
     func testDitherRotGrowsFromNothing() {
         let cells = (0..<80).flatMap { x in (0..<24).map { (x, $0) } }
@@ -253,3 +254,4 @@ final class TerminalLinksTests: XCTestCase {
         XCTAssertLessThan(blocks(1), cells.count * 9 / 10)   // text stays readable between patches
     }
 }
+#endif
