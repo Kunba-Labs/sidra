@@ -55,7 +55,7 @@ final class VoiceInput {
     /// Whisper only once its model is on disk; Apple otherwise.
     private var activeEngine: Engine { engine == .whisper && whisperOnDisk ? .whisper : .apple }
 
-    private let audio = AVAudioEngine()
+    private var audio = AVAudioEngine()
     /// 16 kHz mono, written from the microphone's thread, so a buffer on its way when recording stops is
     /// not dropped. Whisper reads all of it; the spectrogram its newest frames.
     private let audioStore = SampleStore()
@@ -280,9 +280,14 @@ final class VoiceInput {
         try s.setCategory(.record, mode: .measurement, options: [.duckOthers])
         try s.setActive(true)
         #endif
-        MicInputs.apply(to: audio)   // the microphone picked in Settings → Voice, before the format is read
+        #if os(macOS)
+        audio = AVAudioEngine()   // nothing carried over from the last device
+        #endif
+        MicInputs.apply(to: audio)   // the microphone picked in Settings → Voice or on the card
         let input = audio.inputNode
-        let format = input.outputFormat(forBus: 0)
+        // The device's own format: after the device is switched, the node's output format still describes
+        // the default device, and a tap in that format gets nothing (seen with a 2-channel webcam mic).
+        let format = input.inputFormat(forBus: 0)
         guard let mono16k = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16_000, channels: 1, interleaved: false),
               let to16k = AVAudioConverter(from: format, to: mono16k) else { throw VoiceError.audioFormat }
         let toApple = appleFormat.flatMap { AVAudioConverter(from: format, to: $0) }
