@@ -30,5 +30,26 @@ final class TabKeysUITests: XCTestCase {
         app.typeKey(XCUIKeyboardKey.tab.rawValue, modifierFlags: .control)
         sleep(1)
         XCTAssertNotEqual(tabs.firstMatch.label, start, "Ctrl-Tab leaves the editor's tab")
+        }
+
+    /// Cmd-[ and Cmd-] walk the tabs from a focused terminal too (in an editor they indent).
+    func testCmdBracketsWalkTabsFromATerminal() {
+        let app = XCUIApplication()
+        app.launchArguments = ["-sidra.noAutoFocus", "-sidra.freshWorkspace"]
+        app.launch()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        XCTAssertTrue(app.buttons["blinky-rs code"].waitForExistence(timeout: 10))
+        let tabs = app.buttons.matching(NSPredicate(format: "isSelected == true"))
+        app.typeKey(XCUIKeyboardKey.shift.rawValue, modifierFlags: [])   // the Simulator drops the first key after launch
+        app.typeKey("t", modifierFlags: .command)   // a VM terminal tab, focused
+        sleep(4)
+        app.typeKey(XCUIKeyboardKey.shift.rawValue, modifierFlags: [])
+        let term = tabs.firstMatch.label
+        app.typeKey("[", modifierFlags: .command)
+        sleep(1)
+        XCTAssertNotEqual(tabs.firstMatch.label, term, "Cmd-[ leaves the terminal's tab")
+        app.typeKey("]", modifierFlags: .command)
+        sleep(1)
+        XCTAssertEqual(tabs.firstMatch.label, term, "Cmd-] comes back")
     }
 }
