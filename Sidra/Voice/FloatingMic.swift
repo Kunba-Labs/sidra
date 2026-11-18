@@ -56,7 +56,10 @@ struct MicKey: View {
         .contentShape(Circle())
         .gesture(DragGesture(minimumDistance: 0)
             .onChanged { v in
-                if !holding { holding = true; voice.press(in: window) }
+                if !holding {
+                    holding = true
+                    if voice.phase == .transcribing { voice.cancel() } else { voice.press(in: window) }
+                }
                 if voice.phase == .recording { voice.cancelling = v.translation.width < -70 }
             }
             .onEnded { _ in holding = false; voice.release(cancel: voice.cancelling) })
@@ -70,9 +73,11 @@ struct MicKey: View {
 /// While listening: the words so far over a spectrogram. Before that, getting ready; after a failure, why.
 struct VoiceCard: View {
     let voice: VoiceInput
+    @State private var mics: [MicInputs.Device] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            if voice.phase != .idle, !isFailed { controls }
             switch voice.phase {
             case .preparing(let s):
                 HStack(spacing: 10) {
@@ -105,11 +110,43 @@ struct VoiceCard: View {
             }
         }
         .padding(14)
+        .task { mics = MicInputs.all() }
         .background(SidraColor.popup, in: RoundedRectangle(cornerRadius: SidraRadius.card, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: SidraRadius.card, style: .continuous).strokeBorder(SidraColor.hairline2))
         .shadow(color: .black.opacity(0.55), radius: 30, y: 16)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Dictation")
+    }
+}
+
+extension VoiceCard {
+    private var isFailed: Bool { if case .failed = voice.phase { true } else { false } }
+
+    /// Top right: which microphone listens (remembered; the system default when the chosen one is gone),
+    /// and a close button that drops the recording at any stage.
+    private var controls: some View {
+        let chosen = mics.first { $0.id == MicInputs.chosen }
+        return HStack(spacing: 8) {
+            Spacer()
+            if mics.count > 1 {
+                SidraMenu([SidraMenuSection("Microphone", [SidraMenuItem("System default", systemImage: chosen == nil ? "checkmark" : nil) { voice.useMic(nil) }]
+                                            + mics.map { m in SidraMenuItem(m.name, systemImage: m.id == chosen?.id ? "checkmark" : nil) { voice.useMic(m.id) } })]) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "mic").font(.system(size: 11))
+                        Text(chosen?.name ?? "System default").font(SidraFont.ui(11.5)).lineLimit(1)
+                        Image(systemName: "chevron.down").font(.system(size: 8, weight: .semibold))
+                    }
+                    .foregroundStyle(SidraColor.muted).padding(.horizontal, 8).frame(height: 24)
+                    .background(SidraColor.raised, in: Capsule())
+                }
+                .accessibilityLabel("Microphone, \(chosen?.name ?? "system default")")
+            }
+            Button { voice.cancel() } label: {
+                Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(SidraColor.muted)
+                    .frame(width: 24, height: 24).background(SidraColor.raised, in: Circle())
+            }
+            .buttonStyle(.plain).accessibilityLabel("Cancel dictation").help("Cancel (Esc)")
+        }
     }
 }
 

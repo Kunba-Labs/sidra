@@ -185,6 +185,7 @@ final class VoiceInput {
             if insert, held { return }                  // ⌥⌘V / Return while preparing: wait for it
             prep?.cancel(); session = UUID(); cleanUp(); reset(); return
         }
+        if phase == .transcribing, !insert { session = UUID(); cleanUp(); reset(); return }   // stop waiting for the words
         guard phase == .recording else { if case .failed = phase { removeKeys(); phase = .idle }; return }
         let live = liveTask
         // Where the words go is fixed now, when speaking stops: switching panes while they are written
@@ -193,6 +194,7 @@ final class VoiceInput {
         stopAudio()
         guard insert else { cleanUp(); reset(); return }
         phase = .transcribing
+        let id = session
         Task {
             let text: String
             await live?.value   // one decode at a time on the Whisper instance
@@ -200,14 +202,33 @@ final class VoiceInput {
                 if sessionEngine == .whisper, let whisper { text = Self.tidy(try await Self.decode(whisper, audioStore.all, final: true)) }
                 else { text = Self.tidy(await finishApple()) }
             } catch {
+                guard session == id else { return }
                 return fail("Whisper could not write it out: \(error.localizedDescription)")
             }
+            guard session == id else { return }   // cancelled while writing out
             if !text.isEmpty { place(text, in: dest) }
             reset()
         }
     }
 
     func dismissMessage() { if case .failed = phase { removeKeys(); phase = .idle } }
+
+    /// The card's close button: drop whatever stage this is at, nothing is inserted.
+    func cancel() {
+        held = false; cancelling = false
+        if case .failed = phase { dismissMessage() } else { finish(insert: false) }
+    }
+
+    /// Another microphone from the card: remembered for next time; a recording starts over on it, as
+    /// what the old one heard is usually why it was switched.
+    func useMic(_ uid: String?) {
+        MicInputs.chosen = uid
+        guard phase == .recording else { return }
+        let w = window
+        session = UUID(); cleanUp(); reset()
+        held = true
+        start(in: w)
+    }
 
     private func place(_ text: String, in dest: DictationSurface?) {
         #if os(macOS)
@@ -370,9 +391,17 @@ final class VoiceInput {
 
     /// The words so far: finalised text plus the last volatile part. The dictation transcriber does not
     /// always mark its last result final (seen on macOS 26 with a short clip), so final-only would lose it.
+    /// It can hang (seen with a silent microphone), so it gives up after 6 s with what it has.
     private func finishApple() async -> String {
-        try? await analyzer?.finalizeAndFinishThroughEndOfInput()
-        await resultsTask?.value
+        final class Flag { var done = false }
+        let flag = Flag(), analyzer = analyzer, results = resultsTask
+        Task { @MainActor in
+            try? await analyzer?.finalizeAndFinishThroughEndOfInput()
+            await results?.value
+            flag.done = true
+        }
+        for _ in 0..<60 where !flag.done { try? await Task.sleep(for: .milliseconds(100)) }
+        if !flag.done { cleanUp() }
         return partial
     }
 
