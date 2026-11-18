@@ -65,10 +65,16 @@ https://kunba-labs.github.io/sidra/privacy.html
 
 ## Review notes
 
-Sidra is a client for machines the user owns: it connects over SSH to the user's own Mac or Linux machine, where the open-source tools herdr and Theasa run. There is no account and no server run by us.
+Screen recording: <LINK TO THE RECORDING>. It was made on an iPad Pro on iPadOS 27 with a demo build. That build is the same app, with made-up data in place of a real machine, so that no private code or hosts show.
 
-To review without a machine:
-1. Tap + and choose HackerTab or Chess. Both work with no setup.
-2. Tap + and choose SSH host to see the host editor. Any SSH server you can reach works (user name and password, or the key Sidra shows).
+Purpose and audience: Sidra is for software developers who run coding agents (Claude Code, Codex) on their own Mac or Linux machine in herdr, an open-source terminal workspace. Agents often stop and wait for an answer. Sidra lets the developer see which agents work, wait or are done, and answer them from an iPad or iPhone, away from the desk. It also opens SSH terminals and shows GitLab and GitHub pipelines.
 
-The screenshots come from a demo mode in our Debug builds, with made-up data. Source: https://github.com/Kunba-Labs/sidra
+Setup: Sidra has no account, no login and no paid content. To use the main features, add an SSH host (Settings > SSH hosts, or + > SSH host) with a user name and a password or the key that Sidra makes. Then tap + > herdr to open herdr on that machine. Any SSH server you can reach works. Without a machine: + > HackerTab and + > Chess work with no setup.
+
+External services: SSH to the user's own machine (Citadel/SwiftNIO SSH). herdr and Theasa, which the user runs on their own machine. The GitLab and GitHub APIs, with a token the user enters. The Hacker News API (hacker-news.firebaseio.com, hn.algolia.com). Apple's on-device speech recognition for dictation, and an optional Whisper speech model that the user can download from Hugging Face (it then runs on the device). There is no server run by us, no analytics and no AI service called from the app; the agents run on the user's machine.
+
+Regions: the app works the same in all regions.
+
+Regulated industry or third-party material: not applicable.
+
+Source: https://github.com/Kunba-Labs/sidra
