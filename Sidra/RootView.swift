@@ -108,15 +108,17 @@ struct RootView: View {
 
     private var commandMenu: some View {
         Menu {
-            Button("New Window", systemImage: "macwindow.badge.plus") { openWindow(id: "main") }
             Button("Keyboard Shortcuts…", systemImage: "keyboard") { app.sheet = .shortcuts }
             Button("Settings…", systemImage: "gearshape") { app.sheet = .settings }
         } label: {
+            // 28 high like the status pills; plain, so iPadOS draws no big glass button around it.
             Image(systemName: "command")
-                .font(.system(size: 17))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(SidraColor.muted)
-                .frame(width: 30, height: 30)
+                .frame(width: 30, height: 28)
+                .contentShape(Rectangle())
         }
+        .menuStyle(.button).buttonStyle(.plain)
         .menuIndicator(.hidden)
         .accessibilityLabel("Sidra menu")
     }
