@@ -333,6 +333,12 @@ final class MuxMonitor {
     private(set) var logos: [String: PlatformImage] = [:]   // by folder
     private var logoTried: Set<String> = []
     private var loadingLogos = false
+    /// Where this machine keeps its projects, for the new-space picker: the folder most of herdr's spaces
+    /// sit in, then common names that exist (~/Development, ~/src, ~/code…), then ~. The pick is remembered per machine.
+    private(set) var projectRoots: [String] = []
+    var projectRoot: String { didSet { UserDefaults.standard.set(projectRoot, forKey: "sidra.projectRoot.\(target)") } }
+    private var rootChosen: Bool
+    private(set) var folderLogos: [String: [String: PlatformImage]] = [:]   // by root, then folder name
 
     var key: String { "\(target)|\(session ?? "default")" }
 
@@ -340,6 +346,9 @@ final class MuxMonitor {
         self.adapter = adapter
         self.target = target
         self.session = session
+        let saved = UserDefaults.standard.string(forKey: "sidra.projectRoot.\(target)")
+        projectRoot = saved ?? "~"
+        rootChosen = saved != nil
     }
 
     /// Polls the snapshot from first sight until the pane closes.
@@ -417,10 +426,53 @@ final class MuxMonitor {
         return true
     }
 
-    /// The folders directly under `root` on that machine (`~/Development` by default), sorted, hidden ones left out.
-    func folders(_ app: AppModel, under root: String = "~/Development") async -> [String] {
-        let dir = root.hasPrefix("~/") ? "\"$HOME\"/" + Herdr.shellQuote(String(root.dropFirst(2))) : Herdr.shellQuote(root)
-        guard let r = try? await app.herdrRun(target, "for d in " + dir + "/*/; do [ -d \"$d\" ] && basename \"$d\"; done") else { return [] }
+    static let commonRoots = ["Development", "Developer", "dev", "src", "code", "Code", "projects", "Projects", "repos", "git", "workspace", "work"]
+
+    /// Fills `projectRoots`, and `projectRoot` when nothing was picked yet.
+    func findProjectRoots(_ app: AppModel) async {
+        let script = #"echo "$HOME"; for d in "# + Self.commonRoots.joined(separator: " ") + #"; do [ -d "$HOME/$d" ] && echo "~/$d"; done; true"#
+        guard let r = try? await app.herdrRun(target, script) else { return }
+        var lines = r.stdoutText.split(separator: "\n").map(String.init)
+        guard !lines.isEmpty else { return }
+        let home = lines.removeFirst()
+        projectRoots = Self.rankRoots(home: home, spaceFolders: snapshot.map { s in s.workspaces.compactMap { s.folder(of: $0.id) } } ?? [], existing: lines)
+        if !rootChosen || !projectRoots.contains(projectRoot) { projectRoot = projectRoots[0]; rootChosen = true }   // first look, or that folder is gone
+    }
+
+    /// The spaces' parent folders, most used first, then the common folders that exist, then ~.
+    nonisolated static func rankRoots(home: String, spaceFolders: [String], existing: [String]) -> [String] {
+        let parents = spaceFolders.map { ($0 as NSString).deletingLastPathComponent }
+            .filter { !$0.isEmpty && $0 != "/" && $0 != home }
+            .map { $0.hasPrefix(home + "/") ? "~/" + $0.dropFirst(home.count + 1) : $0 }
+        let counts = Dictionary(parents.map { ($0, 1) }, uniquingKeysWith: +)
+        let ranked = counts.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }.map(\.key)
+        var seen = Set<String>()
+        return (ranked + existing + ["~"]).filter { seen.insert($0).inserted }
+    }
+
+    /// `root` as a shell word, with ~ expanded on the machine.
+    private static func dir(_ root: String) -> String {
+        root == "~" ? "\"$HOME\"" : root.hasPrefix("~/") ? "\"$HOME\"/" + Herdr.shellQuote(String(root.dropFirst(2))) : Herdr.shellQuote(root)
+    }
+
+    /// Each folder's own logo under `root`, in one command; folders without one are left out. Kept per root.
+    func loadFolderLogos(_ app: AppModel, under root: String) async {
+        guard folderLogos[root] == nil else { return }
+        folderLogos[root] = [:]
+        let script = "for d in " + Self.dir(root) + #"/*/; do [ -d "$d" ] || continue; b=$("# + HerdrLogo.script(folder: nil)
+            + #" "$d") && printf '%s\t%s\n' "$(basename "$d")" "$b"; done; true"#
+        guard let r = try? await app.herdrRun(target, script) else { folderLogos[root] = nil; return }
+        var found: [String: PlatformImage] = [:]
+        for line in r.stdoutText.split(separator: "\n") {
+            let parts = line.split(separator: "\t", maxSplits: 1)
+            if parts.count == 2, let data = Data(base64Encoded: String(parts[1])), let image = HerdrLogo.image(data) { found[String(parts[0])] = image }
+        }
+        folderLogos[root] = found
+    }
+
+    /// The folders directly under `root` on that machine, sorted, hidden ones left out.
+    func folders(_ app: AppModel, under root: String) async -> [String] {
+        guard let r = try? await app.herdrRun(target, "for d in " + Self.dir(root) + "/*/; do [ -d \"$d\" ] && basename \"$d\"; done") else { return [] }
         return r.stdoutText.split(separator: "\n").map(String.init).filter { !$0.isEmpty && $0 != "*" }.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
     }
 
@@ -496,7 +548,8 @@ enum HerdrLogo {
     /// can (sips on a Mac) and rasterises an SVG with rsvg-convert or Quick Look; a machine with neither
     /// skips SVGs. Stays under 512 KB. Skips the Rails starter icon (a red circle, recognisable by the
     /// tiny icon.svg next to it). Runs under sh: zsh, the macOS login shell, aborts on a glob that matches nothing.
-    static func script(folder: String) -> String {
+    /// With no folder: the command without its folder argument, for a loop to append one.
+    static func script(folder: String?) -> String {
         let inner = #"cd "$1" 2>/dev/null || exit 1; cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)"; t=$(mktemp -d); trap 'rm -rf "$t"' EXIT; "#
             + "for f in \(candidates.joined(separator: " ")); do "
             + #"[ -s "$f" ] || continue; "#
@@ -507,7 +560,7 @@ enum HerdrLogo {
             + #"*) if command -v sips >/dev/null; then sips -Z 128 -s format png "$f" --out "$t/l.png" >/dev/null 2>&1; fi; [ -s "$t/l.png" ] || cp "$f" "$t/l.png";; esac; "#
             + #"[ -s "$t/l.png" ] && [ "$(wc -c < "$t/l.png")" -lt 524288 ] || continue; "#
             + #"base64 < "$t/l.png" | tr -d '\n'; exit 0; done; exit 1"#
-        return "sh -c " + Herdr.shellQuote(inner) + " sh " + Herdr.shellQuote(folder)
+        return "sh -c " + Herdr.shellQuote(inner) + " sh" + (folder.map { " " + Herdr.shellQuote($0) } ?? "")
     }
 
     /// PNG, JPEG and ICO decode with PlatformImage; SVGs arrive rasterised by the script.

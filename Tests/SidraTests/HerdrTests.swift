@@ -51,5 +51,12 @@ final class HerdrTests: XCTestCase {
         XCTAssertTrue(Herdr.attachScript.contains("HERDR_CONFIG_PATH"), "Sidra's client reads its own config copy")
         XCTAssertTrue(Herdr.installScript.hasSuffix("\nSIDRA_EOF\n"))
     }
-}
 
+    /// The new-space picker's projects folder: where the spaces sit wins, then common names, then ~.
+    func testProjectRootsRanking() {
+        let home = "/home/ann"
+        XCTAssertEqual(MuxMonitor.rankRoots(home: home, spaceFolders: ["/home/ann/src/a", "/home/ann/src/b", "/srv/x/y", "/home/ann"], existing: ["~/src", "~/code"]),
+                       ["~/src", "/srv/x", "~/code", "~"])
+        XCTAssertEqual(MuxMonitor.rankRoots(home: home, spaceFolders: [], existing: []), ["~"])
+    }
+}

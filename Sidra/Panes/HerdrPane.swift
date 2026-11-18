@@ -80,13 +80,14 @@ struct MuxSpacesBar: View {
             .overlay(alignment: .bottom) { Rectangle().fill(SidraColor.hairline).frame(height: 1) }
             .background { spaceShortcuts(m, s) }
             .sheet(isPresented: $pickerShown) {
-                NewSpacePicker(monitor: m, snapshot: s) { newSpaceMoving = false; newSpaceLabel = ""; newSpaceFolder = "~/Development/"; newSpaceShown = true }
+                NewSpacePicker(monitor: m, snapshot: s) { newSpaceMoving = false; newSpaceLabel = ""; newSpaceFolder = m.projectRoot + "/"; newSpaceShown = true }
                     .environment(app)
             }
             .alert(newSpaceMoving ? "Move to space" : "New space", isPresented: $newSpaceShown) {
             TextField("Name", text: Binding(get: { newSpaceLabel }, set: { v in
-                // The folder follows the name until it is edited: ~/Development/<name>.
-                if !newSpaceMoving, newSpaceFolder == "~/Development/" + newSpaceLabel { newSpaceFolder = "~/Development/" + v }
+                // The folder follows the name until it is edited: <projects folder>/<name>.
+                let root = (MuxMonitors.shared.byPane[pane.id]?.projectRoot ?? "~") + "/"
+                if !newSpaceMoving, newSpaceFolder == root + newSpaceLabel { newSpaceFolder = root + v }
                 newSpaceLabel = v
             }))
             .plainTextEntry().autocorrectionDisabled()
@@ -246,7 +247,8 @@ struct MuxSpacesBar: View {
     }
 }
 
-/// New space in a folder that is already there: the folders under ~/Development on that machine, searchable,
+/// New space in a folder that is already there: the folders in the machine's projects folder (see
+/// MuxMonitor.projectRoot), searchable, each with its project's logo,
 /// with the ones that already have a space marked; or any path. Making a new folder is the secondary action.
 struct NewSpacePicker: View {
     let monitor: MuxMonitor
@@ -278,20 +280,37 @@ struct NewSpacePicker: View {
             Text("Pick a folder on \(app.herdrMachineName(monitor.target)); the space opens a shell there.")
                 .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
             StartAgentRow()
-            TextField("Search ~/Development", text: $query)
+            HStack(spacing: 8) {
+            TextField("Search \(monitor.projectRoot)", text: $query)
                 .plainTextEntry().autocorrectionDisabled()
                 .font(SidraFont.ui(14)).padding(.horizontal, 10).frame(height: 36)
                 .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline2))
                 .accessibilityIdentifier("new-space-search")
+                if monitor.projectRoots.count > 1 {
+                    SidraMenu([SidraMenuSection("Projects folder", monitor.projectRoots.map { r in
+                        SidraMenuItem(r, systemImage: r == monitor.projectRoot ? "checkmark" : nil) { monitor.projectRoot = r }
+                    })]) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "folder").font(.system(size: 12))
+                            Text(monitor.projectRoot).font(SidraFont.mono(12.5)).lineLimit(1)
+                            Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
+                        }
+                        .foregroundStyle(SidraColor.muted).padding(.horizontal, 10).frame(height: 36)
+                        .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline2))
+                    }
+                    .accessibilityLabel("Projects folder, \(monitor.projectRoot)")
+                }
+            }
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 2) {
                     if folders == nil { HStack(spacing: 8) { GradientSpinner(size: 12); Text("Reading folders…").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted) }.padding(10) }
                     else if shown.isEmpty { Text("No folder matches.").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted).padding(10) }
                     ForEach(shown, id: \.self) { name in
-                        Button { Task { await create(label: name, folder: "~/Development/" + name) } } label: {
+                        Button { Task { await create(label: name, folder: monitor.projectRoot + "/" + name) } } label: {
                             HStack(spacing: 10) {
-                                HerdrLogoView(name: name, image: nil, size: 22)
+                                HerdrLogoView(name: name, image: monitor.folderLogos[monitor.projectRoot]?[name], size: 22)
                                 Text(name).font(SidraFont.ui(13.5, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
                                 Spacer()
                                 if withSpace.contains(name) { Text("has a space").font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim) }
@@ -320,7 +339,13 @@ struct NewSpacePicker: View {
         .padding(20)
         .frame(maxWidth: 520)
         .background(SidraColor.popup)
-        .task { folders = await monitor.folders(app) }
+        .task(id: monitor.projectRoot) {
+            if monitor.projectRoots.isEmpty { await monitor.findProjectRoots(app) }
+            folders = nil
+            let root = monitor.projectRoot
+            folders = await monitor.folders(app, under: root)
+            await monitor.loadFolderLogos(app, under: root)
+        }
     }
 
     private func create(label: String, folder: String) async {
