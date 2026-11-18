@@ -5,17 +5,24 @@ import SidraWorkspace
 import SidraTerminal
 import SidraTheasa
 
-/// `-sidra.demo`: fake data for screenshots and the demo film, in the Simulator only (Debug builds).
+/// `-sidra.demo`: fake data for screenshots and the demo film (Debug builds). In the Simulator it reads
+/// this checkout; a device demo build (tools/demo-ipad.sh, SIDRA_DEMO_ALWAYS) is always on and reads
+/// the fixtures copied into its bundle.
 /// A made-up machine "devbox" answers herdr's commands and opens canned terminal screens; Theasa
 /// (https://theasa.demo) and GitLab (https://gitlab.demo) answer from JSON files in this repo.
 /// Nothing here reaches a network or a real machine.
 enum DemoMode {
+    #if SIDRA_DEMO_ALWAYS
+    static let isOn = true
+    #else
     static var isOn: Bool { CommandLine.arguments.contains("-sidra.demo") }
+    #endif
     static let hostID = UUID(uuidString: "00000000-0000-0000-0000-0000000de300")!
     static let host = SSHHostProfile(id: hostID, alias: "devbox", host: "devbox.local", user: "dev", auth: .key, startupCommand: "", trustOnFirstUse: false)
 
-    /// The repo, from this file's path: the Simulator reads the Mac's files.
-    static let repo = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    /// The bundle's copy of the fixtures on a device, else the repo from this file's path (the Simulator reads the Mac's files).
+    static let repo = Bundle.main.url(forResource: "Demo", withExtension: nil)
+        ?? URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
 
     /// Before any request: URLSession.shared and Theasa's session answer from the stub.
     static func registerProtocol() {

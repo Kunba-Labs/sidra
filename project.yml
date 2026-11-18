@@ -38,6 +38,16 @@ targets:
     sources:
       - path: Sidra
         excludes: ["Info.plist", "Sidra.entitlements"]
+    postBuildScripts:
+      # A device demo build (tools/demo-ipad.sh) carries demo mode's fixtures; other builds skip this.
+      - name: Demo fixtures
+        basedOnDependencyAnalysis: false
+        script: |
+          [ "${SIDRA_DEMO:-}" = YES ] || exit 0
+          D="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Demo"
+          mkdir -p "$D/tools/dev" "$D/Packages/SidraTheasa/Tests/SidraTheasaTests"
+          cp -R "$SRCROOT/tools/dev/demo-icons" "$D/tools/dev/"
+          cp -R "$SRCROOT/Packages/SidraTheasa/Tests/SidraTheasaTests/Fixtures" "$D/Packages/SidraTheasa/Tests/SidraTheasaTests/"
     dependencies:
       - package: SidraDesign
       - package: SidraWorkspace
