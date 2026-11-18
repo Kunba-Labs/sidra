@@ -235,13 +235,27 @@ struct MuxSpacesBar: View {
         .contentShape(Rectangle())
     }
 
-    /// ⌥⌘1–9 jump to a space while this pane has focus.
+    /// While this pane has focus: ⌥⌘1–9 jump to a space; ⌃1–9 to a tab of the focused space, and ⌃Tab / ⌃⇧Tab
+    /// step through its tabs (⌘1–9 stay Sidra's own tabs).
     @ViewBuilder private func spaceShortcuts(_ m: MuxMonitor, _ s: MuxSnapshot) -> some View {
         if app.workspace.focusedPane?.id == pane.id {
             ForEach(Array(s.workspaces.prefix(9).enumerated()), id: \.element.id) { i, ws in
                 Button("") { Task { await m.focus(app, ws) } }
                     .keyboardShortcut(KeyEquivalent(Character("\(i + 1)")), modifiers: [.command, .option])
                     .opacity(0).accessibilityHidden(true)
+            }
+            let tabs = s.focused_workspace_id.map { s.tabs(in: $0) } ?? []
+            ForEach(Array(tabs.prefix(9).enumerated()), id: \.element.id) { i, tab in
+                Button("") { Task { await m.focusTab(app, tab.tab_id) } }
+                    .keyboardShortcut(KeyEquivalent(Character("\(i + 1)")), modifiers: .control)
+                    .opacity(0).accessibilityHidden(true)
+            }
+            if tabs.count > 1 {
+                let at = tabs.firstIndex { $0.focused } ?? 0
+                Button("") { Task { await m.focusTab(app, tabs[(at + 1) % tabs.count].tab_id) } }
+                    .keyboardShortcut(.tab, modifiers: .control).opacity(0).accessibilityHidden(true)
+                Button("") { Task { await m.focusTab(app, tabs[(at + tabs.count - 1) % tabs.count].tab_id) } }
+                    .keyboardShortcut(.tab, modifiers: [.control, .shift]).opacity(0).accessibilityHidden(true)
             }
         }
     }
