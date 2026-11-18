@@ -46,11 +46,23 @@ struct WorkspaceCommands: Commands {
             guard let focused = store.focusedPane else { return }
             store.split(focused.id, axis: axis, newPane: app.newPane(kind: focused.kind))
         }
+        /// In a herdr pane, ⌘[ and ⌘] walk its spaces (the chip row) instead of the window's panes.
+        func herdrSpace(_ offset: Int) -> Bool {
+            guard let p = store.focusedPane, case .herdr = p.kind,
+                  let m = MuxMonitors.shared.monitor(for: p, app: app), let spaces = m.snapshot?.workspaces, !spaces.isEmpty else { return false }
+            let n = spaces.count
+            let i = spaces.firstIndex { $0.id == m.snapshot?.focused_workspace_id } ?? 0
+            Task { await m.focus(app, spaces[((i + offset) % n + n) % n]) }
+            return true
+        }
         var c: [SidraCommand] = [
             .init("tab.new", "New Tab…", area: "Tab", key: "t") { app.sheet = .newTab },
             .init("tab.close", "Close Tab", area: "Tab", key: "w") { if let id = store.activeTabID { store.requestCloseTab(id) } },
             .init("tab.next", "Next Tab", area: "Tab", key: "]", modifiers: [.command, .shift]) { store.selectTab(offset: 1) },
             .init("tab.prev", "Previous Tab", area: "Tab", key: "[", modifiers: [.command, .shift]) { store.selectTab(offset: -1) },
+            // ⌃⇥ and ⌃⇧⇥ walk every tab, as in a browser (Waseem, 2026-11-18). Recent files moved to ⌃`.
+            .init("tab.nextCtrl", "Next Tab (⌃⇥)", area: "Tab", key: .tab, modifiers: .control) { store.selectTab(offset: 1) },
+            .init("tab.prevCtrl", "Previous Tab (⌃⇧⇥)", area: "Tab", key: .tab, modifiers: [.control, .shift]) { store.selectTab(offset: -1) },
         ]
         for n in 1..<10 { c.append(.init("tab.\(n)", "Tab \(n)", area: "Tab", key: KeyEquivalent(Character("\(n)"))) { store.selectTab(index: n - 1) }) }
         c += [
@@ -58,8 +70,8 @@ struct WorkspaceCommands: Commands {
             .init("pane.splitDown", "Split Down", area: "Pane", key: "d", modifiers: [.command, .shift]) { splitFocused(.vertical) },
             .init("pane.maximize", "Maximize Pane", area: "Pane", key: .return, modifiers: [.command, .shift]) { if let id = store.focusedPane?.id { store.toggleMaximize(pane: id) } },
             .init("pane.close", "Close Pane", area: "Pane", key: "w", modifiers: [.command, .shift]) { if let id = store.focusedPane?.id { store.requestClose(pane: id) } },
-            .init("pane.next", "Focus Next Pane", area: "Pane", key: "]") { store.focusPane(offset: 1) },
-            .init("pane.prev", "Focus Previous Pane", area: "Pane", key: "[") { store.focusPane(offset: -1) },
+            .init("pane.next", "Focus Next Pane", area: "Pane", key: "]") { if !herdrSpace(1) { store.focusPane(offset: 1) } },
+            .init("pane.prev", "Focus Previous Pane", area: "Pane", key: "[") { if !herdrSpace(-1) { store.focusPane(offset: -1) } },
         ]
         for n in 1..<10 { c.append(.init("pane.\(n)", "Focus Pane \(n)", area: "Pane", key: KeyEquivalent(Character("\(n)")), modifiers: .control) { store.focusPane(index: n - 1) }) }
         c += [
