@@ -180,11 +180,13 @@ struct TerminalPane: View {
         }
     }
 
-    /// An image path printed on screen, read from the far side for its thumbnail (8 MB at most).
+    /// An image path printed on screen, read from the far side for its thumbnail (2 MB at most: the read shares
+    /// the shell's SSH connection, so a big one held up typing).
+    // ponytail: a 2 MB cap; a second SSH connection for reads if bigger thumbnails are missed
     private func fetchImage(_ path: String) async -> Data? {
         guard !path.contains("'"), !path.contains("\\") else { return nil }
         let quoted = path.hasPrefix("~/") ? "\"$HOME\"/'\(path.dropFirst(2))'" : "'\(path)'"
-        guard let r = try? await app.herdrRun(target, "[ -f \(quoted) ] && [ $(wc -c < \(quoted)) -le 8000000 ] && base64 < \(quoted)"),
+        guard let r = try? await app.herdrRun(target, "[ -f \(quoted) ] && [ $(wc -c < \(quoted)) -le 2000000 ] && base64 < \(quoted)"),
               r.exitCode == 0 else { return nil }
         return Data(base64Encoded: r.stdoutText, options: .ignoreUnknownCharacters)
     }

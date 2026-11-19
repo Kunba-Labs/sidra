@@ -807,6 +807,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
         Task { @MainActor [weak self] in
             // The upload takes a while: if focus moved on meanwhile, the path goes to the clipboard instead.
             guard let path = await upload(data) else { return }
+            if let image = UIImage(data: data) { self?.thumbnails.remember(path, image) }
             if let self, self.isFirstResponder { self.pasteText(path) } else { UIPasteboard.general.string = path }
         }
     }

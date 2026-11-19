@@ -112,10 +112,18 @@ public enum TerminalLinks {
     /// Paths that could not be read, and when; tried again after 15 s (the file may not exist yet).
     private var failed: [String: Date] = [:]
     private var lastLayout: [String] = []
+    /// Images pasted from this device, by their path on the far side: shown without reading them back,
+    /// since a read shares the shell's SSH connection and typing waited behind it (Waseem, 2026-11-19).
+    private var local: [String: UIImage] = [:]
     var fetch: ((String) async -> Data?)?
     var open: ((String, UIImage) -> Void)?
 
     init(host: UIView) { self.host = host }
+
+    func remember(_ path: String, _ image: UIImage) {
+        if local.count >= 4 { local.removeAll() }   // ponytail: only the last few pastes; older ones are read back like any image
+        local[path] = image
+    }
 
     func owns(_ view: UIView?) -> Bool { view.map { v in views.values.contains { $0 === v } } ?? false }
 
@@ -136,7 +144,7 @@ public enum TerminalLinks {
         for (i, hit) in found.enumerated() {
             let key = "\(hit.row):\(hit.path)"
             seen.insert(key)
-            guard let image = images[hit.path] else { load(hit.path); continue }
+            guard let image = images[hit.path] ?? local[hit.path] else { load(hit.path); continue }
             let y = CGFloat(hit.row) * cell.height
             let nextY = i + 1 < found.count ? CGFloat(found[i + 1].row) * cell.height : y + 60
             let h = max(18, min(54, nextY - y - 4))
