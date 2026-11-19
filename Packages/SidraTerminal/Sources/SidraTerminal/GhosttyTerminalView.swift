@@ -402,13 +402,20 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     }
 
     private func placeSendOffer() {
-        guard sendOffered, let c = engine.frame(force: true)?.cursor ?? frame_?.cursor else { return }
+        guard sendOffered, let c = currentFrame()?.cursor else { return }
         sendOffer.sizeToFit()
         let s = sendOffer.bounds.size
         let x = min(CGFloat(c.x) * cellSize.width + 8, bounds.width - s.width - SidraSpace.gap)
         let y = min(max(0, CGFloat(c.y) * cellSize.height + (cellSize.height - s.height) / 2), bounds.height - s.height)
         sendOffer.frame.origin = CGPoint(x: x, y: y)
         sendOffer.isHidden = false
+    }
+
+    /// A fresh frame outside draw(). Taking one clears the engine's dirty flag, so it is kept for draw()
+    /// to use; dropping it left the pasted dictation invisible until the next key redrew.
+    private func currentFrame() -> TerminalFrame? {
+        if let f = engine.frame(force: true) { frame_ = f; setNeedsDisplay() }
+        return frame_
     }
 
     private func withdrawSend() {
@@ -817,7 +824,7 @@ extension GhosttyTerminalView: FloatingKeyboardTarget {
     public var learnsCommands: Bool { true }
     public var keyboardPasteLabel: String { pasteLabel }
     public var cursorLineText: String? {
-        guard let f = engine.frame(force: true), let c = f.cursor, f.rows.indices.contains(c.y) else { return nil }
+        guard let f = currentFrame(), let c = f.cursor, f.rows.indices.contains(c.y) else { return nil }
         return f.rows[c.y].cells.map(\.text).joined()
     }
 }
