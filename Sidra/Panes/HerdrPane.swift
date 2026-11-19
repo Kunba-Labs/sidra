@@ -51,7 +51,14 @@ struct MuxSpacesBar: View {
                     HStack(spacing: 2) {
                         // One chip per space; a space with several tabs opens a dropdown of them (2026-11-16).
                         // Spaces with the same name and folder share a chip (MuxSnapshot.chips).
-                        ForEach(s.chips(shown(s)), id: \.[0].id) { g in reorder(tab(g, m: m, s: s), g[0], m, s) }
+                        ForEach(Array(s.chips(shown(s)).enumerated()), id: \.element[0].id) { i, g in
+                            reorder(tab(g, m: m, s: s), g[0], m, s)
+                                .overlay(alignment: .topLeading) {
+                                    // Held ⌃ in this pane: the key that picks each space (Waseem, 2026-11-19).
+                                    if ModifierHold.shared.control, app.workspace.focusedPane?.id == pane.id, let k = TabKeys.label(i) { KeyHint("⌃" + k).offset(x: -2, y: -2) }
+                                }
+                                .animation(.easeOut(duration: 0.12), value: ModifierHold.shared.control)
+                        }
                         // The space's tabs scroll with the spaces, so a narrow pane never pushes them off its edge.
                         if let ws = s.focused_workspace_id { tabsBar(m, s, space: ws) }
                     }
@@ -246,13 +253,13 @@ struct MuxSpacesBar: View {
         .contentShape(Rectangle())
     }
 
-    /// While this pane has focus: ⌃1–9 (and ⌥⌘1–9) jump to a space in the bar's order, ⌃Tab / ⌃⇧Tab step
+    /// While this pane has focus: ⌃1–9, ⌃0, ⌃- and ⌃= (and the same with ⌥⌘) jump to a space in the bar's order, ⌃Tab / ⌃⇧Tab step
     /// through the spaces (⌘1–9 stay Sidra's own tabs).
     @ViewBuilder private func spaceShortcuts(_ m: MuxMonitor, _ s: MuxSnapshot) -> some View {
         if app.workspace.focusedPane?.id == pane.id {
             let spaces = s.chips(shown(s)).map { $0[0] }   // one stop per chip, in the bar's order
-            ForEach(Array(spaces.prefix(9).enumerated()), id: \.element.id) { i, ws in
-                let key = KeyEquivalent(Character("\(i + 1)"))
+            ForEach(Array(spaces.prefix(TabKeys.keys.count).enumerated()), id: \.element.id) { i, ws in
+                let key = KeyEquivalent(TabKeys.keys[i])
                 Button("") { Task { await m.focus(app, ws) } }.keyboardShortcut(key, modifiers: .control).opacity(0).accessibilityHidden(true)
                 Button("") { Task { await m.focus(app, ws) } }.keyboardShortcut(key, modifiers: [.command, .option]).opacity(0).accessibilityHidden(true)
             }

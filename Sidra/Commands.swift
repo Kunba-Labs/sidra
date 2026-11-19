@@ -2,6 +2,7 @@ import SwiftUI
 #if canImport(UIKit)
 import UIKit
 #endif
+import SidraDesign
 import SidraWorkspace
 import SidraTerminal
 
@@ -76,7 +77,10 @@ struct WorkspaceCommands: Commands {
             .init("tab.nextCtrl", "Next Tab (⌃⇥)", area: "Tab", key: .tab, modifiers: .control) { store.selectTab(offset: 1) },
             .init("tab.prevCtrl", "Previous Tab (⌃⇧⇥)", area: "Tab", key: .tab, modifiers: [.control, .shift]) { store.selectTab(offset: -1) },
         ]
-        for n in 1..<10 { c.append(.init("tab.\(n)", "Tab \(n)", area: "Tab", key: KeyEquivalent(Character("\(n)"))) { store.selectTab(index: n - 1) }) }
+        // ⌘1–9, then ⌘0, ⌘- and ⌘= (shown +) for tabs 10 to 12; the Mac keeps those three for text size.
+        for (i, k) in TabKeys.keys.enumerated() where !(Platform.isMac && i >= 9) {
+            c.append(.init("tab.\(i + 1)", "Tab \(i + 1)", area: "Tab", key: KeyEquivalent(k), label: "⌘" + (TabKeys.label(i) ?? "")) { store.selectTab(index: i) })
+        }
         c += [
             .init("pane.splitRight", "Split Right", area: "Pane", key: "d") { splitFocused(.horizontal) },
             .init("pane.splitDown", "Split Down", area: "Pane", key: "d", modifiers: [.command, .shift]) { splitFocused(.vertical) },

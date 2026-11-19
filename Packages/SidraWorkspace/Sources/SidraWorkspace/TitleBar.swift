@@ -74,12 +74,17 @@ struct TitleBar<Trailing: View>: View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 4) {
-                    ForEach(store.visibleTabs) { tab in
+                    ForEach(Array(store.visibleTabs.enumerated()), id: \.element.id) { i, tab in
                         // A subtitle that repeats the title (a Theasa connection named Theasa) says nothing.
                         PillTab(icon: tab.icon, title: tab.title, subtitle: tab.subtitle == tab.title ? nil : tab.subtitle,
                                 active: tab.id == store.activeTabID, dot: store.tabDot?(tab) == true,
                                 action: { store.select(tab: tab.id) },
                                 close: { store.requestCloseTab(tab.id) })
+                            .overlay(alignment: .topLeading) {
+                                // Held ⌘: the key that picks each tab (Waseem, 2026-11-19).
+                                if ModifierHold.shared.command, let k = TabKeys.label(i), !(Platform.isMac && i >= 9) { KeyHint("⌘" + k).offset(x: -2, y: -2) }
+                            }
+                            .animation(.easeOut(duration: 0.12), value: ModifierHold.shared.command)
                             .id(tab.id)
                             .reorderable(tab.id, dragging: $dragging) { store.moveTab($0, to: $1) }
                     }
