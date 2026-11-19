@@ -33,6 +33,8 @@ struct TerminalPane: View {
     @State private var showFind = false
     /// A pasted image on its way to the host: 0…1, nil when none.
     @State private var pasteProgress: Double?
+    /// Seconds left before the next automatic reconnect, shown as it counts down.
+    @State private var countdown: Int?
     @State private var findText = ""
     @State private var findStep = 0
     @State private var findTotal = 0
@@ -60,8 +62,22 @@ struct TerminalPane: View {
             }
             if link.ended {
                 ConnectionLostCard(title: link.exitCode.map { $0 == 0 ? "Session ended" : "Session ended with status \($0)" } ?? "Connection lost",
-                                   detail: link.exitCode == nil ? link.endReason : nil, lost: link.exitCode == nil, reconnect: reconnect)
+                                   detail: link.exitCode == nil ? retryLine ?? link.endReason : nil, lost: link.exitCode == nil,
+                                   reconnect: manualReconnect, stop: countdown != nil ? { link.autoStopped = true } : nil)
             }
+        }
+        // Lost or unreachable: count down, then try again, waiting longer after each failure (Waseem, 2026-11-20).
+        .task(id: "\(link.attempt)-\(retryDelay ?? -1)") {
+            countdown = nil
+            guard let wait = retryDelay else { return }
+            for left in stride(from: wait, to: 0, by: -1) {
+                countdown = left
+                try? await Task.sleep(for: .seconds(1))
+                if Task.isCancelled { return }   // hidden, stopped or reconnected by hand
+            }
+            countdown = nil
+            link.retries += 1
+            reconnect()
         }
         // One open per attempt: a Reconnect while one is in flight starts the next attempt, and the old one closes what it gets.
         .task(id: link.attempt) { if link.session == nil, link.error == nil, link.openingAttempt != link.attempt { await open() } }
@@ -137,10 +153,14 @@ struct TerminalPane: View {
             if link.failure == nil, let hint = link.error.flatMap(NetworkHints.hint) {
                 Text(hint).font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.yellow).multilineTextAlignment(.center).frame(maxWidth: 420)
             }
+            if let line = retryLine {
+                Text(line).font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted).monospacedDigit()
+            }
             if let raw = link.error {
                 HStack(spacing: 8) {
-                    Button { reconnect() } label: { Label("Reconnect", systemImage: "arrow.clockwise").labelStyle(.titleAndIcon) }
+                    Button { manualReconnect() } label: { Label(countdown == nil ? "Reconnect" : "Reconnect now", systemImage: "arrow.clockwise").labelStyle(.titleAndIcon) }
                         .buttonStyle(.sidraDark).accessibilityIdentifier("Reconnect")
+                    if countdown != nil { Button("Stop") { link.autoStopped = true }.buttonStyle(.sidraSecondary) }
                     if let changed = link.changedKey {
                         Button("Accept new key") { KnownHosts.record(host: changed.host, port: changed.port, publicKey: changed.newKey); reconnect() }.buttonStyle(.sidraSecondary)
                     }
@@ -150,6 +170,29 @@ struct TerminalPane: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Waits before each automatic reconnect: 3 s, then longer after every failure, at most a minute.
+    static let retryWaits = [3, 5, 10, 20, 30, 60]
+
+    /// The wait before the next automatic reconnect, or nil when there is none: the shell exited, or
+    /// opening failed for a reason trying again cannot fix (sign-in, host key), or Stop was pressed.
+    private var retryDelay: Int? {
+        guard !link.autoStopped else { return nil }
+        let lost = link.ended && link.exitCode == nil
+        let unreachable = link.error != nil && link.changedKey == nil && [.unreachable, .other].contains(link.failure?.kind ?? .other)
+        guard lost || unreachable else { return nil }
+        return Self.retryWaits[min(link.retries, Self.retryWaits.count - 1)]
+    }
+
+    private var retryLine: String? {
+        countdown.map { "Reconnecting in \($0)…" + (link.retries > 0 ? " (try \(link.retries + 1))" : "") }
+    }
+
+    /// The Reconnect button: also turns automatic reconnects back on after Stop.
+    private func manualReconnect() {
+        link.autoStopped = false
+        reconnect()
     }
 
     private func reconnect() {
@@ -277,11 +320,14 @@ struct TerminalPane: View {
             }
             guard link.attempt == mine, TerminalLink.isCurrent(link, for: pane.id) else { s.close(); return }
             link.session = s
+            link.openedAt = Date()
             Task {
                 var code: Int?
                 for await c in s.exit { code = c }
                 await MainActor.run {
                     guard link.attempt == mine else { return }   // a session that was replaced has nothing to report
+                    // A session that stayed up a while starts the waits over at 3 s.
+                    if let at = link.openedAt, Date().timeIntervalSince(at) > 30 { link.retries = 0 }
                     link.exitCode = code
                     link.endReason = s.endReason
                     link.ended = true
@@ -312,6 +358,11 @@ final class TerminalLink {
     var changedKey: HostKeyChanged?
     /// The attempt an open is in flight for, if any.
     var openingAttempt: Int?
+    /// Automatic reconnects since the last session that stayed up 30 s: picks the next wait.
+    var retries = 0
+    /// Stop pressed: no automatic reconnect until the next manual one.
+    var autoStopped = false
+    var openedAt: Date?
 
     @ObservationIgnored private static var all: [UUID: TerminalLink] = [:]
     static func of(_ pane: UUID) -> TerminalLink {
@@ -427,6 +478,8 @@ struct ConnectionLostCard: View {
     var detail: String?
     var lost = true
     let reconnect: () -> Void
+    /// While an automatic reconnect counts down: stops it.
+    var stop: (() -> Void)? = nil
 
     var body: some View {
         VStack {
@@ -436,8 +489,9 @@ struct ConnectionLostCard: View {
                     Text(title).font(SidraFont.ui(12.5, weight: .bold)).foregroundStyle(lost ? SidraColor.orange : SidraColor.muted)
                     if let detail { Text(detail).font(SidraFont.ui(12)).foregroundStyle(SidraColor.muted) }
                 }
-                Button { reconnect() } label: { Label("Reconnect", systemImage: "arrow.clockwise").labelStyle(.titleAndIcon) }
+                Button { reconnect() } label: { Label(stop == nil ? "Reconnect" : "Reconnect now", systemImage: "arrow.clockwise").labelStyle(.titleAndIcon) }
                     .buttonStyle(.sidraDark).accessibilityIdentifier("Reconnect")
+                if let stop { Button("Stop", action: stop).buttonStyle(.sidraSecondary) }
             }
             .padding(10)
             .background(SidraColor.raised, in: RoundedRectangle(cornerRadius: SidraRadius.card, style: .continuous))
