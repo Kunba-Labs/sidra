@@ -49,6 +49,7 @@ jobs:
 
       - name: Newest Xcode
         run: |
+          ls -d /Applications/Xcode*.app
           sudo xcode-select -s "$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)"
           xcodebuild -version
           brew install xcodegen

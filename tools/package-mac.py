@@ -31,11 +31,16 @@ def main():
     build = args.build or int(subprocess.check_output(['git', 'rev-list', '--count', 'HEAD'], cwd=ROOT, text=True))
     OUT.mkdir(parents=True, exist_ok=True)
     run('xcodegen', 'generate')
-    with (OUT / 'release-build.log').open('w') as log:
-        run('xcodebuild', '-project', 'Sidra.xcodeproj', '-scheme', 'SidraMac', '-configuration', 'Release',
-            '-destination', 'platform=macOS,arch=arm64', '-derivedDataPath', DERIVED,
+    log_path = OUT / 'release-build.log'
+    with log_path.open('w') as log:
+        result = subprocess.run(['xcodebuild', '-project', 'Sidra.xcodeproj', '-scheme', 'SidraMac', '-configuration', 'Release',
+            '-destination', 'platform=macOS,arch=arm64', '-derivedDataPath', str(DERIVED),
             '-skipPackagePluginValidation', '-skipMacroValidation',
-            'CODE_SIGNING_ALLOWED=NO', f'CURRENT_PROJECT_VERSION={build}', 'build', stdout=log, stderr=subprocess.STDOUT)
+            'CODE_SIGNING_ALLOWED=NO', f'CURRENT_PROJECT_VERSION={build}', 'build'], cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
+    if result.returncode:
+        errors = [l for l in log_path.read_text().splitlines() if ' error: ' in l or l.startswith('error:')]
+        print('\n'.join(dict.fromkeys(errors)) or log_path.read_text()[-4000:])
+        raise SystemExit(f'xcodebuild failed ({result.returncode}); full log in {log_path}')
     source = DERIVED / 'Build/Products/Release/Sidra.app'
     info = plistlib.loads((source / 'Contents/Info.plist').read_bytes())
     if info['CFBundleIdentifier'] != 'nl.sadiq.sidra.mac':
