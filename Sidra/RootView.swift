@@ -49,14 +49,14 @@ struct RootView: View {
         .animation(.easeOut(duration: 0.2), value: app.toastMessage)
         .sidraAlert($app.alert)
         #if os(iOS)
-        .onChange(of: ScreenshotInbox.shared.pending, initial: true) { _, image in if image != nil, app.sheet == nil { app.sheet = .screenshot } }
+        // A screenshot arriving closes whatever sheet is up: the Send screenshot card covers the window.
+        .onChange(of: ScreenshotInbox.shared.pending, initial: true) { _, image in if image != nil { app.sheet = nil } }
+        .fullScreenCover(isPresented: Binding(get: { ScreenshotInbox.shared.pending != nil && app.sheet == nil },
+                                              set: { if !$0 { ScreenshotInbox.shared.pending = nil } })) {
+            if let image = ScreenshotInbox.shared.pending { ScreenshotSendSheet(image: image).environment(app) }
+        }
         #endif
-        .sheet(item: $app.sheet, onDismiss: {
-            app.afterSheetDismiss?(); app.afterSheetDismiss = nil
-            #if os(iOS)
-            if app.sheet == nil { ScreenshotInbox.shared.pending = nil }
-            #endif
-        }) { sheet in
+        .sheet(item: $app.sheet, onDismiss: { app.afterSheetDismiss?(); app.afterSheetDismiss = nil }) { sheet in
             Group { switch sheet {
             case .settings: SettingsSheet()
             case .shortcuts: ShortcutsSheet()
@@ -65,10 +65,6 @@ struct RootView: View {
             case .pipelines: PipelinesConnectSheet()
             case .pipelinesEdit(let id): PipelinesConnectSheet(editing: id)
             case .newTab: NewTabSheet()
-            case .screenshot:
-                #if os(iOS)
-                if let image = ScreenshotInbox.shared.pending { ScreenshotSendSheet(image: image) }
-                #endif
             } }
             // Handed on explicitly: on a Mac (Designed for iPad) a sheet's content did not inherit them, and
             // the first-run setup sheet crashed at launch with "No Observable object of type AppModel".

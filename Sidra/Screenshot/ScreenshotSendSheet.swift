@@ -25,11 +25,31 @@ struct ScreenshotSendSheet: View {
     @State private var drawing: [CGPoint]?
     @State private var history: [[CGPoint]] = []
     @State private var preview: UIImage?
+    /// 1 = the whole screenshot fits; pinch, −/+ or ⌘+/⌘− zoom up to 8×. `pan` moves the zoomed image.
+    @State private var zoom: CGFloat = 1
+    @State private var zoomAtPinch: CGFloat?
+    @State private var pan: CGSize = .zero
+    @State private var panAtDrag: CGSize?
+    @State private var moving = false
 
     private var pixels: CGSize { image.cgImage.map { CGSize(width: $0.width, height: $0.height) } ?? image.size }
     private var target: ScreenshotTarget? { targets.first { $0.id == picked } }
 
+    /// A card over 96% of the screen (Waseem, 2026-11-19), shown as a full-screen cover since a sheet
+    /// cannot be sized that freely.
     var body: some View {
+        GeometryReader { geo in
+            card
+                .frame(width: geo.size.width * 0.96, height: geo.size.height * 0.96)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(SidraColor.hairline2))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .background(Color.black.opacity(0.5).ignoresSafeArea())
+        .presentationBackground(.clear)
+    }
+
+    private var card: some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
                 Text("Send screenshot").font(SidraFont.ui(15, weight: .bold)).foregroundStyle(SidraColor.text)
@@ -52,9 +72,11 @@ struct ScreenshotSendSheet: View {
             footer
         }
         .background(SidraColor.raised)
-        .presentationSizing(.page)
         .onAppear { updatePreview() }
         .background { keys }
+        .onReceive(NotificationCenter.default.publisher(for: .sidraScreenshotZoom)) { note in
+            switch note.object as? String { case "0": setZoom(1); case "-": setZoom(zoom / 1.5); case "=": setZoom(zoom * 1.5); default: break }
+        }
     }
 
     // MARK: Sessions
@@ -112,7 +134,13 @@ struct ScreenshotSendSheet: View {
 
     private var tools: some View {
         HStack(spacing: 8) {
-            Label("Draw around the part to send", systemImage: "pencil.and.outline").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
+            toolToggle("Draw", "pencil.and.outline", on: !moving) { moving = false }
+            toolToggle("Move", "hand.draw", on: moving) { moving = true }
+            Rectangle().fill(SidraColor.hairline2).frame(width: 1, height: 20).padding(.horizontal, 4)
+            IconButton("minus.magnifyingglass", label: "Zoom out") { setZoom(zoom / 1.5) }
+            Text(verbatim: "\(Int((zoom * 100).rounded()))%").font(SidraFont.mono(12)).foregroundStyle(SidraColor.muted).frame(minWidth: 44)
+            IconButton("plus.magnifyingglass", label: "Zoom in") { setZoom(zoom * 1.5) }
+            Button("Fit") { setZoom(1) }.buttonStyle(.sidraSecondary).disabled(zoom == 1 && pan == .zero)
             Spacer()
             Button("Undo") { shape = history.popLast() ?? []; updatePreview() }
                 .buttonStyle(.sidraSecondary).disabled(shape.isEmpty)
@@ -122,9 +150,30 @@ struct ScreenshotSendSheet: View {
         .padding(.horizontal, 14).frame(height: 48)
     }
 
+    private func toolToggle(_ title: String, _ icon: String, on: Bool, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: icon).font(SidraFont.ui(12.5, weight: on ? .bold : .regular))
+                .foregroundStyle(on ? SidraColor.text : SidraColor.muted)
+                .padding(.horizontal, 10).frame(height: 30)
+                .overlay(alignment: .bottom) {
+                    if on { UnevenRoundedRectangle(topLeadingRadius: 2, topTrailingRadius: 2).fill(SidraGradient.horizontal).frame(height: 2).padding(.horizontal, 8) }
+                }
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
+    }
+
+    private func setZoom(_ z: CGFloat) {
+        withAnimation(.easeOut(duration: 0.15)) {
+            zoom = min(8, max(1, z))
+            if zoom == 1 { pan = .zero }
+        }
+    }
+
     private var canvas: some View {
         GeometryReader { geo in
-            let fit = fitted(in: geo.size)
+            let fit = shown(fitted(in: geo.size), in: geo.size)
             let toView = { (p: CGPoint) in CGPoint(x: fit.minX + p.x / pixels.width * fit.width, y: fit.minY + p.y / pixels.height * fit.height) }
             let toImage = { (p: CGPoint) in CGPoint(x: min(max(0, (p.x - fit.minX) / fit.width * pixels.width), pixels.width),
                                                     y: min(max(0, (p.y - fit.minY) / fit.height * pixels.height), pixels.height)) }
@@ -145,16 +194,42 @@ struct ScreenshotSendSheet: View {
             }
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0).onChanged { v in
+                if moving || zoomAtPinch != nil {   // Move pans; a pinch in progress draws nothing
+                    if moving { if panAtDrag == nil { panAtDrag = pan }; pan = clamped((panAtDrag ?? .zero) + v.translation, geo.size) }
+                    return
+                }
                 let p = toImage(v.location)
                 if drawing == nil { drawing = [p] }
-                else if let last = drawing?.last, hypot(p.x - last.x, p.y - last.y) > pixels.width / 400 { drawing?.append(p) }
+                else if let last = drawing?.last, hypot(p.x - last.x, p.y - last.y) > pixels.width / 400 / zoom { drawing?.append(p) }
             }.onEnded { _ in
+                panAtDrag = nil
                 if let d = drawing, d.count > 3 { history.append(shape); shape = d; updatePreview() }
                 drawing = nil
+            })
+            .simultaneousGesture(MagnifyGesture().onChanged { v in
+                if zoomAtPinch == nil { zoomAtPinch = zoom; drawing = nil }
+                zoom = min(8, max(1, (zoomAtPinch ?? 1) * v.magnification))
+                pan = clamped(pan, geo.size)
+            }.onEnded { _ in
+                zoomAtPinch = nil
+                if zoom == 1 { withAnimation(.easeOut(duration: 0.15)) { pan = .zero } }
             })
         }
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .accessibilityLabel("Screenshot. Draw around the part to send.")
+    }
+
+    /// The fitted rect zoomed about the middle, then moved by `pan`.
+    private func shown(_ fit: CGRect, in size: CGSize) -> CGRect {
+        let w = fit.width * zoom, h = fit.height * zoom
+        return CGRect(x: (size.width - w) / 2 + pan.width, y: (size.height - h) / 2 + pan.height, width: w, height: h)
+    }
+
+    /// Panning stops where the zoomed image's edge meets the frame's.
+    private func clamped(_ p: CGSize, _ size: CGSize) -> CGSize {
+        let fit = fitted(in: size)
+        let mx = max(0, (fit.width * zoom - size.width) / 2), my = max(0, (fit.height * zoom - size.height) / 2)
+        return CGSize(width: min(mx, max(-mx, p.width)), height: min(my, max(-my, p.height)))
     }
 
     private func fitted(in size: CGSize) -> CGRect {
@@ -188,11 +263,14 @@ struct ScreenshotSendSheet: View {
         .padding(.horizontal, 18).frame(height: 64)
     }
 
-    /// ↑ and ↓ move the pick.
+    /// ↑ and ↓ move the pick; ⌘+, ⌘− and ⌘0 zoom.
     private var keys: some View {
         Group {
             Button("") { step(-1) }.keyboardShortcut(.upArrow, modifiers: [])
             Button("") { step(1) }.keyboardShortcut(.downArrow, modifiers: [])
+            Button("") { setZoom(zoom * 1.5) }.keyboardShortcut("=", modifiers: .command)
+            Button("") { setZoom(zoom / 1.5) }.keyboardShortcut("-", modifiers: .command)
+            Button("") { setZoom(1) }.keyboardShortcut("0", modifiers: .command)
         }
         .opacity(0).accessibilityHidden(true)
     }
@@ -309,4 +387,5 @@ struct ScreenshotTarget: Identifiable, Hashable {
         return (mine.first ?? targets.first)?.id
     }
 }
+private func + (a: CGSize, b: CGSize) -> CGSize { CGSize(width: a.width + b.width, height: a.height + b.height) }
 #endif
