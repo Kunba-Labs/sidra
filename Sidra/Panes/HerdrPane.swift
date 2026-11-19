@@ -50,7 +50,8 @@ struct MuxSpacesBar: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 2) {
                         // One chip per space; a space with several tabs opens a dropdown of them (2026-11-16).
-                        ForEach(shown(s)) { ws in reorder(tab(ws, on: ws.id == s.focused_workspace_id, m: m, s: s), ws, m, s) }
+                        // Spaces with the same name and folder share a chip (MuxSnapshot.chips).
+                        ForEach(s.chips(shown(s)), id: \.[0].id) { g in reorder(tab(g, m: m, s: s), g[0], m, s) }
                         // The space's tabs scroll with the spaces, so a narrow pane never pushes them off its edge.
                         if let ws = s.focused_workspace_id { tabsBar(m, s, space: ws) }
                     }
@@ -169,6 +170,7 @@ struct MuxSpacesBar: View {
     }
 
     /// Dragging any of a space's chips moves the whole space.
+    // ponytail: a merged chip drags only its first space; the others stay put in herdr's order.
     private func reorder(_ chip: some View, _ ws: MuxSnapshot.Workspace, _ m: MuxMonitor, _ s: MuxSnapshot) -> some View {
         chip.reorderable(ws.id, dragging: $dragging) { dragged, over in
             var ids = shown(s).map(\.id)
@@ -184,30 +186,39 @@ struct MuxSpacesBar: View {
         }
     }
 
-    /// A space's chip. With several tabs it shows their count and opens a dropdown: each tab, its stage, and Move here.
-    @ViewBuilder private func tab(_ ws: MuxSnapshot.Workspace, on: Bool, m: MuxMonitor, s: MuxSnapshot) -> some View {
-        let hasAgents = !s.agents(in: ws.id).isEmpty
-        let tabs = s.tabs(in: ws.id)
+    /// A space's chip (or several same-named spaces' one chip). With several tabs it shows their count and
+    /// opens a dropdown: each tab, its stage, and Move here.
+    @ViewBuilder private func tab(_ group: [MuxSnapshot.Workspace], m: MuxMonitor, s: MuxSnapshot) -> some View {
+        let ws = group[0]
+        let at = group.firstIndex { $0.id == s.focused_workspace_id }
+        let on = at != nil
+        let withAgents = group.filter { !s.agents(in: $0.id).isEmpty }
+        let tabs = group.flatMap { s.tabs(in: $0.id) }
         // The pill is always the tab count, so the chip keeps its width when picked (2026-11-16); VoiceOver names the tab up.
-        let up = on ? tabs.first(where: \.focused) : nil
+        let up = on ? tabs.first { $0.focused && $0.workspace_id == s.focused_workspace_id } : nil
         let pill = tabs.count < 2 ? nil : "\(tabs.count)"
-        let label = chip(ws, pill: pill, on: on, status: hasAgents ? ws.agent_status : nil, m: m)
+        let label = chip(ws, pill: pill, on: on, status: withAgents.isEmpty ? nil : MuxStatus.worst(withAgents.map(\.agent_status)), m: m)
         Group {
             if tabs.count > 1 {
                 Button { tabsOpen = ws.id } label: { label }
                     .buttonStyle(.plain)
                     .popover(isPresented: Binding(get: { tabsOpen == ws.id }, set: { if !$0 { tabsOpen = nil } }), arrowEdge: .top) {
-                        MuxTabsMenu(space: ws, tabs: tabs, shown: on, logo: m.logo(for: ws)) { t in
+                        MuxTabsMenu(space: ws, tabs: tabs, shown: s.focused_workspace_id, logo: m.logo(for: ws)) { t in
                             tabsOpen = nil
-                            Task { await m.focusTab(app, t.id) }
+                            Task {
+                                // A tab of another space in the chip: herdr shows that space first.
+                                if t.workspace_id != s.focused_workspace_id, let w = group.first(where: { $0.id == t.workspace_id }) { await m.focus(app, w) }
+                                await m.focusTab(app, t.id)
+                            }
                         }
                         .presentationCompactAdaptation(.popover)
                     }
             } else {
-                Button { Task { await m.focus(app, ws) } } label: { label }.buttonStyle(.plain)
+                // An older herdr reports no tabs: a merged chip steps through its spaces.
+                Button { Task { await m.focus(app, group[((at ?? -1) + 1) % group.count]) } } label: { label }.buttonStyle(.plain)
             }
         }
-        .accessibilityLabel("\(ws.label)\(tabs.count > 1 ? ", \(tabs.count) tabs" : "")\(up.map { t in ", showing " + (t.label.flatMap { $0.isEmpty ? nil : $0 } ?? "tab \(t.number)") } ?? ""), \(hasAgents ? HerdrStatusIcon.label(ws.agent_status) : "no agents")")
+        .accessibilityLabel("\(ws.label)\(tabs.count > 1 ? ", \(tabs.count) tabs" : "")\(up.map { t in ", showing " + (t.label.flatMap { $0.isEmpty ? nil : $0 } ?? "tab \(t.number)") } ?? ""), \(withAgents.isEmpty ? "no agents" : HerdrStatusIcon.label(MuxStatus.worst(withAgents.map(\.agent_status))))")
         .accessibilityAddTraits(on ? .isSelected : [])
         .accessibilityIdentifier("herdr-space-\(ws.label)")
     }
@@ -239,14 +250,14 @@ struct MuxSpacesBar: View {
     /// through the spaces (⌘1–9 stay Sidra's own tabs).
     @ViewBuilder private func spaceShortcuts(_ m: MuxMonitor, _ s: MuxSnapshot) -> some View {
         if app.workspace.focusedPane?.id == pane.id {
-            let spaces = shown(s)
+            let spaces = s.chips(shown(s)).map { $0[0] }   // one stop per chip, in the bar's order
             ForEach(Array(spaces.prefix(9).enumerated()), id: \.element.id) { i, ws in
                 let key = KeyEquivalent(Character("\(i + 1)"))
                 Button("") { Task { await m.focus(app, ws) } }.keyboardShortcut(key, modifiers: .control).opacity(0).accessibilityHidden(true)
                 Button("") { Task { await m.focus(app, ws) } }.keyboardShortcut(key, modifiers: [.command, .option]).opacity(0).accessibilityHidden(true)
             }
             if spaces.count > 1 {
-                let at = spaces.firstIndex { $0.id == s.focused_workspace_id } ?? 0
+                let at = s.chips(shown(s)).firstIndex { $0.contains { $0.id == s.focused_workspace_id } } ?? 0
                 Button("") { Task { await m.focus(app, spaces[(at + 1) % spaces.count]) } }
                     .keyboardShortcut(.tab, modifiers: .control).opacity(0).accessibilityHidden(true)
                 Button("") { Task { await m.focus(app, spaces[(at + spaces.count - 1) % spaces.count]) } }
@@ -737,19 +748,21 @@ struct HerdrLogoView: View {
 struct MuxTabsMenu: View {
     let space: MuxSnapshot.Workspace
     let tabs: [MuxSnapshot.Tab]
-    let shown: Bool
+    /// The space herdr shows; its focused tab is the one up.
+    let shown: String?
     let logo: PlatformImage?
     let pick: (MuxSnapshot.Tab) -> Void
 
     var body: some View {
         ScrollView {
         VStack(alignment: .leading, spacing: 2) {
-            ForEach(tabs) { t in
-                let on = shown && t.focused
+            ForEach(Array(tabs.enumerated()), id: \.element.id) { i, t in
+                let on = t.workspace_id == shown && t.focused
+                let n = i + 1   // counted across the chip: merged spaces each start at tab 1
                 Button { pick(t) } label: {
                     HStack(spacing: 10) {
                         HerdrLogoView(name: space.label, image: logo, size: 20)
-                        let name = Text(t.label.flatMap { $0.isEmpty || Int($0) != nil ? nil : $0 } ?? "\(space.label) \(t.number)")
+                        let name = Text(t.label.flatMap { $0.isEmpty || Int($0) != nil ? nil : $0 } ?? "\(space.label) \(n)")
                             .font(SidraFont.ui(13.5, weight: on ? .bold : .regular))
                         if on {
                             // The tab showing: its name in the gradient, a blinking caret after it.
@@ -765,9 +778,9 @@ struct MuxTabsMenu: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("\(space.label) tab \(t.number), \(HerdrStatusIcon.label(t.agent_status))")
+                .accessibilityLabel("\(space.label) tab \(n), \(HerdrStatusIcon.label(t.agent_status))")
                 .accessibilityAddTraits(on ? .isSelected : [])
-                .accessibilityIdentifier("herdr-tab-\(space.label)-\(t.number)")
+                .accessibilityIdentifier("herdr-tab-\(space.label)-\(n)")
             }
         }
         }

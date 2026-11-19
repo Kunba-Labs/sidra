@@ -209,6 +209,18 @@ struct MuxSnapshot: Decodable, Sendable {
     /// The folder a space works in: its first pane's directory.
     func folder(of ws: String) -> String? { panes.first { $0.workspace_id == ws }?.cwd }
     func count(_ status: MuxStatus) -> Int { agents.filter { $0.agent_status == status }.count }
+
+    /// Spaces with the same name and folder share one chip in the bar, their tabs in one dropdown, so a
+    /// duplicate space (a second "Tuli" in ~/Development/Tuli) reads as one project (Waseem, 2026-11-19).
+    /// Keeps `list`'s order; each group sits where its first space is.
+    func chips(_ list: [Workspace]) -> [[Workspace]] {
+        var groups: [[Workspace]] = [], at: [String: Int] = [:]
+        for ws in list {
+            let key = ws.label + "\u{0}" + (folder(of: ws.id) ?? ws.id)   // no folder known: never merged
+            if let i = at[key] { groups[i].append(ws) } else { at[key] = groups.count; groups.append([ws]) }
+        }
+        return groups
+    }
 }
 
 struct HerdrError: Error, LocalizedError {

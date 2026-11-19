@@ -27,6 +27,15 @@ final class HerdrTests: XCTestCase {
         XCTAssertEqual(s.count(.working), 1)
     }
 
+    /// Same name and folder share a chip; same name elsewhere, or no folder known, does not.
+    func testSameProjectSpacesShareAChip() throws {
+        let json = #"""
+        {"result":{"snapshot":{"workspaces":[{"workspace_id":"a","label":"Tuli","number":1,"agent_status":"idle","tab_count":1,"focused":false},{"workspace_id":"b","label":"pfase","number":1,"agent_status":"idle","tab_count":1,"focused":false},{"workspace_id":"c","label":"Tuli","number":1,"agent_status":"idle","tab_count":1,"focused":false},{"workspace_id":"d","label":"Tuli","number":1,"agent_status":"idle","tab_count":1,"focused":false},{"workspace_id":"e","label":"x","number":1,"agent_status":"idle","tab_count":1,"focused":false},{"workspace_id":"f","label":"x","number":1,"agent_status":"idle","tab_count":1,"focused":false}],"agents":[],"panes":[{"pane_id":"1","workspace_id":"a","cwd":"/T"},{"pane_id":"2","workspace_id":"c","cwd":"/T"},{"pane_id":"3","workspace_id":"d","cwd":"/other"}],"focused_pane_id":null,"focused_workspace_id":"c","version":null}}}
+        """#
+        let s = try MuxSnapshot.parse(Data(json.utf8))
+        XCTAssertEqual(s.chips(s.workspaces).map { $0.map(\.id) }, [["a", "c"], ["b"], ["d"], ["e"], ["f"]])
+    }
+
     func testServerNotRunningIsExplained() {
         let reply = #"{"id":"x","error":{"code":"server_not_running","message":"no herdr server is running"}}"#
         XCTAssertThrowsError(try MuxSnapshot.parse(Data(reply.utf8))) { e in
