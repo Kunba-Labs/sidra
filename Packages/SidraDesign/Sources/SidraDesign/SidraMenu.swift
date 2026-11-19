@@ -35,7 +35,9 @@ public struct SidraMenu<Label: View>: View {
     public var body: some View {
         Button { open.toggle() } label: { label() }
             .buttonStyle(.plain)
-            .popover(isPresented: $open, arrowEdge: .bottom) {
+            // No arrowEdge: a pinned edge opens above even with no room there (the herdr bar near the
+            // top of the screen squeezed the + menu into a scroll); the system picks the side with space.
+            .popover(isPresented: $open) {
                 SidraMenuList(sections: sections) { open = false }
                     .presentationCompactAdaptation(.popover)
                     .presentationBackground(SidraColor.popup)
