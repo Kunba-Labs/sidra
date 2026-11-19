@@ -68,6 +68,7 @@
 		6B5024C83E45197BF4473249 /* TheasaCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A13AED1FB2E44CBBCE48E1 /* TheasaCommands.swift */; };
 		6EBC7DB38F21425DECECA632 /* SidraSSH in Frameworks */ = {isa = PBXBuildFile; productRef = E3A47C10FA0E643E3967CC53 /* SidraSSH */; };
 		70837EE4B144DA323B9753D3 /* JetBrainsMono-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9FAFFC0DA4889FFFC37607E5 /* JetBrainsMono-Variable.ttf */; };
+		72210B56A357E40E414FC6D1 /* SidraShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 24E3FBD0D184CBA1A09C2A72 /* SidraShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		72957F7C89C8286EC9B48A86 /* SidraWorkspace in Frameworks */ = {isa = PBXBuildFile; productRef = 11BEF98FA85E5B56A02A801A /* SidraWorkspace */; };
 		762694257B241A70017A3BD6 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CC77A4E8D6AA264330D64 /* SettingsSheet.swift */; };
 		76818F3F38D7C373C58D6F24 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 788A46258945131DAB264C68 /* PrivacyInfo.xcprivacy */; };
@@ -137,10 +138,18 @@
 		F54C10CBFB1A977F03FE4746 /* NewTabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835D989F13A564BB23920914 /* NewTabUITests.swift */; };
 		F6B9EC8C6A87955ED5F21628 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 64C542AF4A8DB04D5DB7B0AF /* WhisperKit */; };
 		F9857DFFC09F44DEC6F754E1 /* CommandRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BF97F13FCCEA3B5097ACB1 /* CommandRegistry.swift */; };
+		FC285F218118A770B10FD649 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2191D66F65F6BF852EB4C5F /* ShareViewController.swift */; };
 		FF4CFAB6C906B6680E21BDB7 /* SidraTheasa in Frameworks */ = {isa = PBXBuildFile; productRef = 0C82BF3189E6FDCF783465AC /* SidraTheasa */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		2F3BFB2B5FC79DAF5EBD5157 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF7C3498BDEAB98B50236D69 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 76079287FA6E4841539D6DB0;
+			remoteInfo = SidraShare;
+		};
 		4EBD27AC819F61F14574FAF6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CF7C3498BDEAB98B50236D69 /* Project object */;
@@ -157,6 +166,20 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		1D369F80F51D66DD7722002D /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				72210B56A357E40E414FC6D1 /* SidraShare.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		026DB1F4BFD86A94EE83C678 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		08DA5A482100B822AC3216BB /* TerminalPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalPane.swift; sourceTree = "<group>"; };
@@ -170,6 +193,7 @@
 		21F90D9F3ACAEC2FB0ADCA51 /* SceneStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneStore.swift; sourceTree = "<group>"; };
 		2323BA0EF5F04A337E394E14 /* SwipeTyping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeTyping.swift; sourceTree = "<group>"; };
 		24DCC141B15F493AF564C38B /* TheasaMarkdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaMarkdown.swift; sourceTree = "<group>"; };
+		24E3FBD0D184CBA1A09C2A72 /* SidraShare.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = SidraShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		2A5640D612B671DEF0516D7B /* SSHMoshUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHMoshUITests.swift; sourceTree = "<group>"; };
 		3A958E2D546170231CBA9D2C /* LifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleTests.swift; sourceTree = "<group>"; };
 		3EE6DFA8F7CAB8895B0EC7A3 /* SidraSSHTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidraSSHTests.swift; sourceTree = "<group>"; };
@@ -219,6 +243,7 @@
 		AB96FDFC13D91E455A4A710C /* SidraHackerTab */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraHackerTab; path = Packages/SidraHackerTab; sourceTree = SOURCE_ROOT; };
 		B0DC2327B7FE042EE0FD4378 /* herdr-attach.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "herdr-attach.sh"; sourceTree = "<group>"; };
 		B1F4667A0E51BA7C24D920DD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B2191D66F65F6BF852EB4C5F /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		B800AF5E86A152DF6C1EA49A /* FloatingKeyboardUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingKeyboardUITests.swift; sourceTree = "<group>"; };
 		CCFB137D3245A2A62F70ECB5 /* FloatingKeyboardPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingKeyboardPanel.swift; sourceTree = "<group>"; };
 		D109603D341FACD0A06F2B12 /* SidraTheasa */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraTheasa; path = Packages/SidraTheasa; sourceTree = SOURCE_ROOT; };
@@ -354,6 +379,7 @@
 			children = (
 				A27535A94778550C0BFB0AA2 /* Sidra.app */,
 				431F62683B346773FF43404D /* SidraMac.app */,
+				24E3FBD0D184CBA1A09C2A72 /* SidraShare.appex */,
 				628260ACBDFD6ACC103AB75C /* SidraTests.xctest */,
 				DA6B2085C39F0188876B8475 /* SidraUITests.xctest */,
 			);
@@ -420,6 +446,7 @@
 			children = (
 				4883476890969664828F3673 /* Packages */,
 				F81EE953F4618233637A7F11 /* Sidra */,
+				FC074CE6CDFDD3EAA5C1B29A /* SidraShare */,
 				D4756BF5A46EB24B1A8266C9 /* Tests */,
 				4A57BDEACAD376B3E5E60959 /* Products */,
 			);
@@ -479,6 +506,14 @@
 			path = Sidra;
 			sourceTree = "<group>";
 		};
+		FC074CE6CDFDD3EAA5C1B29A /* SidraShare */ = {
+			isa = PBXGroup;
+			children = (
+				B2191D66F65F6BF852EB4C5F /* ShareViewController.swift */,
+			);
+			path = SidraShare;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -489,11 +524,13 @@
 				D7599E00B73BB8BDBFD35DAF /* Sources */,
 				AB155051BBD43604022F8811 /* Resources */,
 				F509322163983CFD192E7677 /* Frameworks */,
+				1D369F80F51D66DD7722002D /* Embed Foundation Extensions */,
 				43C214577BE2609BEFDC27E8 /* Demo fixtures */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				5BA65178EA2F7289A10D97E5 /* PBXTargetDependency */,
 			);
 			name = Sidra;
 			packageProductDependencies = (
@@ -509,6 +546,23 @@
 			productName = Sidra;
 			productReference = A27535A94778550C0BFB0AA2 /* Sidra.app */;
 			productType = "com.apple.product-type.application";
+		};
+		76079287FA6E4841539D6DB0 /* SidraShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 02BC09DEC067EB24EFEEBD1E /* Build configuration list for PBXNativeTarget "SidraShare" */;
+			buildPhases = (
+				B492224256E89109858D6824 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SidraShare;
+			packageProductDependencies = (
+			);
+			productName = SidraShare;
+			productReference = 24E3FBD0D184CBA1A09C2A72 /* SidraShare.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 		B1B2CB0337808B53E2A10E48 /* SidraUITests */ = {
 			isa = PBXNativeTarget;
@@ -587,6 +641,10 @@
 						DevelopmentTeam = KF53B4S5HD;
 						ProvisioningStyle = Automatic;
 					};
+					76079287FA6E4841539D6DB0 = {
+						DevelopmentTeam = KF53B4S5HD;
+						ProvisioningStyle = Automatic;
+					};
 					B1B2CB0337808B53E2A10E48 = {
 						DevelopmentTeam = KF53B4S5HD;
 						ProvisioningStyle = Automatic;
@@ -628,6 +686,7 @@
 			projectRoot = "";
 			targets = (
 				14CA571447511C955C0A2246 /* Sidra */,
+				76079287FA6E4841539D6DB0 /* SidraShare */,
 				B6F531514AE626E95576790D /* SidraMac */,
 				BEB540746EA92D253C85E508 /* SidraTests */,
 				B1B2CB0337808B53E2A10E48 /* SidraUITests */,
@@ -702,6 +761,14 @@
 				F087FA61D38E17BABB730417 /* TabKeysUITests.swift in Sources */,
 				2E5B5083144AEADA07FCDEEC /* TheasaKeyboardUITests.swift in Sources */,
 				5D9CC4FCB755969318BDDFD8 /* TheasaUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B492224256E89109858D6824 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FC285F218118A770B10FD649 /* ShareViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -820,6 +887,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		5BA65178EA2F7289A10D97E5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 76079287FA6E4841539D6DB0 /* SidraShare */;
+			targetProxy = 2F3BFB2B5FC79DAF5EBD5157 /* PBXContainerItemProxy */;
+		};
 		9C2CD6D7DDA4B3C008AEB0A9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 14CA571447511C955C0A2246 /* Sidra */;
@@ -997,6 +1069,25 @@
 			};
 			name = Debug;
 		};
+		5743973D135E69B80FE679B7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SidraShare/SidraShare.entitlements;
+				CURRENT_PROJECT_VERSION = 14;
+				INFOPLIST_FILE = SidraShare/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = nl.sadiq.sidra.share;
+				PRODUCT_NAME = SidraShare;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
 		58DB122C51519F038973EA8F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1060,6 +1151,25 @@
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Sidra.app/Sidra";
+			};
+			name = Release;
+		};
+		EBA044E32B8B5154F958ADAF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = SidraShare/SidraShare.entitlements;
+				CURRENT_PROJECT_VERSION = 14;
+				INFOPLIST_FILE = SidraShare/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = nl.sadiq.sidra.share;
+				PRODUCT_NAME = SidraShare;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -1137,6 +1247,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		02BC09DEC067EB24EFEEBD1E /* Build configuration list for PBXNativeTarget "SidraShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5743973D135E69B80FE679B7 /* Debug */,
+				EBA044E32B8B5154F958ADAF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		2006FCD935FACF39F9098FA1 /* Build configuration list for PBXNativeTarget "SidraTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -19,6 +19,11 @@ settings:
     SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     SWIFT_STRICT_CONCURRENCY: minimal
+# The iOS app and its share extension carry one version (tools/testflight.sh bumps the first CURRENT_PROJECT_VERSION).
+settingGroups:
+  iosVersion:
+    MARKETING_VERSION: 1.0.0
+    CURRENT_PROJECT_VERSION: 14
 packages:
   SidraDesign: { path: Packages/SidraDesign }
   SidraWorkspace: { path: Packages/SidraWorkspace }
@@ -62,6 +67,7 @@ targets:
       - package: SidraChess
       - package: Argmax
         product: WhisperKit
+      - target: SidraShare
     info:
       path: Sidra/Info.plist
       properties:
@@ -92,18 +98,51 @@ targets:
         NSMicrophoneUsageDescription: Sidra listens while you hold the mic to dictate into a terminal. Speech is turned into text on this device.
         NSSpeechRecognitionUsageDescription: Sidra turns your dictation into text on this device.
         ITSAppUsesNonExemptEncryption: false
+        CFBundleURLTypes:   # sidra://screenshot from the share extension
+          - CFBundleURLName: nl.sadiq.sidra
+            CFBundleURLSchemes: [sidra]
     entitlements:
       path: Sidra/Sidra.entitlements
-      properties: {}
+      properties:
+        # Shared with SidraShare: the Share sheet leaves screenshots in this group's Inbox (2026-11-19).
+        com.apple.security.application-groups: [group.nl.sadiq.sidra]
     settings:
+      groups: [iosVersion]
       base:
         PRODUCT_BUNDLE_IDENTIFIER: nl.sadiq.sidra
         PRODUCT_NAME: Sidra
-        MARKETING_VERSION: 1.0.0
-        CURRENT_PROJECT_VERSION: 14
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_UIUserInterfaceStyle: Dark
         OTHER_LDFLAGS: ["-ObjC"]
+  # "Sidra" in the Share sheet (the screenshot editor's included): the image goes to the App Group's Inbox,
+  # where Sidra picks it up on the Send screenshot sheet.
+  SidraShare:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: SidraShare
+        excludes: ["Info.plist", "SidraShare.entitlements"]
+    info:
+      path: SidraShare/Info.plist
+      properties:
+        CFBundleDisplayName: Sidra
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsImageWithMaxCount: 1
+    entitlements:
+      path: SidraShare/SidraShare.entitlements
+      properties:
+        com.apple.security.application-groups: [group.nl.sadiq.sidra]
+    settings:
+      groups: [iosVersion]
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: nl.sadiq.sidra.share
+        PRODUCT_NAME: SidraShare
   # The native Mac app (decided 2026-11-17, replacing the Designed-for-iPad build): same sources,
   # AppKit where UIKit differs. Ships outside the App Store with Developer ID and Sparkle.
   SidraMac:
