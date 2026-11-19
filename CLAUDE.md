@@ -13,6 +13,9 @@ HackerTab and Chess. New tab kinds are added one by one; each kind runs its own 
 - `-sidra.demo` (Debug, simulator) fills every tab with made-up data from `Sidra/Demo/DemoMode.swift`.
 - `tools/store-shots.sh` makes the App Store screenshots; `tools/testflight.sh` uploads a build;
   `tools/asc.rb` drives App Store Connect (`store/metadata.md` holds the listing text).
+- Mac app (`SidraMac`): every push to main is a release. `.github/workflows/release-mac.yml` builds it, signs it with
+  Developer ID, notarizes it and publishes a DMG plus a Sparkle `appcast.xml` as a GitHub release (`mac-v<version>.<commits>`).
+  `tools/package-mac.py --identity <Developer ID> [--notary-profile sidra]` does the same locally; `tools/release-secrets` sets the CI secrets.
 
 ## Design system (Packages/SidraDesign)
 

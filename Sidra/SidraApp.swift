@@ -15,6 +15,9 @@ struct SidraApp: App {
         DemoMode.registerProtocol()
         #endif
         DataLayout.apply()
+        #if os(macOS)
+        _ = AppUpdater.controller   // starts the scheduled update checks
+        #endif
         // -sidra.forceCrash, -sidra.killAfter N (tests): a real crash and a real SIGKILL.
         if CommandLine.arguments.contains("-sidra.forceCrash") { DispatchQueue.main.asyncAfter(deadline: .now() + 2) { fatalError("sidra.forceCrash") } }
         let killAfter = UserDefaults.standard.double(forKey: "sidra.killAfter")
@@ -32,6 +35,9 @@ struct SidraApp: App {
         #endif
         .commands {
             WorkspaceCommands(app: app)
+            #if os(macOS)
+            UpdateCommands()
+            #endif
         }
     }
 }
