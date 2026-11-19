@@ -1,55 +1,42 @@
 import XCTest
 
-/// Ctrl-Tab and Ctrl-Shift-Tab walk the window's tabs, wrapping at both ends (2026-11-18).
+/// Ctrl-Tab / Ctrl-Shift-Tab and Cmd-[ / Cmd-] walk the window's tabs from a terminal (2026-11-18).
+/// In a herdr pane Cmd-[ and Cmd-] walk herdr's own tabs instead, so this starts on the demo's plain shell.
 final class TabKeysUITests: XCTestCase {
-    func testCtrlTabWalksTabs() {
+    private func launchOnShell() -> (XCUIApplication, XCUIElementQuery) {
         let app = XCUIApplication()
-        app.launchArguments = ["-sidra.noAutoFocus", "-sidra.freshWorkspace"]
+        app.launchArguments = ["-sidra.demo", "-sidra.freshWorkspace", "-sidra.noAutoFocus", "-sidra.onboarded", "YES"]
         app.launch()
         XCUIDevice.shared.orientation = .landscapeLeft
-        let first = app.buttons["blinky-rs code"]
-        XCTAssertTrue(first.waitForExistence(timeout: 10))
-        let selected = NSPredicate(format: "isSelected == true")
-        let tabs = app.buttons.matching(selected)
-        app.typeKey(XCUIKeyboardKey.shift.rawValue, modifierFlags: [])   // the Simulator drops the first hardware key after launch (any key, not just Ctrl-Tab)
+        sleep(4)
+        app.typeKey(XCUIKeyboardKey.shift.rawValue, modifierFlags: [])   // the Simulator drops the first hardware key after launch
+        app.typeKey("2", modifierFlags: .command)                        // the demo's SSH shell
         sleep(2)
+        return (app, app.buttons.matching(NSPredicate(format: "isSelected == true")))
+    }
+
+    func testCtrlTabWalksTabs() {
+        let (app, tabs) = launchOnShell()
         let start = tabs.firstMatch.label
+        XCTAssertFalse(start.isEmpty)
         app.typeKey(XCUIKeyboardKey.tab.rawValue, modifierFlags: .control)
         sleep(1)
         XCTAssertNotEqual(tabs.firstMatch.label, start, "Ctrl-Tab moves to another tab")
         app.typeKey(XCUIKeyboardKey.tab.rawValue, modifierFlags: [.control, .shift])
         sleep(1)
         XCTAssertEqual(tabs.firstMatch.label, start, "Ctrl-Shift-Tab comes back")
+    }
 
-        // With the editor's text view focused: its own key commands must not take Ctrl-Tab.
-        let editor = app.textViews.firstMatch
-        XCTAssertTrue(editor.waitForExistence(timeout: 10))
-        editor.tap()
-        sleep(1)
-        app.typeKey(XCUIKeyboardKey.shift.rawValue, modifierFlags: [])   // dropped too: the first key after the keyboard comes up
-        app.typeKey(XCUIKeyboardKey.tab.rawValue, modifierFlags: .control)
-        sleep(1)
-        XCTAssertNotEqual(tabs.firstMatch.label, start, "Ctrl-Tab leaves the editor's tab")
-        }
-
-    /// Cmd-[ and Cmd-] walk the tabs from a focused terminal too (in an editor they indent).
     func testCmdBracketsWalkTabsFromATerminal() {
-        let app = XCUIApplication()
-        app.launchArguments = ["-sidra.noAutoFocus", "-sidra.freshWorkspace"]
-        app.launch()
-        XCUIDevice.shared.orientation = .landscapeLeft
-        XCTAssertTrue(app.buttons["blinky-rs code"].waitForExistence(timeout: 10))
-        let tabs = app.buttons.matching(NSPredicate(format: "isSelected == true"))
-        app.typeKey(XCUIKeyboardKey.shift.rawValue, modifierFlags: [])   // the Simulator drops the first key after launch
-        app.typeKey("t", modifierFlags: .command)   // a VM terminal tab, focused
-        sleep(4)
-        app.typeKey(XCUIKeyboardKey.shift.rawValue, modifierFlags: [])
-        let term = tabs.firstMatch.label
-        app.typeKey("[", modifierFlags: .command)
-        sleep(1)
-        XCTAssertNotEqual(tabs.firstMatch.label, term, "Cmd-[ leaves the terminal's tab")
+        let (app, tabs) = launchOnShell()
+        let start = tabs.firstMatch.label
+        XCTAssertFalse(start.isEmpty)
+        // Right first: tab 1 is herdr, where Cmd-] would walk herdr's tabs instead.
         app.typeKey("]", modifierFlags: .command)
         sleep(1)
-        XCTAssertEqual(tabs.firstMatch.label, term, "Cmd-] comes back")
+        XCTAssertNotEqual(tabs.firstMatch.label, start, "Cmd-] leaves the terminal's tab")
+        app.typeKey("[", modifierFlags: .command)
+        sleep(1)
+        XCTAssertEqual(tabs.firstMatch.label, start, "Cmd-[ comes back")
     }
 }

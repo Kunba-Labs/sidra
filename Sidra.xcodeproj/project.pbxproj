@@ -121,6 +121,7 @@
 		E5795E4C4649FF14ADF7A896 /* PaneBodies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08F9C6E2FAA342E35589D7C /* PaneBodies.swift */; };
 		EBCCC0B6610AE719433183FF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 788A46258945131DAB264C68 /* PrivacyInfo.xcprivacy */; };
 		EE3FCFD9FCFB9F202F7D1D68 /* TheasaProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A069A363B9F7AB51553030 /* TheasaProject.swift */; };
+		F087FA61D38E17BABB730417 /* TabKeysUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D5909535627F01D7DA7FB8 /* TabKeysUITests.swift */; };
 		F32455CD57664A9B89A9D52B /* TheasaSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444C16EC11530D11005BDA70 /* TheasaSearch.swift */; };
 		F3910D0B77EA4077E8699099 /* SceneStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F90D9F3ACAEC2FB0ADCA51 /* SceneStore.swift */; };
 		F3B50A34F450608051F45D1C /* SmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA53C89AF6EAA63E1ABAC641 /* SmokeTests.swift */; };
@@ -153,6 +154,7 @@
 		08DA5A482100B822AC3216BB /* TerminalPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalPane.swift; sourceTree = "<group>"; };
 		0A1CC77A4E8D6AA264330D64 /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
 		0BCED55A7704AA6225857CA0 /* SidraChess */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraChess; path = Packages/SidraChess; sourceTree = SOURCE_ROOT; };
+		13D5909535627F01D7DA7FB8 /* TabKeysUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabKeysUITests.swift; sourceTree = "<group>"; };
 		1480327CDF081DB259C98E5F /* TheasaPulse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaPulse.swift; sourceTree = "<group>"; };
 		16A78597AF77F3BBAB81F25F /* SSHKeysTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHKeysTests.swift; sourceTree = "<group>"; };
 		19FFF77CC7CB50FA454494F7 /* Herdr.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Herdr.swift; sourceTree = "<group>"; };
@@ -269,6 +271,7 @@
 				7154BCD71DBCA78733D7CF59 /* PipelinesUITests.swift */,
 				2A5640D612B671DEF0516D7B /* SSHMoshUITests.swift */,
 				69A9BEE59A535B1C6F7572B3 /* StoreScreenshotsUITests.swift */,
+				13D5909535627F01D7DA7FB8 /* TabKeysUITests.swift */,
 				86C0FAC71E767169A8F6AC6F /* TheasaKeyboardUITests.swift */,
 				867174C3E73F59B207A9FDB0 /* TheasaUITests.swift */,
 			);
@@ -461,6 +464,7 @@
 				D7599E00B73BB8BDBFD35DAF /* Sources */,
 				AB155051BBD43604022F8811 /* Resources */,
 				F509322163983CFD192E7677 /* Frameworks */,
+				43C214577BE2609BEFDC27E8 /* Demo fixtures */,
 			);
 			buildRules = (
 			);
@@ -633,6 +637,28 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		43C214577BE2609BEFDC27E8 /* Demo fixtures */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Demo fixtures";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "[ \"${SIDRA_DEMO:-}\" = YES ] || exit 0\nD=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Demo\"\nmkdir -p \"$D/tools/dev\" \"$D/Packages/SidraTheasa/Tests/SidraTheasaTests\"\ncp -R \"$SRCROOT/tools/dev/demo-icons\" \"$D/tools/dev/\"\ncp -R \"$SRCROOT/Packages/SidraTheasa/Tests/SidraTheasaTests/Fixtures\" \"$D/Packages/SidraTheasa/Tests/SidraTheasaTests/\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		AB6BEADE95BDFE4AF73B83FE /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -645,6 +671,7 @@
 				098F1638832F56C4252C669C /* PipelinesUITests.swift in Sources */,
 				BE67F73EEF04D36498A08B32 /* SSHMoshUITests.swift in Sources */,
 				52D8473D4545285327988653 /* StoreScreenshotsUITests.swift in Sources */,
+				F087FA61D38E17BABB730417 /* TabKeysUITests.swift in Sources */,
 				2E5B5083144AEADA07FCDEEC /* TheasaKeyboardUITests.swift in Sources */,
 				5D9CC4FCB755969318BDDFD8 /* TheasaUITests.swift in Sources */,
 			);

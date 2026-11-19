@@ -48,8 +48,6 @@ struct WorkspaceCommands: Commands {
         }
         /// ⌘[ and ⌘]: in a herdr pane, herdr's tabs across all its spaces; elsewhere the window's tabs (Waseem, 2026-11-18).
         func stepTab(_ offset: Int) {
-            // The menu takes ⌘[ ⌘] before the wizard's own buttons, so it hands them on: Back and Next.
-            if app.sheet == .onboarding { NotificationCenter.default.post(name: .sidraOnboardingStep, object: offset); return }
             guard let p = store.focusedPane, case .herdr = p.kind,
                   let m = MuxMonitors.shared.monitor(for: p, app: app), let s = m.snapshot, !s.workspaces.isEmpty else { store.selectTab(offset: offset); return }
             // Every tab of every space in order, wrapping: off a space's last tab onto the next space's first.
