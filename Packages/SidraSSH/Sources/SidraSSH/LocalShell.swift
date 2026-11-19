@@ -67,7 +67,8 @@ enum LocalShell {
         sigfillset(&all); sigemptyset(&none)
         posix_spawnattr_setsigdefault(&attr, &all)
         posix_spawnattr_setsigmask(&attr, &none)
-        let argv = [shell, "-l", "-c", command].map { strdup($0) } + [nil]
+        let args: [String] = [shell, "-l", "-c", command]   // typed: Xcode 26 reads the bare literal as C pointers
+        let argv: [UnsafeMutablePointer<CChar>?] = args.map { strdup($0) } + [nil]
         let envp = environment.map { strdup($0) } + [nil]
         defer { (argv + envp).forEach { free($0) } }
         var pid: pid_t = 0
