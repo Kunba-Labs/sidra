@@ -13,6 +13,15 @@ struct FloatingMic: View {
     let showMic: Bool
     @State private var voice = VoiceInput.shared
     @State private var window: PlatformWindow?
+    #if os(iOS)
+    @State private var kb = FloatingKeyboard.shared
+    /// Sidra's keyboard is open in this window: its corner mic takes over.
+    private var keysOpen: Bool { kb.visible && window != nil && kb.targetWindow == window.map(ObjectIdentifier.init) }
+    /// Collapsed (or a hardware keyboard types): its button sits beside the mic.
+    private var keysCollapsed: Bool { kb.showsBubbles && window != nil && kb.targetWindow == window.map(ObjectIdentifier.init) }
+    #else
+    private let keysOpen = false, keysCollapsed = false
+    #endif
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 10) {
@@ -22,10 +31,24 @@ struct FloatingMic: View {
                     .frame(maxWidth: 520)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
-            if showMic || (voice.isActive && voice.window === window) {
-                // Another window is dictating: this one's mic waits, so its release cannot end that recording.
-                let elsewhere = voice.isActive && voice.window != nil && voice.window !== window
-                MicKey(voice: voice, window: window).disabled(elsewhere).opacity(elsewhere ? 0.4 : 1)
+            if !keysOpen, showMic || (voice.isActive && voice.window === window) {
+                HStack(spacing: 10) {
+                    #if os(iOS)
+                    if keysCollapsed {
+                        Button { kb.expand() } label: {
+                            Image(systemName: "keyboard").font(.system(size: 17)).foregroundStyle(SidraColor.text)
+                                .frame(width: 48, height: 48)
+                                .background(SidraColor.raised, in: Circle())
+                                .overlay(Circle().strokeBorder(SidraColor.hairline2))
+                                .shadow(color: .black.opacity(0.45), radius: 12, y: 6)
+                        }
+                        .buttonStyle(.plain).accessibilityLabel("Show Sidra keyboard")
+                    }
+                    #endif
+                    // Another window is dictating: this one's mic waits, so its release cannot end that recording.
+                    let elsewhere = voice.isActive && voice.window != nil && voice.window !== window
+                    MicKey(voice: voice, window: window).disabled(elsewhere).opacity(elsewhere ? 0.4 : 1)
+                }
             }
         }
         .padding(.trailing, 24).padding(.bottom, 24 + SidraSpace.paneFooterHeight).padding(.leading, 16)   // above the pane footer

@@ -29,6 +29,9 @@ struct RootView: View {
         #endif
         .overlay(alignment: .top) { PlatformBanners() }
         // The floating green mic: hold to talk into the focused terminal (iPad and Mac).
+        #if os(iOS)
+        .overlay { FloatingKeyboardLayer() }   // under the mic, so dictation's card draws over the keys
+        #endif
         .overlay(alignment: .bottomTrailing) { FloatingMic(showMic: focusedIsTerminal) }
         .overlay(alignment: .bottom) {
             if let msg = app.toastMessage {

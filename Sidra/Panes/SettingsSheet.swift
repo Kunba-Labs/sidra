@@ -346,6 +346,14 @@ struct TerminalKeysSection: View {
     private func show(_ texts: String...) -> Bool { query.isEmpty || texts.contains { $0.localizedCaseInsensitiveContains(query) } }
 
     var body: some View {
+        #if os(iOS)
+        if show("Sidra keyboard", "keyboard", "floating", "swipe") {
+            SettingRow("Sidra keyboard", detail: "A floating developer keyboard in place of Apple's, in terminals. Hides when a hardware keyboard is attached. The SwiftTerm engine keeps Apple's keyboard", isDefault: FloatingKeyboard.shared.enabled, reset: { FloatingKeyboard.shared.enabled = true }) {
+                Toggle("", isOn: Binding(get: { FloatingKeyboard.shared.enabled }, set: { FloatingKeyboard.shared.enabled = $0 }))
+                    .toggleStyle(GradientToggleStyle()).labelsHidden().fixedSize()
+            }
+        }
+        #endif
         if show("Terminal", "⌘ acts as Ctrl", "cmd", "ctrl", "command", "keyboard") {
             SettingRow("⌘ acts as Ctrl in terminals", detail: "Cmd-C sends Ctrl-C; copy stays on the key row", isDefault: !cmdAsCtrl, reset: { cmdAsCtrl = false }) {
                 Toggle("", isOn: $cmdAsCtrl).toggleStyle(GradientToggleStyle()).labelsHidden().fixedSize()
