@@ -46,7 +46,7 @@ enum PaneBodies {
             }
         case .substrate(let id):
             return PaneBody {
-                if let store = SubstrateHub.shared.store(id) { SubstratePane(store: store) } else { PlaceholderPane(text: "This Substrate account was removed.") }
+                if let store = SubstrateHub.shared.store(id) { SubstratePane(store: store, pane: pane) } else { PlaceholderPane(text: "This Substrate account was removed.") }
             } extra: {
                 if let store = SubstrateHub.shared.store(id) { SubstrateHeader(store: store) }
             } footer: {

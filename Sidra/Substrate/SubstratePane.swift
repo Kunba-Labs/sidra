@@ -20,6 +20,8 @@ enum SubstrateStyle {
 
 struct SubstratePane: View {
     @Bindable var store: SubstrateStore
+    let pane: Pane
+    @Environment(AppModel.self) private var app
 
     var body: some View {
         Group {
@@ -27,8 +29,10 @@ struct SubstratePane: View {
                 SubstrateSignIn(store: store)
             } else {
                 switch store.section {
-                case .requests: SubstrateRequests(store: store)
-                case .sessions: SubstrateSessions(store: store)
+                // Its keys only while this pane has focus: hidden tabs stay built, and ↑↓ or ⌘↩ typed
+                // in another pane must not approve anything (Waseem, 2026-11-20).
+                case .requests: SubstrateRequests(store: store, keysOn: app.workspace.focusedPane?.id == pane.id)
+                case .sessions: SubstrateSessions(store: store, keysOn: app.workspace.focusedPane?.id == pane.id)
                 case .machines: SubstrateMachines(store: store)
                 }
             }
@@ -69,6 +73,12 @@ struct SubstrateHeader: View {
                 .padding(3)
                 .background(SubstrateStyle.main, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(SidraColor.hairline))
+                SidraMenu([SidraMenuSection("Signed in as \(store.connection.name ?? store.connection.email)", [
+                    SidraMenuItem("Sign out", systemImage: "rectangle.portrait.and.arrow.right") { Task { await store.signOut() } },
+                ])]) {
+                    Image(systemName: "person.crop.circle").font(.system(size: 14)).foregroundStyle(SidraColor.muted).frame(width: 28, height: 26).contentShape(Rectangle())
+                }
+                .accessibilityLabel("Substrate account")
                 if let u = store.dashboard?.new_session_url ?? store.sessions?.new_session_url, let url = URL(string: u) {
                     SubstrateChip { Text("New session"); Image(systemName: "arrow.up.right.square") }.onTapGesture { Platform.open(url) }
                         .accessibilityAddTraits(.isButton).accessibilityLabel("New session, opens the browser")
@@ -100,6 +110,7 @@ struct SubstrateFooter: View {
 
 struct SubstrateRequests: View {
     @Bindable var store: SubstrateStore
+    let keysOn: Bool
     @Environment(AppModel.self) private var app
     @State private var fullPrompt = false
     @State private var working = false
@@ -133,7 +144,7 @@ struct SubstrateRequests: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background { keys }
+        .background { if keysOn { keys } }
         .task(id: picked?.conversation_id) { if let c = picked?.conversation_id { await store.loadConversation(c) } }
         .onChange(of: picked?.id) { _, _ in fullPrompt = false }
     }
@@ -174,8 +185,8 @@ struct SubstrateRequests: View {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 10) {
                     SubstrateAvatar(name: m.sender?.name ?? "?", url: m.sender?.avatar_url)
-                    (Text(m.sender?.name ?? "Someone").font(SidraFont.ui(15, weight: .semibold)).foregroundColor(SidraColor.text)
-                     + Text(" via session" + (m.client.map { " · \($0)" } ?? "")).font(SidraFont.ui(13)).foregroundColor(SidraColor.muted))
+                    Text(m.sender?.name ?? "Someone").font(SidraFont.ui(15, weight: .semibold)).foregroundStyle(SidraColor.text)
+                    Text("via " + (m.client ?? "session")).font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted).lineLimit(1)
                     if let p = m.project { SubstrateChip { SubstrateProjectLogo(project: p, size: 16); Text(p.name) } }
                     if waiting { SubstrateChip(tone: .warn) { Circle().fill(SidraColor.gold).frame(width: 7, height: 7); Text(m.held ? "held: \(m.risk ?? "")" : "waiting for you") } }
                     else { SubstrateChip { Text(Substrate.stageLabel(m)) } }
@@ -289,6 +300,7 @@ struct SubstrateRequests: View {
 
 struct SubstrateSessions: View {
     @Bindable var store: SubstrateStore
+    let keysOn: Bool
     private var sessions: [Substrate.Session] { store.sessions?.sessions ?? [] }
     private var picked: Substrate.Session? {
         let id = store.pickedSession ?? sessions.first?.id
@@ -315,7 +327,7 @@ struct SubstrateSessions: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background { keys }
+        .background { if keysOn { keys } }
         .task(id: picked?.id) { if let id = picked?.id { await store.loadSession(id) } }
     }
 
