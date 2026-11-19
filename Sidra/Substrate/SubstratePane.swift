@@ -155,7 +155,7 @@ struct SubstrateRequests: View {
             HStack(spacing: 10) {
                 SubstrateAvatar(name: m.sender?.name ?? "?", url: m.sender?.avatar_url, project: m.project)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(m.text).font(SidraFont.ui(13, weight: .semibold)).foregroundStyle(SidraColor.text).lineLimit(1)
+                    Text(m.text).font(SidraFont.ui(13, weight: on ? .bold : .medium)).foregroundStyle(on ? SidraColor.text : SidraColor.text.opacity(0.85)).lineLimit(1)
                     HStack(spacing: 5) {
                         if let p = m.project { SubstrateProjectLogo(project: p, size: 13) }
                         Text([m.sender?.name, m.project?.name, Substrate.stageLabel(m)].compactMap { $0 }.joined(separator: " · "))
@@ -166,7 +166,6 @@ struct SubstrateRequests: View {
                 Text(Substrate.ago(m.updated_at ?? m.created_at)).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.muted)
             }
             .padding(.horizontal, 14).frame(minHeight: 52)
-            .background(on ? Color(hex: 0x1c2129) : .clear)
             .overlay(alignment: .bottom) {
                 if on { UnevenRoundedRectangle(topLeadingRadius: 2, topTrailingRadius: 2).fill(SidraGradient.horizontal).frame(height: 2).padding(.horizontal, 14) }
             }
@@ -175,6 +174,7 @@ struct SubstrateRequests: View {
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(on ? .isSelected : [])
+        // Picked: the gradient underline alone, no fill (a full-width grey slab read oddly, 2026-11-20).
     }
 
     private func detail(_ m: Substrate.Message) -> some View {
@@ -339,7 +339,7 @@ struct SubstrateSessions: View {
                 SubstrateAvatar(name: s.name, url: s.avatar_url)
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
-                        Text(s.name).font(SidraFont.ui(13, weight: .semibold)).foregroundStyle(SidraColor.text).lineLimit(1)
+                        Text(s.name).font(SidraFont.ui(13, weight: on ? .bold : .medium)).foregroundStyle(on ? SidraColor.text : SidraColor.text.opacity(0.85)).lineLimit(1)
                         if let w = s.waiting, w > 0 { SubstrateChip(tone: .warn, small: true) { Text("\(w) waiting") } }
                     }
                     Text([(s.projects ?? []).map(\.name).joined(separator: ", "), revoked ? "revoked" : s.last_used_at.map { "used \(Substrate.ago($0, long: true))" }]
@@ -350,7 +350,6 @@ struct SubstrateSessions: View {
                 if !revoked, let e = s.expires_at { Text(e.formatted(.dateTime.month(.abbreviated).day())).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.muted) }
             }
             .padding(.horizontal, 14).frame(minHeight: 52)
-            .background(on ? Color(hex: 0x1c2129) : .clear)
             .overlay(alignment: .bottom) {
                 if on { UnevenRoundedRectangle(topLeadingRadius: 2, topTrailingRadius: 2).fill(SidraGradient.horizontal).frame(height: 2).padding(.horizontal, 14) }
             }
