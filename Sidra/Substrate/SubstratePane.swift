@@ -551,10 +551,15 @@ struct SubstrateSignIn: View {
                     Text(error).font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.red).multilineTextAlignment(.center).padding(.top, 12)
                 }
                 if sent {
-                    HStack(spacing: 4) {
-                        Text("Code sent to \(email) · valid for 10 minutes ·").foregroundStyle(SidraColor.dim)
-                        Button("Send again") { code = ""; sendCode() }.buttonStyle(.plain).foregroundStyle(SidraColor.muted)
-                        Button("Other email") { sent = false; code = ""; focus = .email }.buttonStyle(.plain).foregroundStyle(SidraColor.muted)
+                    // Two centred lines: the note, then its two actions (one wrapped row read badly, 2026-11-20).
+                    VStack(spacing: 6) {
+                        Text("Code sent to \(email). It works for 10 minutes.").foregroundStyle(SidraColor.dim).multilineTextAlignment(.center)
+                        HStack(spacing: 6) {
+                            Button("Send again") { code = ""; sendCode() }.buttonStyle(.plain)
+                            Text("·").foregroundStyle(SidraColor.dim)
+                            Button("Other email") { sent = false; code = ""; focus = .email }.buttonStyle(.plain)
+                        }
+                        .foregroundStyle(SidraColor.muted)
                     }
                     .font(SidraFont.ui(12)).padding(.top, 14)
                 }
