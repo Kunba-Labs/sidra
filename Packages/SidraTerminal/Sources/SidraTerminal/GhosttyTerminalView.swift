@@ -803,12 +803,19 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
         if engine.hasSelection { engine.clearSelection(); setNeedsDisplay() }
         let board = UIPasteboard.general
         if board.hasStrings, let s = board.string { pasteText(s); return }
-        guard let upload = onPasteImage, let data = board.image?.pngData() else { return }
+        guard let data = board.image?.pngData() else { return }
+        pasteImage(data)
+    }
+
+    /// Uploads an image to the far side and pastes its path, which agent CLIs attach. A paste from the
+    /// keyboard sends the path to the clipboard if focus moved on during the upload; `here` (the Send
+    /// screenshot sheet, which picked this terminal) always pastes it here.
+    public func pasteImage(_ data: Data, here: Bool = false) {
+        guard let upload = onPasteImage else { return }
         Task { @MainActor [weak self] in
-            // The upload takes a while: if focus moved on meanwhile, the path goes to the clipboard instead.
             guard let path = await upload(data) else { return }
             if let image = UIImage(data: data) { self?.thumbnails.remember(path, image) }
-            if let self, self.isFirstResponder { self.pasteText(path) } else { UIPasteboard.general.string = path }
+            if let self, here || self.isFirstResponder { self.pasteText(path) } else { UIPasteboard.general.string = path }
         }
     }
 }

@@ -48,6 +48,8 @@ public struct TerminalPaneView: UIViewRepresentable {
     /// screen and scrollback instead of reconnecting. `forget` when the session closes.
     @MainActor private static var surfaces: [ObjectIdentifier: (engine: TerminalEngineKind, view: UIView)] = [:]
     @MainActor public static func forget(_ io: TerminalIO) { surfaces[ObjectIdentifier(io)] = nil }
+    /// The Ghostty surface showing `io`, if one is built (the Send screenshot sheet pastes into it).
+    @MainActor public static func ghostty(for io: TerminalIO) -> GhosttyTerminalView? { surfaces[ObjectIdentifier(io)]?.view as? GhosttyTerminalView }
 
     public func makeUIView(context: Context) -> UIView {
         if let kept = Self.surfaces[ObjectIdentifier(io)], kept.engine == engine {

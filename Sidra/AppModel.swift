@@ -11,6 +11,8 @@ import SidraSSH
 final class AppModel {
     enum Sheet: Identifiable, Hashable {
         case settings, shortcuts, herdr, theasa, pipelines, newTab
+        /// Send screenshot: the image waits in ScreenshotInbox (iPad and iPhone).
+        case screenshot
         /// One Pipelines connection's sheet: replace its token, or disconnect.
         case pipelinesEdit(UUID)
         var id: Self { self }

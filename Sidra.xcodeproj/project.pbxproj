@@ -91,6 +91,7 @@
 		8D567A6A0AEAC60638766CBE /* TheasaProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A069A363B9F7AB51553030 /* TheasaProject.swift */; };
 		8F23A13F56510105FA21C6E3 /* SidraWorkspace in Frameworks */ = {isa = PBXBuildFile; productRef = 31252BA74554E5041C2F2836 /* SidraWorkspace */; };
 		91BBE159888E6DC08DC564FC /* Notifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E196B90CD3E23D5A8642B9E4 /* Notifier.swift */; };
+		922C84C12CD28FA61CD8E670 /* ScreenshotSendSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC216BD8EB62660E922097D2 /* ScreenshotSendSheet.swift */; };
 		938965E6743C19E879D07BAA /* FloatingKeyboardPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCFB137D3245A2A62F70ECB5 /* FloatingKeyboardPanel.swift */; };
 		9BFF73B4CD41730D8F97000C /* PipelinesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE12FF0FEBA7EB10B55328 /* PipelinesTests.swift */; };
 		9C09EC179AB3EC8359CA186F /* SSHKeysTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16A78597AF77F3BBAB81F25F /* SSHKeysTests.swift */; };
@@ -105,6 +106,8 @@
 		AA68CCB35DF9EB7A9A8186B4 /* TheasaMarkdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DCC141B15F493AF564C38B /* TheasaMarkdown.swift */; };
 		ADCABBA0CE88A581FEF55939 /* TheasaAgents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FA4FA59DD2513883467739 /* TheasaAgents.swift */; };
 		AFEAFDC623409ACE12493055 /* SidraChess in Frameworks */ = {isa = PBXBuildFile; productRef = 0CE9EE125C9A286548263F3C /* SidraChess */; };
+		B1A52E74B5957E4FAC4AD9A4 /* ScreenshotSendSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC216BD8EB62660E922097D2 /* ScreenshotSendSheet.swift */; };
+		B2639D3F1C874E40B5D05384 /* ScreenshotInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF9DBCB951A69CFF27CFD076 /* ScreenshotInbox.swift */; };
 		B5145760F4ED57BEC411375B /* GitLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7188AFC621B1D9E1EFB8CC4 /* GitLab.swift */; };
 		B913C402DDBB59A495B59D5A /* Notifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E196B90CD3E23D5A8642B9E4 /* Notifier.swift */; };
 		BA25D9950CF47C88684ED41F /* HackerTabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5878234E78CAE96CF386F927 /* HackerTabUITests.swift */; };
@@ -125,12 +128,14 @@
 		DC868DBE1BEA62F52598D3CC /* FloatingOrbUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA664C38BC9D52E3E799088 /* FloatingOrbUITests.swift */; };
 		DF3814FE0078CE03ABD0BF1E /* SidraHackerTab in Frameworks */ = {isa = PBXBuildFile; productRef = DC9A2B79CFA0FED0D1A8A021 /* SidraHackerTab */; };
 		DFB3C2053A1DC1B6171BBDC4 /* Herdr.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19FFF77CC7CB50FA454494F7 /* Herdr.swift */; };
+		DFEB5706F86374F57C86973C /* ScreenshotInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF9DBCB951A69CFF27CFD076 /* ScreenshotInbox.swift */; };
 		E1BC1D846F9F58B39C0B64CA /* CI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CE3882D2B474C66E4A47CC6 /* CI.swift */; };
 		E432AD3A54C55893300A32CA /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4BC5697584C293B136FA2FB2 /* Inter-Bold.ttf */; };
 		E5795E4C4649FF14ADF7A896 /* PaneBodies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08F9C6E2FAA342E35589D7C /* PaneBodies.swift */; };
 		EBCCC0B6610AE719433183FF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 788A46258945131DAB264C68 /* PrivacyInfo.xcprivacy */; };
 		EE3FCFD9FCFB9F202F7D1D68 /* TheasaProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A069A363B9F7AB51553030 /* TheasaProject.swift */; };
 		F087FA61D38E17BABB730417 /* TabKeysUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D5909535627F01D7DA7FB8 /* TabKeysUITests.swift */; };
+		F2428B17E85D7E918697B913 /* ScreenshotCutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2815686B9356871CDDC40E19 /* ScreenshotCutTests.swift */; };
 		F32455CD57664A9B89A9D52B /* TheasaSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444C16EC11530D11005BDA70 /* TheasaSearch.swift */; };
 		F3910D0B77EA4077E8699099 /* SceneStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F90D9F3ACAEC2FB0ADCA51 /* SceneStore.swift */; };
 		F3B50A34F450608051F45D1C /* SmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA53C89AF6EAA63E1ABAC641 /* SmokeTests.swift */; };
@@ -194,6 +199,7 @@
 		2323BA0EF5F04A337E394E14 /* SwipeTyping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeTyping.swift; sourceTree = "<group>"; };
 		24DCC141B15F493AF564C38B /* TheasaMarkdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaMarkdown.swift; sourceTree = "<group>"; };
 		24E3FBD0D184CBA1A09C2A72 /* SidraShare.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = SidraShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		2815686B9356871CDDC40E19 /* ScreenshotCutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotCutTests.swift; sourceTree = "<group>"; };
 		2A5640D612B671DEF0516D7B /* SSHMoshUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHMoshUITests.swift; sourceTree = "<group>"; };
 		3A958E2D546170231CBA9D2C /* LifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleTests.swift; sourceTree = "<group>"; };
 		3EE6DFA8F7CAB8895B0EC7A3 /* SidraSSHTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidraSSHTests.swift; sourceTree = "<group>"; };
@@ -250,6 +256,8 @@
 		D7188AFC621B1D9E1EFB8CC4 /* GitLab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitLab.swift; sourceTree = "<group>"; };
 		DA6B2085C39F0188876B8475 /* SidraUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SidraUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DAA664C38BC9D52E3E799088 /* FloatingOrbUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingOrbUITests.swift; sourceTree = "<group>"; };
+		DC216BD8EB62660E922097D2 /* ScreenshotSendSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotSendSheet.swift; sourceTree = "<group>"; };
+		DF9DBCB951A69CFF27CFD076 /* ScreenshotInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotInbox.swift; sourceTree = "<group>"; };
 		E196B90CD3E23D5A8642B9E4 /* Notifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifier.swift; sourceTree = "<group>"; };
 		E370EAEEFC681DB92CFBC0EF /* TheasaPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaPane.swift; sourceTree = "<group>"; };
 		E386D698B0C73B5EFADB7F13 /* TheasaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaStore.swift; sourceTree = "<group>"; };
@@ -386,6 +394,15 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		4E3034AA60028A9F8501F1EF /* Screenshot */ = {
+			isa = PBXGroup;
+			children = (
+				DF9DBCB951A69CFF27CFD076 /* ScreenshotInbox.swift */,
+				DC216BD8EB62660E922097D2 /* ScreenshotSendSheet.swift */,
+			);
+			path = Screenshot;
+			sourceTree = "<group>";
+		};
 		6920F420AC13A7F3AAB8D97C /* Demo */ = {
 			isa = PBXGroup;
 			children = (
@@ -467,6 +484,7 @@
 				F0C8C6F728A42C21EF094989 /* HerdrTests.swift */,
 				3A958E2D546170231CBA9D2C /* LifecycleTests.swift */,
 				FDFE12FF0FEBA7EB10B55328 /* PipelinesTests.swift */,
+				2815686B9356871CDDC40E19 /* ScreenshotCutTests.swift */,
 				3EE6DFA8F7CAB8895B0EC7A3 /* SidraSSHTests.swift */,
 				AA53C89AF6EAA63E1ABAC641 /* SmokeTests.swift */,
 				600EBD10A930EB3B4F2C55DB /* SSHConnectionLiveTests.swift */,
@@ -500,6 +518,7 @@
 				12DAAE7720D4E51D308B813B /* Panes */,
 				BD30B9CC5081090969757B7A /* Pipelines */,
 				B78AA8018F6E9F31E62F3617 /* Resources */,
+				4E3034AA60028A9F8501F1EF /* Screenshot */,
 				B0F81D4521F7B38A97507F78 /* Theasa */,
 				BDE0D52F18C042FB07295F6A /* Voice */,
 			);
@@ -798,6 +817,8 @@
 				51DB76C7A852474C5E1F6837 /* Platform.swift in Sources */,
 				1C52926532F4A9D6B7659B52 /* RootView.swift in Sources */,
 				7F8A385915BB93D324C7331C /* SceneStore.swift in Sources */,
+				B2639D3F1C874E40B5D05384 /* ScreenshotInbox.swift in Sources */,
+				B1A52E74B5957E4FAC4AD9A4 /* ScreenshotSendSheet.swift in Sources */,
 				762694257B241A70017A3BD6 /* SettingsSheet.swift in Sources */,
 				35C27C0E38C27AA214903CC4 /* ShortcutsSheet.swift in Sources */,
 				20C46E8C36F0060E4F0C91E6 /* SidraAlert.swift in Sources */,
@@ -846,6 +867,8 @@
 				8B3BAB38512BEE5F05DA6D60 /* Platform.swift in Sources */,
 				65B635852204048381160C72 /* RootView.swift in Sources */,
 				F3910D0B77EA4077E8699099 /* SceneStore.swift in Sources */,
+				DFEB5706F86374F57C86973C /* ScreenshotInbox.swift in Sources */,
+				922C84C12CD28FA61CD8E670 /* ScreenshotSendSheet.swift in Sources */,
 				DBD541799BC95824D31E2B39 /* SettingsSheet.swift in Sources */,
 				592658D29F343143041E23DE /* ShortcutsSheet.swift in Sources */,
 				89E5807F9528CDBF3E265320 /* SidraAlert.swift in Sources */,
@@ -878,6 +901,7 @@
 				578E14E615D3F336AA4D5DFC /* SSHConnectionLiveTests.swift in Sources */,
 				89DBEEDE718CFC48E796A670 /* SSHKeyLifecycleTests.swift in Sources */,
 				9C09EC179AB3EC8359CA186F /* SSHKeysTests.swift in Sources */,
+				F2428B17E85D7E918697B913 /* ScreenshotCutTests.swift in Sources */,
 				8BD74A1D373F10633931A4DC /* SidraSSHTests.swift in Sources */,
 				F3B50A34F450608051F45D1C /* SmokeTests.swift in Sources */,
 				342E47E76F6FDFAD3F0260DD /* TestHost.swift in Sources */,

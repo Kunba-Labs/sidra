@@ -49,6 +49,9 @@ struct SettingsSheet: View {
             TerminalFontSection(query: query)
             #endif
             VoiceSection(query: query)
+            #if os(iOS)
+            ScreenshotSection(query: query)
+            #endif
 
             TerminalKeysSection(query: query)
 
@@ -400,6 +403,20 @@ struct TerminalFontSection: View {
                     Button { TerminalFont.step(1) } label: { Image(systemName: "plus") }.buttonStyle(.sidraSecondary).accessibilityLabel("Bigger text")
                 }
             }
+        }
+    }
+}
+#endif
+
+#if os(iOS)
+/// How to send a screenshot to a session: the Shortcuts action and the Share sheet (2026-11-19).
+struct ScreenshotSection: View {
+    let query: String
+    var body: some View {
+        if query.isEmpty || ["Screenshot", "Shortcut", "Share", "image"].contains(where: { $0.localizedCaseInsensitiveContains(query) }) {
+            SectionLabel("Screenshots")
+            SettingRow("Send a screenshot", detail: "In Shortcuts, make a shortcut with Take Screenshot, then Send Screenshot to Sidra. Add it to Control Center, ask Siri, or set Apple Pencil Pro's squeeze to run it. Or take a screenshot and share it to Sidra.",
+                       isDefault: true, reset: {}) { EmptyView() }
         }
     }
 }
