@@ -67,6 +67,9 @@ struct TitleBar<Trailing: View>: View {
         .padding(.trailing, 4)
     }
 
+    /// The tabs' own width: the strip grows to fit them and scrolls only when the bar has no more room (2026-11-20).
+    @State private var tabsWidth: CGFloat = 0
+
     private var tabStrip: some View {
         // Clipped and scrollable: more tabs than fit scroll inside the strip instead of running
         // under the status pills; the active tab is scrolled into view when it changes. New tab sits at its end.
@@ -90,7 +93,9 @@ struct TitleBar<Trailing: View>: View {
                     }
                 }
                 .padding(4)
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { tabsWidth = $0 }
             }
+            .frame(maxWidth: tabsWidth > 0 ? tabsWidth : nil)
             .onChange(of: store.activeTabID) { _, id in if let id { withAnimation(.easeOut(duration: 0.15)) { proxy.scrollTo(id) } } }
         }
             newTabMenu.padding(.trailing, 4)
@@ -99,7 +104,6 @@ struct TitleBar<Trailing: View>: View {
         .overlay(RoundedRectangle(cornerRadius: SidraRadius.tabStrip, style: .continuous).strokeBorder(SidraColor.hairline))
         .clipShape(RoundedRectangle(cornerRadius: SidraRadius.tabStrip, style: .continuous))
         .fixedSize(horizontal: false, vertical: true)
-        .frame(maxWidth: 820, alignment: .leading)
         .layoutPriority(-1)
     }
 }
