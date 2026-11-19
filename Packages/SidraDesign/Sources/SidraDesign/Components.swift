@@ -5,7 +5,7 @@ import SwiftUI
 /// Flat solid square with a dark glyph. No tint, no transparency, no glow.
 public struct ProcessIcon: View {
     public enum Kind: String, Codable, Sendable, CaseIterable {
-        case code, cargo, serial, ssh, mosh, agent, git, herdr, theasa, hackertab, pipelines, chess, claude, vnc
+        case code, cargo, serial, ssh, mosh, agent, git, herdr, theasa, hackertab, pipelines, chess, claude, vnc, substrate
 
         public var fill: Color {
             switch self {
@@ -22,6 +22,7 @@ public struct ProcessIcon: View {
             case .chess: SidraColor.Process.chess
             case .claude: Color(hex: 0xf0eee6)   // Claude's cream, under its spark
             case .vnc: SidraColor.Process.mosh
+            case .substrate: .black
             }
         }
         public var symbol: String {
@@ -39,6 +40,7 @@ public struct ProcessIcon: View {
             case .claude: "globe"
             case .vnc: "display"
             case .chess: "crown.fill"   // SF Symbols has no knight; the tile draws ♞ instead, menus use this
+            case .substrate: "circle.fill"   // menus; the tile draws Substrate's orb
             }
         }
     }
@@ -52,9 +54,9 @@ public struct ProcessIcon: View {
     }
 
     public var body: some View {
-        if kind == .herdr {
-            // herdr's own mark, unaltered (an app-target asset)
-            Image("brand-herdr").resizable().scaledToFill().frame(width: size, height: size)
+        if kind == .herdr || kind == .substrate {
+            // herdr's and Substrate's own marks, unaltered (app-target assets)
+            Image(kind == .herdr ? "brand-herdr" : "brand-substrate").resizable().scaledToFill().frame(width: size, height: size)
                 .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
                 .accessibilityHidden(true)
         } else {
@@ -135,13 +137,16 @@ public struct PillTab: View {
     let subtitle: String?
     let active: Bool
     let dot: Bool
+    let accessory: AnyView?
     let action: () -> Void
     let close: (() -> Void)?
 
-    /// `dot`: a small blue dot after the title, for a tab with something new in it.
-    public init(icon: ProcessIcon.Kind, title: String, subtitle: String? = nil, active: Bool, dot: Bool = false,
+    /// `dot`: a small blue dot after the title, for a tab with something new in it. `accessory`: a mark or
+    /// count after it (Substrate's waiting count, its mark on a herdr tab).
+    public init(icon: ProcessIcon.Kind, title: String, subtitle: String? = nil, active: Bool, dot: Bool = false, accessory: AnyView? = nil,
                 action: @escaping () -> Void, close: (() -> Void)? = nil) {
         self.dot = dot
+        self.accessory = accessory
         self.icon = icon
         self.title = title
         self.subtitle = subtitle
@@ -165,6 +170,7 @@ public struct PillTab: View {
                         .lineLimit(1)
                 }
                 if dot { Circle().fill(SidraColor.blue).frame(width: 7, height: 7).accessibilityHidden(true) }
+                if let accessory { accessory }
             }
             .padding(.leading, 6)
             .padding(.trailing, 14)

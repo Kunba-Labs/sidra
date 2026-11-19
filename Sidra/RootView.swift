@@ -20,6 +20,7 @@ struct RootView: View {
                       // Title bar design B (design/html/13-title-bar.html): what needs you as labelled pills.
                       machine: slot(HStack(spacing: 2) { commandMenu })) {
             TheasaPill()
+            SubstratePill()
             HerdrTitleCounts()
         }
         // A floating or undocked keyboard sits over the panes; only a docked one makes room.
@@ -81,6 +82,7 @@ struct RootView: View {
             #endif
             TheasaStore.shared.openFromLaunchArguments(app)
             store.tabDetail = { tab in AnyView(TabActivity(tab: tab)) }
+            store.tabAccessory = { tab in SubstrateTabMark.accessory(for: tab) }
             store.attention = { [app] in MuxMonitors.shared.count(.blocked, live: Set(app.allWorkspaces.flatMap { $0.tabs.flatMap { $0.panes.map(\.id) } })) }
             PipelinesHub.shared.start()
             if UserDefaults.standard.bool(forKey: "hackertab.open") { app.openSingle(.hackertab) }

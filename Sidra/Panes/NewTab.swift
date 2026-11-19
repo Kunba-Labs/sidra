@@ -5,7 +5,7 @@ import SidraSSH
 
 /// What a new tab can be. Each kind runs its own setup the first time: there is no global onboarding.
 enum NewTabKind: String, CaseIterable, Identifiable {
-    case herdr, ssh, theasa, pipelines, hackertab, chess
+    case herdr, ssh, theasa, pipelines, substrate, hackertab, chess
     var id: String { rawValue }
 
     var icon: ProcessIcon.Kind {
@@ -14,6 +14,7 @@ enum NewTabKind: String, CaseIterable, Identifiable {
         case .ssh: .ssh
         case .theasa: .theasa
         case .pipelines: .pipelines
+        case .substrate: .substrate
         case .hackertab: .hackertab
         case .chess: .chess
         }
@@ -25,6 +26,7 @@ enum NewTabKind: String, CaseIterable, Identifiable {
         case .ssh: "SSH host"
         case .theasa: "Theasa"
         case .pipelines: "Pipelines"
+        case .substrate: "Substrate"
         case .hackertab: "HackerTab"
         case .chess: "Chess"
         }
@@ -36,6 +38,7 @@ enum NewTabKind: String, CaseIterable, Identifiable {
         case .ssh: "A terminal on a machine you reach over SSH, with mosh when the host has it."
         case .theasa: "The pulse of your Claude Code agents, from a Theasa server you run."
         case .pipelines: "GitLab or GitHub pipelines of your projects, with the log of each failed job."
+        case .substrate: "Approve what testers send your agents, and follow each fix to deploy."
         case .hackertab: "Hacker News, comments first."
         case .chess: "A game against Sidra's own engine, on this device."
         }
@@ -49,6 +52,11 @@ extension AppModel {
         case .herdr: sheet = .herdr
         case .theasa: sheet = .theasa
         case .pipelines: sheet = .pipelines   // the saved connections, or a form for the first
+        case .substrate:
+            // One account today: its tab comes to the front, or opens and signs in there.
+            let c = SubstrateHub.shared.connections.first ?? SubstrateHub.shared.add()
+            if let t = workspace.tabs.first(where: { $0.panes.contains { $0.kind == .substrate(connection: c.id) } }) { workspace.select(tab: t.id) }
+            else { openTab(kind: .substrate(connection: c.id)) }
         case .hackertab: openSingle(.hackertab)
         case .chess: openSingle(.chess)
         case .ssh: break   // NewTabSheet shows the host list

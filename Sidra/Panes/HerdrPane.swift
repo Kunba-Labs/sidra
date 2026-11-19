@@ -204,7 +204,9 @@ struct MuxSpacesBar: View {
         // The pill is always the tab count, so the chip keeps its width when picked (2026-11-16); VoiceOver names the tab up.
         let up = on ? tabs.first { $0.focused && $0.workspace_id == s.focused_workspace_id } : nil
         let pill = tabs.count < 2 ? nil : "\(tabs.count)"
-        let label = chip(ws, pill: pill, on: on, status: withAgents.isEmpty ? nil : MuxStatus.worst(withAgents.map(\.agent_status)), m: m)
+        let substrate = SubstrateHub.shared.waitingPanes
+        let request = !substrate.isEmpty && group.contains { g in s.agents(in: g.id).contains { substrate.contains($0.pane_id) } }
+        let label = chip(ws, pill: pill, on: on, status: withAgents.isEmpty ? nil : MuxStatus.worst(withAgents.map(\.agent_status)), request: request, m: m)
         Group {
             if tabs.count > 1 {
                 Button { tabsOpen = ws.id } label: { label }
@@ -230,7 +232,8 @@ struct MuxSpacesBar: View {
         .accessibilityIdentifier("herdr-space-\(ws.label)")
     }
 
-    private func chip(_ ws: MuxSnapshot.Workspace, pill: String?, on: Bool, status: MuxStatus?, m: MuxMonitor) -> some View {
+    /// `request`: a Substrate request waits for an agent in this space; Substrate's mark shows.
+    private func chip(_ ws: MuxSnapshot.Workspace, pill: String?, on: Bool, status: MuxStatus?, request: Bool = false, m: MuxMonitor) -> some View {
         HStack(spacing: 7) {
             HerdrLogoView(name: ws.label, image: m.logo(for: ws), size: 18.5)   // 16 + 15% (2026-11-17)
             Text(ws.label).font(SidraFont.ui(12.5, weight: on ? .bold : .regular))
@@ -245,6 +248,7 @@ struct MuxSpacesBar: View {
                 Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold)).foregroundStyle(SidraColor.muted)
             }
             if let status, status != .unknown { HerdrStatusIcon(status: status, size: 9) }
+            if request { ProcessIcon(.substrate, size: 14).accessibilityLabel("Substrate request waiting") }
         }
         .padding(.horizontal, 12).frame(height: 36)
         .overlay(alignment: .bottom) {

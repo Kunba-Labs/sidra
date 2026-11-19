@@ -101,6 +101,8 @@ public final class WorkspaceStore {
     public var isBusy: ((UUID) -> Bool)?
     /// Set by the app: whether a tab shows the blue "something new" dot.
     public var tabDot: ((WorkspaceTab) -> Bool)?
+    /// Set by the app: a mark or count drawn after a tab's title (nil: none).
+    public var tabAccessory: ((WorkspaceTab) -> AnyView?)?
     /// A tab's activity for its long-press details on iPhone (what runs, agents, pipelines); set by the app.
     public var tabDetail: ((WorkspaceTab) -> AnyView)?
     /// How many things need the user (agents asking), for the floating orb's badge; set by the app.

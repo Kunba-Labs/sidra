@@ -16,6 +16,8 @@ public enum PaneKind: Codable, Hashable, Sendable {
     case pipelines(connection: UUID?)
     /// Chess against Sidra's own engine.
     case chess
+    /// Substrate (substrate.gliph.sh): testers' requests to approve, sessions and machines, by saved account.
+    case substrate(connection: UUID)
 
     public var icon: ProcessIcon.Kind {
         switch self {
@@ -25,6 +27,7 @@ public enum PaneKind: Codable, Hashable, Sendable {
         case .hackertab: .hackertab
         case .pipelines: .pipelines
         case .chess: .chess
+        case .substrate: .substrate
         }
     }
 }

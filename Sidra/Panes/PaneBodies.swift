@@ -44,6 +44,14 @@ enum PaneBodies {
             } footer: {
                 FooterItem("Sidra's own engine, on this device")
             }
+        case .substrate(let id):
+            return PaneBody {
+                if let store = SubstrateHub.shared.store(id) { SubstratePane(store: store) } else { PlaceholderPane(text: "This Substrate account was removed.") }
+            } extra: {
+                if let store = SubstrateHub.shared.store(id) { SubstrateHeader(store: store) }
+            } footer: {
+                SubstrateFooter(store: SubstrateHub.shared.store(id))
+            }
         case .theasa(let id):
             return PaneBody {
                 TheasaPane(pane: pane, connectionID: id)

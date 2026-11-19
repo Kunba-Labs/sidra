@@ -15,6 +15,8 @@
 		09BA2A23DFCCC4B4EE7E9C53 /* KeysSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9020BCA2AC1F7D913937CCA7 /* KeysSection.swift */; };
 		0A47E38329AB8B1E7FE10DEC /* JetBrainsMono-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9FAFFC0DA4889FFFC37607E5 /* JetBrainsMono-Variable.ttf */; };
 		0B771BBB5C32A631AE2F7F35 /* LifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A958E2D546170231CBA9D2C /* LifecycleTests.swift */; };
+		0C3B79EBE1826CD55B664720 /* SubstrateAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76C9664CC8E278BA870F7C7D /* SubstrateAPI.swift */; };
+		0CBC254F1583D63449B3519A /* SubstrateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4694552B665A83C90CCD3DF /* SubstrateTests.swift */; };
 		0D6E679C1BEBF058AA5C70D0 /* MicInputs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2D83C2FE1831D1C584C9D1 /* MicInputs.swift */; };
 		0F781B2E06D7BF291D71494C /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = B037505C87287B42AE7A192B /* WhisperKit */; };
 		10A62F11BFDFD7A86CAC198D /* DemoMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D40EFDF6FF49F49A56FDCE /* DemoMode.swift */; };
@@ -45,10 +47,13 @@
 		4902132C4FDD9804A0DFFE33 /* BusyPanes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DF9B0DE46B31B9EBB3C0BA /* BusyPanes.swift */; };
 		4CA48703B87A8CEA83D0A3E5 /* TheasaTurn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9151B661C8A5150FD6B3DD /* TheasaTurn.swift */; };
 		4EB0038BEAEBE43B236B1C7D /* ChessUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73017469F38A5080D3473461 /* ChessUITests.swift */; };
+		4ED6627132D1FEE5F59A0A7E /* SubstrateMarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10E835F25969CA3EBC4B34A /* SubstrateMarks.swift */; };
 		51DB76C7A852474C5E1F6837 /* Platform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898FEE6677F04B352643E7AB /* Platform.swift */; };
 		52D8473D4545285327988653 /* StoreScreenshotsUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69A9BEE59A535B1C6F7572B3 /* StoreScreenshotsUITests.swift */; };
+		53D68D47B38410C45761C2AB /* SubstrateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBAAB5658EC405F95ADBB43 /* SubstrateStore.swift */; };
 		55A8E932394155B63433188D /* SidraChess in Frameworks */ = {isa = PBXBuildFile; productRef = AB3C253E12FD44E0D0DACA67 /* SidraChess */; };
 		564B4EB9D00A64F43511CF4C /* TheasaMarkdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DCC141B15F493AF564C38B /* TheasaMarkdown.swift */; };
+		5750D87F46B200E1B4B2BA5A /* SubstratePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7526F9C00A47BF6E5C7C03C8 /* SubstratePane.swift */; };
 		575AFF9A69C4A42C29D4DFD6 /* GitLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7188AFC621B1D9E1EFB8CC4 /* GitLab.swift */; };
 		578E14E615D3F336AA4D5DFC /* SSHConnectionLiveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 600EBD10A930EB3B4F2C55DB /* SSHConnectionLiveTests.swift */; };
 		579A4EC5B15A0A5FB6C614FF /* TerminalPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08DA5A482100B822AC3216BB /* TerminalPane.swift */; };
@@ -59,6 +64,7 @@
 		5A627506779E3E2F944E6BFC /* FloatingKeyboardUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800AF5E86A152DF6C1EA49A /* FloatingKeyboardUITests.swift */; };
 		5D3ADBE6C24C53DECD6EC630 /* TheasaConnectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B41E3C7C2BA941E511861CB /* TheasaConnectSheet.swift */; };
 		5D9CC4FCB755969318BDDFD8 /* TheasaUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 867174C3E73F59B207A9FDB0 /* TheasaUITests.swift */; };
+		5F7DFA0B39CD1FEDB4A93F87 /* SubstratePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7526F9C00A47BF6E5C7C03C8 /* SubstratePane.swift */; };
 		61EB8A69879C57BB3BAFB34A /* KeysSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9020BCA2AC1F7D913937CCA7 /* KeysSection.swift */; };
 		63C9254D1FA7DADE246DF8B3 /* TheasaConnectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B41E3C7C2BA941E511861CB /* TheasaConnectSheet.swift */; };
 		65B635852204048381160C72 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F083441085B2B800071D6F /* RootView.swift */; };
@@ -103,6 +109,7 @@
 		A0D9EDEC398C69C5867E4301 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1F4667A0E51BA7C24D920DD /* Assets.xcassets */; };
 		A623DEEE53B4ACFE19518F59 /* HerdrPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4477F8E3EBA916104FCB99C5 /* HerdrPane.swift */; };
 		A660E1D5A45121EC37490B83 /* MicInputs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2D83C2FE1831D1C584C9D1 /* MicInputs.swift */; };
+		A906DDC53DF8C889CAA7BBC7 /* SubstrateMarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10E835F25969CA3EBC4B34A /* SubstrateMarks.swift */; };
 		AA68CCB35DF9EB7A9A8186B4 /* TheasaMarkdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DCC141B15F493AF564C38B /* TheasaMarkdown.swift */; };
 		ADCABBA0CE88A581FEF55939 /* TheasaAgents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FA4FA59DD2513883467739 /* TheasaAgents.swift */; };
 		AFEAFDC623409ACE12493055 /* SidraChess in Frameworks */ = {isa = PBXBuildFile; productRef = 0CE9EE125C9A286548263F3C /* SidraChess */; };
@@ -113,6 +120,7 @@
 		BA25D9950CF47C88684ED41F /* HackerTabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5878234E78CAE96CF386F927 /* HackerTabUITests.swift */; };
 		BE265D46DCFEE3E497F53DF0 /* HerdrConnectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79C4F81745995413751B61AA /* HerdrConnectSheet.swift */; };
 		BE67F73EEF04D36498A08B32 /* SSHMoshUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A5640D612B671DEF0516D7B /* SSHMoshUITests.swift */; };
+		C1C35226D86009FC8997D8B9 /* SubstrateAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76C9664CC8E278BA870F7C7D /* SubstrateAPI.swift */; };
 		C2B75528C9937F7F75887D3E /* FloatingMic.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC861FD0DBC61E527D1B8C68 /* FloatingMic.swift */; };
 		C4F0602DCB0E3FBB7155B713 /* SidraApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF4101D8B8817370EE559987 /* SidraApp.swift */; };
 		C5213763CE84F01419C2B518 /* NewTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AE28FD3AB3C35FCCD53E8FF /* NewTab.swift */; };
@@ -143,6 +151,7 @@
 		F54C10CBFB1A977F03FE4746 /* NewTabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835D989F13A564BB23920914 /* NewTabUITests.swift */; };
 		F6B9EC8C6A87955ED5F21628 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 64C542AF4A8DB04D5DB7B0AF /* WhisperKit */; };
 		F9857DFFC09F44DEC6F754E1 /* CommandRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BF97F13FCCEA3B5097ACB1 /* CommandRegistry.swift */; };
+		FAAE68B6F81C2ACE5FA5AF7A /* SubstrateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBAAB5658EC405F95ADBB43 /* SubstrateStore.swift */; };
 		FC285F218118A770B10FD649 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2191D66F65F6BF852EB4C5F /* ShareViewController.swift */; };
 		FF4CFAB6C906B6680E21BDB7 /* SidraTheasa in Frameworks */ = {isa = PBXBuildFile; productRef = 0C82BF3189E6FDCF783465AC /* SidraTheasa */; };
 /* End PBXBuildFile section */
@@ -223,6 +232,8 @@
 		69A9BEE59A535B1C6F7572B3 /* StoreScreenshotsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreScreenshotsUITests.swift; sourceTree = "<group>"; };
 		7154BCD71DBCA78733D7CF59 /* PipelinesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelinesUITests.swift; sourceTree = "<group>"; };
 		73017469F38A5080D3473461 /* ChessUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChessUITests.swift; sourceTree = "<group>"; };
+		7526F9C00A47BF6E5C7C03C8 /* SubstratePane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubstratePane.swift; sourceTree = "<group>"; };
+		76C9664CC8E278BA870F7C7D /* SubstrateAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubstrateAPI.swift; sourceTree = "<group>"; };
 		788A46258945131DAB264C68 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		79C4F81745995413751B61AA /* HerdrConnectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HerdrConnectSheet.swift; sourceTree = "<group>"; };
 		7D6450EDD9602176E4E800B6 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
@@ -245,9 +256,11 @@
 		A0D67B8A7040FD87F2598823 /* PipelinesPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelinesPane.swift; sourceTree = "<group>"; };
 		A0FA4FA59DD2513883467739 /* TheasaAgents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaAgents.swift; sourceTree = "<group>"; };
 		A27535A94778550C0BFB0AA2 /* Sidra.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Sidra.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A4694552B665A83C90CCD3DF /* SubstrateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubstrateTests.swift; sourceTree = "<group>"; };
 		AA53C89AF6EAA63E1ABAC641 /* SmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmokeTests.swift; sourceTree = "<group>"; };
 		AB96FDFC13D91E455A4A710C /* SidraHackerTab */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraHackerTab; path = Packages/SidraHackerTab; sourceTree = SOURCE_ROOT; };
 		B0DC2327B7FE042EE0FD4378 /* herdr-attach.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "herdr-attach.sh"; sourceTree = "<group>"; };
+		B10E835F25969CA3EBC4B34A /* SubstrateMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubstrateMarks.swift; sourceTree = "<group>"; };
 		B1F4667A0E51BA7C24D920DD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B2191D66F65F6BF852EB4C5F /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		B800AF5E86A152DF6C1EA49A /* FloatingKeyboardUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingKeyboardUITests.swift; sourceTree = "<group>"; };
@@ -268,6 +281,7 @@
 		EF4101D8B8817370EE559987 /* SidraApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidraApp.swift; sourceTree = "<group>"; };
 		F0C8C6F728A42C21EF094989 /* HerdrTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HerdrTests.swift; sourceTree = "<group>"; };
 		FC861FD0DBC61E527D1B8C68 /* FloatingMic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingMic.swift; sourceTree = "<group>"; };
+		FCBAAB5658EC405F95ADBB43 /* SubstrateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubstrateStore.swift; sourceTree = "<group>"; };
 		FDFE12FF0FEBA7EB10B55328 /* PipelinesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelinesTests.swift; sourceTree = "<group>"; };
 		FEFA0D447FC952F4060C8301 /* VoiceInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceInput.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -411,6 +425,17 @@
 			path = Demo;
 			sourceTree = "<group>";
 		};
+		7931ECF6BDBB3F8AED13707E /* Substrate */ = {
+			isa = PBXGroup;
+			children = (
+				76C9664CC8E278BA870F7C7D /* SubstrateAPI.swift */,
+				B10E835F25969CA3EBC4B34A /* SubstrateMarks.swift */,
+				7526F9C00A47BF6E5C7C03C8 /* SubstratePane.swift */,
+				FCBAAB5658EC405F95ADBB43 /* SubstrateStore.swift */,
+			);
+			path = Substrate;
+			sourceTree = "<group>";
+		};
 		B0F81D4521F7B38A97507F78 /* Theasa */ = {
 			isa = PBXGroup;
 			children = (
@@ -490,6 +515,7 @@
 				600EBD10A930EB3B4F2C55DB /* SSHConnectionLiveTests.swift */,
 				46309641DF73FE9E9FFCF88B /* SSHKeyLifecycleTests.swift */,
 				16A78597AF77F3BBAB81F25F /* SSHKeysTests.swift */,
+				A4694552B665A83C90CCD3DF /* SubstrateTests.swift */,
 				E7E2D24662885AE2E47DC051 /* TestHost.swift */,
 			);
 			path = SidraTests;
@@ -519,6 +545,7 @@
 				BD30B9CC5081090969757B7A /* Pipelines */,
 				B78AA8018F6E9F31E62F3617 /* Resources */,
 				4E3034AA60028A9F8501F1EF /* Screenshot */,
+				7931ECF6BDBB3F8AED13707E /* Substrate */,
 				B0F81D4521F7B38A97507F78 /* Theasa */,
 				BDE0D52F18C042FB07295F6A /* Voice */,
 			);
@@ -823,6 +850,10 @@
 				35C27C0E38C27AA214903CC4 /* ShortcutsSheet.swift in Sources */,
 				20C46E8C36F0060E4F0C91E6 /* SidraAlert.swift in Sources */,
 				283606F2982CFF08E3AC6B34 /* SidraApp.swift in Sources */,
+				0C3B79EBE1826CD55B664720 /* SubstrateAPI.swift in Sources */,
+				4ED6627132D1FEE5F59A0A7E /* SubstrateMarks.swift in Sources */,
+				5F7DFA0B39CD1FEDB4A93F87 /* SubstratePane.swift in Sources */,
+				FAAE68B6F81C2ACE5FA5AF7A /* SubstrateStore.swift in Sources */,
 				8862998D27C832D4B9778259 /* SwipeTyping.swift in Sources */,
 				8BB80666014F3FB8C47B03C4 /* TabActivity.swift in Sources */,
 				579A4EC5B15A0A5FB6C614FF /* TerminalPane.swift in Sources */,
@@ -873,6 +904,10 @@
 				592658D29F343143041E23DE /* ShortcutsSheet.swift in Sources */,
 				89E5807F9528CDBF3E265320 /* SidraAlert.swift in Sources */,
 				C4F0602DCB0E3FBB7155B713 /* SidraApp.swift in Sources */,
+				C1C35226D86009FC8997D8B9 /* SubstrateAPI.swift in Sources */,
+				A906DDC53DF8C889CAA7BBC7 /* SubstrateMarks.swift in Sources */,
+				5750D87F46B200E1B4B2BA5A /* SubstratePane.swift in Sources */,
+				53D68D47B38410C45761C2AB /* SubstrateStore.swift in Sources */,
 				9DCB82D0A7F49562E8456C1B /* SwipeTyping.swift in Sources */,
 				3314E979ABFFE71D7DBC6CD4 /* TabActivity.swift in Sources */,
 				401D2572B3378D327AA460E6 /* TerminalPane.swift in Sources */,
@@ -904,6 +939,7 @@
 				F2428B17E85D7E918697B913 /* ScreenshotCutTests.swift in Sources */,
 				8BD74A1D373F10633931A4DC /* SidraSSHTests.swift in Sources */,
 				F3B50A34F450608051F45D1C /* SmokeTests.swift in Sources */,
+				0CBC254F1583D63449B3519A /* SubstrateTests.swift in Sources */,
 				342E47E76F6FDFAD3F0260DD /* TestHost.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
