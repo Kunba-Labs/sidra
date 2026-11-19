@@ -63,8 +63,9 @@ struct PipelinesPane: View {
         .onChange(of: store.pipelines.map(\.id), initial: true) { _, ids in
             // A pipeline asked for from the title bar wins once it has loaded; it stays pending until then.
             if takeReveal() { return }
-            // Open the newest failure on first sight; keep the user's pick otherwise.
-            if !ids.isEmpty, selected == nil || !ids.contains(selected!) { selected = store.latestPerProject.first { $0.status == "failed" }?.id ?? ids.first }
+            // Nothing is picked until you pick (Waseem, 2026-11-19): picking the newest failure scrolled the list
+            // to it, often far down. A pick whose pipeline is gone is dropped.
+            if let s = selected, !ids.contains(s) { selected = nil }
         }
     }
 
