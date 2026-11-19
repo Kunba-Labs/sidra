@@ -139,7 +139,7 @@ targets:
         NSSpeechRecognitionUsageDescription: Sidra turns your dictation into text on this Mac.
         ITSAppUsesNonExemptEncryption: false
         # Sparkle: the appcast each release publishes, and the public half of the EdDSA key that
-        # signs it (~/.sidra-updater-key). AppUpdater only starts in a copy under /Applications.
+        # signs it (~/Desktop/sidra-updater-key). AppUpdater only starts in a copy under /Applications.
         SUFeedURL: https://github.com/Kunba-Labs/sidra/releases/latest/download/appcast.xml
         SUPublicEDKey: aT6Y2+a+Zo2O/jOURp7BSKeIh1zH1BL/XyyDm2GaLqI=
         SUEnableAutomaticChecks: true

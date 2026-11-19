@@ -7,6 +7,7 @@
 <p align="center">
   Your coding agents in herdr, on your iPad and iPhone.<br>
   <a href="https://apps.apple.com/app/id6832359499">App Store</a> ·
+  <a href="https://github.com/Kunba-Labs/sidra/releases/latest">Mac app</a> ·
   <a href="https://kunba-labs.github.io/sidra/">Website</a> ·
   <a href="docs/herdr.md">Patch herdr</a> ·
   <a href="https://github.com/Kunba-Labs/theasa">Theasa</a>
@@ -38,6 +39,17 @@ You need a Mac or a Linux machine with SSH turned on, and Sidra on an iPad or iP
 5. Tap **+** and choose **herdr**. Pick the machine to see its herdr spaces.
    If herdr is not installed, tap **Install herdr**.
 6. Tap **Open spaces**. Use **New space** for a project folder, then **Start coding agent** in it.
+
+## Sidra for Mac
+
+Sidra also runs as a native Mac app (macOS 26 or later, Apple silicon).
+
+1. Download the newest `Sidra-<version>-arm64.dmg` from [Releases](https://github.com/Kunba-Labs/sidra/releases/latest).
+2. Open the DMG and drag **Sidra** into **Applications**.
+3. Open Sidra from Applications. The app is signed with Developer ID and notarized by Apple.
+
+Sidra updates itself. It checks for a new release every hour, and **Sidra → Check for Updates…** checks at once.
+Each push to `main` makes a new release (`.github/workflows/release-mac.yml`).
 
 ## Optional setup
 

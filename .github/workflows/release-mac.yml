@@ -3,7 +3,7 @@
 # appcast.xml, which every installed copy's Sparkle updater polls (SUFeedURL in project.yml).
 #
 # Secrets (tools/release-secrets sets them all):
-#   SPARKLE_ED_KEY                        ~/.sidra-updater-key/sidra.key; losing it strands every install
+#   SPARKLE_ED_KEY                        ~/Desktop/sidra-updater-key/sidra.key; losing it strands every install
 #   APPLE_CERTIFICATE[_PASSWORD]          Developer ID .p12, base64
 #   APPLE_SIGNING_IDENTITY                "Developer ID Application: … (KF53B4S5HD)"
 #   APPLE_API_KEY / APPLE_API_ISSUER / APPLE_API_KEY_P8   App Store Connect key, for notarizing
