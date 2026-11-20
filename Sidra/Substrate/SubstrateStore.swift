@@ -78,6 +78,8 @@ final class SubstrateStore {
     enum Section: String, CaseIterable { case requests = "Requests", sessions = "Sessions", machines = "Machines" }
 
     @ObservationIgnored private var liveTask: Task<Void, Never>?
+    /// Requests already waiting at the last refresh; nil before the first, so launching does not notify the backlog.
+    @ObservationIgnored private var seenWaiting: Set<String>?
 
     init(connection: SubstrateConnection) {
         self.connection = connection
@@ -165,6 +167,7 @@ final class SubstrateStore {
             async let s: Substrate.Sessions = client.get("/sessions")
             async let m: Substrate.Machines = client.get("/machines")
             dashboard = try await d
+            notifyNewApprovals()
             sessions = try await s
             machines = try await m.machines
             error = nil
@@ -175,6 +178,20 @@ final class SubstrateStore {
             error = "Your Substrate sign-in ended. Sign in again."
         } catch {
             self.error = error.localizedDescription
+        }
+    }
+
+    /// A local notification per request that started waiting since the last refresh, with Approve and Reject
+    /// (2026-11-20). Only while Sidra runs: Notifier skips it when Sidra is in front, where the pill shows it.
+    private func notifyNewApprovals() {
+        let waiting = (dashboard?.waiting ?? []).filter { $0.stage == "pending_approval" || $0.stage == "held" }
+        defer { seenWaiting = Set(waiting.map(\.id)) }
+        guard let seen = seenWaiting else { return }
+        for m in waiting where !seen.contains(m.id) {
+            let who = m.sender?.name ?? "Someone"
+            Notifier.notify(m.held ? "Held: \(m.project?.name ?? "a project")" : "\(who) asks \(m.project?.name ?? "an agent")",
+                            m.held ? "\(who): \(m.text)" : m.text,
+                            route: .substrate(connection.id, m.id), category: Notifier.approvalCategory, id: "substrate.\(m.id)")
         }
     }
 

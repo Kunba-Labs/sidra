@@ -77,6 +77,15 @@ final class AppModel {
                 if store !== workspace { activateWindow(of: store) }
                 return
             }
+        case .substrate(let c, let m):
+            if let s = SubstrateHub.shared.store(c) { s.section = .requests; s.pickedMessage = m }
+            for store in [workspace] + sceneWorkspaces.values {
+                guard let tab = store.tabs.first(where: { $0.panes.contains { $0.kind == .substrate(connection: c) } }) else { continue }
+                store.select(tab: tab.id)
+                if store !== workspace { activateWindow(of: store) }
+                return
+            }
+            openTab(kind: .substrate(connection: c))
         }
     }
 
