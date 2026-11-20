@@ -509,7 +509,7 @@ struct MuxAgentsMenu: View {
             if pipes.connected {
                 HStack(spacing: 4) {
                     sectionButton("Agents", icon: .agent, count: sources.reduce(0) { $0 + $1.snapshot.agents.count }, on: shown == .agents) { section = .agents }
-                    sectionButton("Pipelines", icon: .pipelines, count: pipes.runningCount, on: shown == .pipelines) { section = .pipelines }
+                    sectionButton("Pipelines", icon: .pipelines, count: pipes.runningCount, busy: pipes.runningCount > 0, on: shown == .pipelines) { section = .pipelines }
                     Spacer()
                 }
                 .padding(.horizontal, 4)
@@ -527,12 +527,14 @@ struct MuxAgentsMenu: View {
         .background(SidraColor.popup)
     }
 
-    private func sectionButton(_ title: String, icon: ProcessIcon.Kind, count: Int, on: Bool, _ action: @escaping () -> Void) -> some View {
+    private func sectionButton(_ title: String, icon: ProcessIcon.Kind, count: Int, busy: Bool = false, on: Bool, _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 6) {
                 ProcessIcon(icon, size: 16)
                 Text(title).font(SidraFont.ui(12.5, weight: on ? .bold : .regular)).foregroundStyle(on ? SidraColor.text : SidraColor.muted)
                 if count > 0 { Text("\(count)").font(SidraFont.ui(11, weight: .bold)).foregroundStyle(SidraColor.muted) }
+                // Pipelines at work: the plain system spinner, not the gradient one, so it stays quiet (2026-11-20).
+                if busy { ProgressView().controlSize(.mini).tint(SidraColor.muted) }
             }
             .padding(.leading, 6).padding(.trailing, 10).frame(height: 28)
             .background(on ? SidraColor.tabActive : .clear, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
