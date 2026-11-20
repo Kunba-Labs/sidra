@@ -124,7 +124,7 @@ final class AppModel {
         case .hackertab: return Pane(kind: kind, title: "HackerTab", project: nil)
         case .chess: return Pane(kind: kind, title: "Chess", project: nil)
         case .pipelines(let id): return Pane(kind: kind, title: "Pipelines", project: PipelinesHub.shared.connection(id)?.title)
-        case .substrate(let id): return Pane(kind: kind, title: "Substrate", project: SubstrateHub.shared.connection(id)?.host)
+        case .substrate: return Pane(kind: kind, title: "Substrate", project: nil)   // one server for now: no host shown
         }
     }
 

@@ -22,8 +22,9 @@ public final class WorkspaceStore {
            let saved = try? JSONDecoder().decode(WorkspaceState.self, from: data) {
             self.state = saved
             self.restored = true
-            // Chess panes used to carry "against the engine"; it is always the engine (2026-11-15).
-            for i in self.state.tabs.indices where self.state.tabs[i].icon == .chess {
+            // Chess panes used to carry "against the engine"; it is always the engine (2026-11-15). Substrate tabs
+            // carried the server's host, which is always substrate.gliph.sh for now (2026-11-20).
+            for i in self.state.tabs.indices where self.state.tabs[i].icon == .chess || self.state.tabs[i].icon == .substrate {
                 self.state.tabs[i].subtitle = nil
                 for p in self.state.tabs[i].panes where p.project != nil { var q = p; q.project = nil; self.state.tabs[i].root = self.state.tabs[i].root?.updatingPane(q) }
             }

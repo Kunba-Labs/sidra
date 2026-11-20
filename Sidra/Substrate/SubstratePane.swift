@@ -165,14 +165,15 @@ struct SubstrateRequests: View {
             HStack(spacing: 10) {
                 SubstrateAvatar(name: m.sender?.name ?? "?", url: m.sender?.avatar_url, project: m.project)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(m.text).font(SidraFont.ui(13, weight: on ? .bold : .medium)).foregroundStyle(on ? SidraColor.text : SidraColor.text.opacity(0.85)).lineLimit(1)
+                    Text(m.text).font(SidraFont.ui(13, weight: on ? .bold : .medium)).foregroundStyle(on ? SidraColor.text : SidraColor.text.opacity(0.85))
+                        .lineLimit(3).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)   // up to 3 lines (2026-11-20)
                     Text([m.sender?.name, m.project?.name, Substrate.stageLabel(m)].compactMap { $0 }.joined(separator: " · "))
                         .font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim).lineLimit(1)
                 }
                 Spacer(minLength: 6)
                 Text(Substrate.ago(m.updated_at ?? m.created_at)).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.muted)
             }
-            .padding(.horizontal, 14).frame(minHeight: 52)
+            .padding(.horizontal, 14).padding(.vertical, 8).frame(minHeight: 52)
             .overlay(alignment: .bottom) {
                 if on { UnevenRoundedRectangle(topLeadingRadius: 2, topTrailingRadius: 2).fill(SidraGradient.horizontal).frame(height: 2).padding(.horizontal, 14) }
             }
@@ -218,7 +219,7 @@ struct SubstrateRequests: View {
                 .padding(.horizontal, 18).padding(.top, 16)
                 if let prompt {
                     Text(prompt).font(SidraFont.mono(12)).foregroundStyle(Color(hex: 0x8b93a0)).textSelection(.enabled)
-                        .lineLimit(fullPrompt ? nil : 3)
+                        .lineLimit(fullPrompt ? nil : 6)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 14).padding(.vertical, 10)
                         .background(SubstrateStyle.well, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
