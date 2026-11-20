@@ -15,6 +15,16 @@ final class ShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .clear
+        note("loaded, \((extensionContext?.inputItems as? [NSExtensionItem] ?? []).flatMap { $0.attachments ?? [] }.map(\.registeredTypeIdentifiers))")
+    }
+
+    /// Each step goes to the unified log and to share.log in the App Group (the last 200 lines), so a failed
+    /// share can be read back from the device: Share needed two or three taps (2026-11-20).
+    private func note(_ s: String) {
+        log.info("\(s, privacy: .public)")
+        guard let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Self.group)?.appendingPathComponent("share.log") else { return }
+        let old = (try? String(contentsOf: url, encoding: .utf8))?.split(separator: "\n").suffix(199).joined(separator: "\n") ?? ""
+        try? (old + "\n" + Date().ISO8601Format(.iso8601.time(includingFractionalSeconds: true)) + " " + s).write(to: url, atomically: true, encoding: .utf8)
     }
 
     /// Starts once the view is on screen: before that the responder chain does not reach the application,
@@ -25,13 +35,22 @@ final class ShareViewController: UIViewController {
         started = true
         // Never left hanging, but long enough for a large image's save plus a refused first open (3 s cut
         // those off, so Share sometimes still needed another tap, 2026-11-20).
-        DispatchQueue.main.asyncAfter(deadline: .now() + 6) { [weak self] in self?.log.error("gave up after 6 s"); self?.finish() }
+        note("appeared")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in self?.note("gave up after 8 s"); self?.finish() }
         Task { @MainActor in
             let t = Date()
-            guard await save() else { log.error("no image saved"); return finish() }
-            log.info("saved in \(Date().timeIntervalSince(t), format: .fixed(precision: 2)) s")
+            let since = { String(format: "%.2f s", Date().timeIntervalSince(t)) }
+            // The screenshot editor may still be rendering the marked-up image when Share is tapped, and then hands
+            // over nothing: ask again for up to 3 s instead of closing (2026-11-20).
+            var saved = false
+            for attempt in 1...10 where !saved {
+                saved = await save()
+                if !saved { note("no image yet (attempt \(attempt), \(since()))"); try? await Task.sleep(for: .milliseconds(300)) }
+            }
+            guard saved else { note("no image, closing"); return finish() }
+            note("saved after \(since())")
             let opened = await open(URL(string: "sidra://screenshot")!)
-            log.info("open \(opened ? "succeeded" : "failed") after \(Date().timeIntervalSince(t), format: .fixed(precision: 2)) s")
+            note("open \(opened ? "succeeded" : "failed") after \(since())")
             finish()
         }
     }
@@ -55,13 +74,18 @@ final class ShareViewController: UIViewController {
 
     /// The screenshot editor hands over a UIImage, Photos and Files a file URL, others raw data.
     private static func png(from provider: NSItemProvider) async -> Data? {
-        await withCheckedContinuation { done in
-            provider.loadItem(forTypeIdentifier: UTType.image.identifier) { item, _ in
-                switch item {
-                case let image as UIImage: done.resume(returning: image.pngData())
-                case let url as URL: done.resume(returning: (try? Data(contentsOf: url)).flatMap { UIImage(data: $0)?.pngData() })
-                case let data as Data: done.resume(returning: UIImage(data: data)?.pngData())
-                default: done.resume(returning: nil)
+        let item: NSSecureCoding? = await withCheckedContinuation { done in
+            provider.loadItem(forTypeIdentifier: UTType.image.identifier) { item, _ in done.resume(returning: item) }
+        }
+        switch item {
+        case let image as UIImage: return image.pngData()
+        case let url as URL: return (try? Data(contentsOf: url)).flatMap { UIImage(data: $0)?.pngData() }
+        case let data as Data: return UIImage(data: data)?.pngData()
+        default:
+            // Some hosts only answer the data representation.
+            return await withCheckedContinuation { done in
+                _ = provider.loadDataRepresentation(forTypeIdentifier: UTType.image.identifier) { data, _ in
+                    done.resume(returning: data.flatMap { UIImage(data: $0)?.pngData() })
                 }
             }
         }
@@ -85,9 +109,9 @@ final class ShareViewController: UIViewController {
                     unsafeBitCast(app.method(for: sel), to: Open.self)(app, sel, url, [:], completion as AnyObject)
                 }
                 if ok { return true }
-                log.info("open refused (attempt \(attempt + 1))")
+                note("open refused (attempt \(attempt + 1))")
             } else {
-                log.info("no application on the responder chain (attempt \(attempt + 1))")
+                note("no application on the responder chain (attempt \(attempt + 1))")
             }
             try? await Task.sleep(for: .milliseconds(150))
         }
