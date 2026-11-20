@@ -73,6 +73,8 @@ final class SubstrateStore {
     var loading = false
     /// The request and session picked in the pane, kept across tab switches.
     var pickedMessage: String?
+    /// The request whose "Edit before approving" editor is open (also opened by a notification's Edit).
+    var editing: String?
     var pickedSession: String?
     var section: Section = .requests
     enum Section: String, CaseIterable { case requests = "Requests", sessions = "Sessions", machines = "Machines" }
@@ -233,12 +235,19 @@ final class SubstrateStore {
 
     // MARK: Acting
 
-    func approve(_ id: String) async throws { try await act(id, "approve") }
+    /// `text`: the developer's edit of the tester's message; the agent gets it in place of the original (2026-11-20).
+    func approve(_ id: String, text: String? = nil) async throws { try await act(id, "approve", text.map { ["text": $0] }) }
     func reject(_ id: String) async throws { try await act(id, "reject") }
 
-    private func act(_ id: String, _ verb: String) async throws {
+    private func act(_ id: String, _ verb: String, _ body: [String: String]? = nil) async throws {
         struct R: Decodable { var id: String?; var stage: String? }
-        let _: R = try await client.post("/messages/\(id)/\(verb)")
+        do {
+            let _: R = try await client.post("/messages/\(id)/\(verb)", body)
+        } catch let f as Substrate.Failure where f.status == 409 {
+            await refresh()
+            throw Substrate.Failure(status: 409, text: "Someone else decided this request first.")
+        }
+        if editing == id { editing = nil }
         await refresh()
     }
 }

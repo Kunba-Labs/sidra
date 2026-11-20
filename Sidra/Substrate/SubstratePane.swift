@@ -115,6 +115,9 @@ struct SubstrateRequests: View {
     @Environment(AppModel.self) private var app
     @State private var fullPrompt = false
     @State private var working = false
+    @State private var draft = ""
+    /// A held request waiting for "Approve anyway"; `text` is the edit, nil for a plain approve.
+    @State private var confirmHeld: (message: Substrate.Message, text: String?)?
 
     private var groups: [(String, [Substrate.Message], Color)] {
         guard let d = store.dashboard else { return [] }
@@ -157,6 +160,14 @@ struct SubstrateRequests: View {
         .background { if keysOn { keys } }
         .task(id: picked?.conversation_id) { if let c = picked?.conversation_id { await store.loadConversation(c) } }
         .onChange(of: picked?.id) { _, _ in fullPrompt = false }
+        .onChange(of: store.editing) { _, id in if let id, let m = store.message(id) { draft = m.text } }
+        .confirmationDialog("This request is held: \(confirmHeld?.message.risk ?? "flagged as risky").",
+                            isPresented: Binding(get: { confirmHeld != nil }, set: { if !$0 { confirmHeld = nil } }), titleVisibility: .visible) {
+            Button(confirmHeld?.text == nil ? "Approve anyway" : "Approve edited message anyway") {
+                if let c = confirmHeld { act(c.message, approve: true, text: c.text ?? c.message.text, confirmed: true) }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
     }
 
     private func row(_ m: Substrate.Message, faded: Bool) -> some View {
@@ -236,6 +247,10 @@ struct SubstrateRequests: View {
                             .buttonStyle(SubstrateButtonStyle()).disabled(working)
                             .help("Reject (⌘⌫)")
                     }
+                    if waiting, store.editing != m.id {
+                        Button { draft = m.text; store.editing = m.id } label: { Label("Edit before approving", systemImage: "pencil") }
+                            .buttonStyle(SubstrateButtonStyle()).disabled(working)
+                    }
                     if prompt != nil {
                         Button(fullPrompt ? "Show less of the prompt" : "Show the full prompt") { fullPrompt.toggle() }
                             .buttonStyle(.plain).font(SidraFont.ui(13, weight: .semibold)).foregroundStyle(SidraColor.muted).padding(.horizontal, 8)
@@ -247,6 +262,7 @@ struct SubstrateRequests: View {
                     }
                 }
                 .padding(.horizontal, 18).padding(.top, 14)
+                if waiting, store.editing == m.id { editor(m) }
                 if let track = Substrate.track(m.deploy_stage ?? conversation?.deploy_stage) {
                     SubstrateTrack(states: track).padding(.horizontal, 18).padding(.top, 16)
                 }
@@ -262,10 +278,41 @@ struct SubstrateRequests: View {
         }
     }
 
-    private func act(_ m: Substrate.Message, approve: Bool) {
+    /// "Edit before approving" (2026-11-20): the tester's text, prefilled; the agent gets the edited version.
+    private func editor(_ m: Substrate.Message) -> some View {
+        let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        let tooLong = draft.count > 8000
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("The agent gets this text in place of \(m.sender?.name ?? "the tester")'s. They see that you edited it.")
+                .font(SidraFont.ui(12)).foregroundStyle(SidraColor.muted)
+            TextEditor(text: $draft)
+                .font(SidraFont.ui(14)).foregroundStyle(SidraColor.text)
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: 110, maxHeight: 260)
+                .padding(8)
+                .background(SubstrateStyle.well, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(SidraColor.hairline2))
+            HStack(spacing: 8) {
+                Button { act(m, approve: true, text: text) } label: { Label("Approve edited message", systemImage: "checkmark") }
+                    .buttonStyle(SubstrateButtonStyle(electric: true)).disabled(working || text.isEmpty || tooLong)
+                Button("Cancel") { store.editing = nil }.buttonStyle(SubstrateButtonStyle())
+                Spacer()
+                if tooLong { Text("\(draft.count) of 8000 characters").font(SidraFont.mono(11.5)).foregroundStyle(SidraColor.red) }
+            }
+        }
+        .padding(14)
+        .background(SubstrateStyle.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(SidraColor.hairline))
+        .padding(.horizontal, 18).padding(.top, 12)
+    }
+
+    /// `text`: an edit; the same text as the tester's goes as a plain approve. A held request asks first, as on the web.
+    private func act(_ m: Substrate.Message, approve: Bool, text: String? = nil, confirmed: Bool = false) {
+        let edit = text == m.text ? nil : text
+        if approve, m.held, !confirmed { confirmHeld = (m, edit); return }
         working = true
         Task {
-            do { if approve { try await store.approve(m.id) } else { try await store.reject(m.id) } }
+            do { if approve { try await store.approve(m.id, text: edit) } else { try await store.reject(m.id) } }
             catch { app.toast(error.localizedDescription) }
             working = false
         }
@@ -828,7 +875,7 @@ struct SubstrateEventLine: View {
         HStack(spacing: 9) {
             Group {
                 switch event.actor {
-                case "human": SubstrateAvatar(name: event.name ?? "?", url: event.avatar_url, size: 20)
+                case "human", "developer": SubstrateAvatar(name: event.name ?? "?", url: event.avatar_url, size: 20)
                 case "deploy": Image(systemName: "shippingbox").font(.system(size: 10)).foregroundStyle(SidraColor.muted).frame(width: 20, height: 20).background(SubstrateStyle.chip, in: Circle())
                 case "agent": Image(systemName: "sparkle").font(.system(size: 10)).foregroundStyle(SidraColor.orange).frame(width: 20, height: 20).background(SubstrateStyle.chip, in: Circle())
                 default: ProcessIcon(.substrate, size: 20).clipShape(Circle())

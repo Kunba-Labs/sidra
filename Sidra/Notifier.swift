@@ -27,7 +27,7 @@ enum Notifier {
         }
     }
 
-    /// Approve and Reject on a Substrate approval notification; tapping the card opens the request.
+    /// Approve, Reject and Edit on a Substrate approval notification; tapping the card opens the request.
     static let approvalCategory = "substrate.approval"
 
     final class Delegate: NSObject, UNUserNotificationCenterDelegate {
@@ -52,6 +52,8 @@ enum Notifier {
                         }
                         return
                     }
+                    // Edit: Sidra comes forward on the request with "Edit before approving" open.
+                    if case .substrate(let c, let m) = route, action == "edit" { SubstrateHub.shared.store(c)?.editing = m }
                     if let route { Notifier.pending = route }
                     done()
                 }
@@ -68,6 +70,7 @@ enum Notifier {
             UNNotificationCategory(identifier: approvalCategory, actions: [
                 UNNotificationAction(identifier: "approve", title: "Approve", options: [.authenticationRequired]),
                 UNNotificationAction(identifier: "reject", title: "Reject", options: [.authenticationRequired, .destructive]),
+                UNNotificationAction(identifier: "edit", title: "Edit", options: [.authenticationRequired, .foreground]),
             ], intentIdentifiers: []),
         ])
         // -sidra.requestNotifications (UI tests): iPadOS only shows the prompt in the foreground.
