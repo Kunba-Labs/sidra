@@ -130,6 +130,14 @@ struct SubstrateRequests: View {
                     ForEach(groups, id: \.0) { name, items, color in
                         SubstrateGroupLabel(name, count: (name == "Needs you" ? store.dashboard?.counts.waiting : name == "Active" ? store.dashboard?.counts.active : nil) ?? items.count, color: color)
                         ForEach(items) { m in row(m, faded: name == "History") }
+                        if items.isEmpty, name != "History" {
+                            // An empty group says what it holds: requests, not the herdr agents at work (2026-11-20).
+                            let working = store.dashboard?.counts.working ?? 0
+                            Text(name == "Needs you" ? "Nothing waits for you."
+                                 : "No requests with an agent." + (working > 0 ? " \(working) \(working == 1 ? "agent" : "agents") working in herdr." : ""))
+                                .font(SidraFont.ui(12)).foregroundStyle(SidraColor.dim)
+                                .padding(.horizontal, 14).padding(.bottom, 6)
+                        }
                     }
                     if store.dashboard == nil {
                         SubstrateEmpty(text: store.error ?? "Reading Substrate…", error: store.error != nil) { Task { await store.refresh() } }
