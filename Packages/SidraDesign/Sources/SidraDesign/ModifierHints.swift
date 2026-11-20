@@ -3,6 +3,7 @@ import SwiftUI
 import AppKit
 #else
 import GameController
+import UIKit
 #endif
 
 /// The number keys that pick a tab: 1–9, then 0, - and = (shown as +) for tabs 10 to 12 (Waseem, 2026-11-19).
@@ -14,7 +15,8 @@ public enum TabKeys {
 }
 
 /// Which of ⌘ and ⌃ is held on its own, after a short hold, so the tabs can show the keys that pick them.
-/// Any other key hides the hints, so a quick ⌘C never flashes them.
+/// Any other key hides the hints, so a quick ⌘C never flashes them. Leaving the app (⌘Tab) hides them too:
+/// the ⌘ release then goes to the other app, and the hints stayed up (2026-11-20).
 @MainActor @Observable public final class ModifierHold {
     public static let shared = ModifierHold()
     public private(set) var command = false
@@ -31,10 +33,16 @@ public enum TabKeys {
             }
             return e
         }
+        NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { ModifierHold.shared.reset() }
+        }
         #else
         hook()
         NotificationCenter.default.addObserver(forName: .GCKeyboardDidConnect, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated { ModifierHold.shared.hook() }
+        }
+        NotificationCenter.default.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { ModifierHold.shared.reset() }
         }
         #endif
     }
@@ -66,6 +74,15 @@ public enum TabKeys {
         }
         pending = w
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: w)
+    }
+
+    /// The app lost focus: nothing is known to be held any more.
+    private func reset() {
+        held = (false, false)
+        #if !os(macOS)
+        down = []
+        #endif
+        otherKey()
     }
 
     private func otherKey() {
