@@ -111,6 +111,7 @@ struct SubstrateFooter: View {
 struct SubstrateRequests: View {
     @Bindable var store: SubstrateStore
     let keysOn: Bool
+    @State private var width: CGFloat = 900
     @Environment(AppModel.self) private var app
     @State private var fullPrompt = false
     @State private var working = false
@@ -136,7 +137,7 @@ struct SubstrateRequests: View {
                 }
                 .padding(.vertical, 6)
             }
-            .frame(width: 360)
+            .frame(width: min(300, width * 0.42))   // HackerTab's index column (2026-11-20)
             .background(SubstrateStyle.side)
             Rectangle().fill(SidraColor.hairline).frame(width: 1)
             Group {
@@ -144,6 +145,7 @@ struct SubstrateRequests: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .background { if keysOn { keys } }
         .task(id: picked?.conversation_id) { if let c = picked?.conversation_id { await store.loadConversation(c) } }
         .onChange(of: picked?.id) { _, _ in fullPrompt = false }
@@ -156,11 +158,8 @@ struct SubstrateRequests: View {
                 SubstrateAvatar(name: m.sender?.name ?? "?", url: m.sender?.avatar_url, project: m.project)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(m.text).font(SidraFont.ui(13, weight: on ? .bold : .medium)).foregroundStyle(on ? SidraColor.text : SidraColor.text.opacity(0.85)).lineLimit(1)
-                    HStack(spacing: 5) {
-                        if let p = m.project { SubstrateProjectLogo(project: p, size: 13) }
-                        Text([m.sender?.name, m.project?.name, Substrate.stageLabel(m)].compactMap { $0 }.joined(separator: " · "))
-                            .font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim).lineLimit(1)
-                    }
+                    Text([m.sender?.name, m.project?.name, Substrate.stageLabel(m)].compactMap { $0 }.joined(separator: " · "))
+                        .font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim).lineLimit(1)
                 }
                 Spacer(minLength: 6)
                 Text(Substrate.ago(m.updated_at ?? m.created_at)).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.muted)
@@ -211,7 +210,7 @@ struct SubstrateRequests: View {
                 .padding(.horizontal, 18).padding(.top, 16)
                 if let prompt {
                     Text(prompt).font(SidraFont.mono(12)).foregroundStyle(Color(hex: 0x8b93a0)).textSelection(.enabled)
-                        .lineLimit(fullPrompt ? nil : 6)
+                        .lineLimit(fullPrompt ? nil : 3)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 14).padding(.vertical, 10)
                         .background(SubstrateStyle.well, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -301,6 +300,7 @@ struct SubstrateRequests: View {
 struct SubstrateSessions: View {
     @Bindable var store: SubstrateStore
     let keysOn: Bool
+    @State private var width: CGFloat = 900
     private var sessions: [Substrate.Session] { store.sessions?.sessions ?? [] }
     private var picked: Substrate.Session? {
         let id = store.pickedSession ?? sessions.first?.id
@@ -319,7 +319,7 @@ struct SubstrateSessions: View {
                 }
                 .padding(.vertical, 6)
             }
-            .frame(width: 360)
+            .frame(width: min(300, width * 0.42))   // HackerTab's index column (2026-11-20)
             .background(SubstrateStyle.side)
             Rectangle().fill(SidraColor.hairline).frame(width: 1)
             Group {
@@ -327,6 +327,7 @@ struct SubstrateSessions: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .background { if keysOn { keys } }
         .task(id: picked?.id) { if let id = picked?.id { await store.loadSession(id) } }
     }
@@ -681,7 +682,9 @@ struct SubstrateGroupLabel: View {
     var body: some View {
         HStack(spacing: 8) {
             if let color, color != SidraColor.dim {
-                if text == "Active" { GradientSpinner(size: 10) } else { RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 8, height: 8) }
+                if text == "Active" {
+                    if (count ?? 0) > 0 { GradientSpinner(size: 10) } else { Circle().strokeBorder(SidraColor.dim, lineWidth: 1.5).frame(width: 10, height: 10) }   // spins only while something runs
+                } else { RoundedRectangle(cornerRadius: 2).fill((count ?? 0) > 0 ? color : SidraColor.dim).frame(width: 8, height: 8) }
             }
             Text(text.uppercased()).font(SidraFont.ui(11.5, weight: .semibold)).tracking(0.5)
             Spacer()
