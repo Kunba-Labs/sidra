@@ -8,6 +8,9 @@ import SidraWorkspace
 @main
 struct SidraApp: App {
     @State private var app = AppModel()
+    #if os(iOS)
+    @UIApplicationDelegateAdaptor(SidraAppDelegate.self) private var delegate   // the APNs token for Substrate's pushes
+    #endif
 
     init() {
         Notifier.start()

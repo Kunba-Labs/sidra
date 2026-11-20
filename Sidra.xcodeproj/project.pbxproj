@@ -70,6 +70,7 @@
 		65B635852204048381160C72 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F083441085B2B800071D6F /* RootView.swift */; };
 		672B64903CA115909DE2DD11 /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED6DE4A11A47F0B05DDE8BA4 /* Commands.swift */; };
 		6A074F3A40762F3A0A95AC0E /* TheasaPulse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1480327CDF081DB259C98E5F /* TheasaPulse.swift */; };
+		6A5F030354DB4E6EAFE46ECC /* SubstratePush.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A11231F408C9DDFBD555F /* SubstratePush.swift */; };
 		6AC0A1BC1AA155451A0B6189 /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4BC5697584C293B136FA2FB2 /* Inter-Bold.ttf */; };
 		6B5024C83E45197BF4473249 /* TheasaCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A13AED1FB2E44CBBCE48E1 /* TheasaCommands.swift */; };
 		6EBC7DB38F21425DECECA632 /* SidraSSH in Frameworks */ = {isa = PBXBuildFile; productRef = E3A47C10FA0E643E3967CC53 /* SidraSSH */; };
@@ -123,6 +124,7 @@
 		C1C35226D86009FC8997D8B9 /* SubstrateAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76C9664CC8E278BA870F7C7D /* SubstrateAPI.swift */; };
 		C2B75528C9937F7F75887D3E /* FloatingMic.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC861FD0DBC61E527D1B8C68 /* FloatingMic.swift */; };
 		C4F0602DCB0E3FBB7155B713 /* SidraApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF4101D8B8817370EE559987 /* SidraApp.swift */; };
+		C501BD6DBADAAE8F7BE1101A /* SubstratePush.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A11231F408C9DDFBD555F /* SubstratePush.swift */; };
 		C5213763CE84F01419C2B518 /* NewTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AE28FD3AB3C35FCCD53E8FF /* NewTab.swift */; };
 		C5BC5FC24F82F516BF0FE409 /* FloatingKeyboardPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCFB137D3245A2A62F70ECB5 /* FloatingKeyboardPanel.swift */; };
 		CA49C1067A793EE8CDB6205D /* SidraHackerTab in Frameworks */ = {isa = PBXBuildFile; productRef = C3883D8A12FE42C5D36C1FC4 /* SidraHackerTab */; };
@@ -245,6 +247,7 @@
 		8CE3882D2B474C66E4A47CC6 /* CI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CI.swift; sourceTree = "<group>"; };
 		9020BCA2AC1F7D913937CCA7 /* KeysSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysSection.swift; sourceTree = "<group>"; };
 		91A13AED1FB2E44CBBCE48E1 /* TheasaCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaCommands.swift; sourceTree = "<group>"; };
+		931A11231F408C9DDFBD555F /* SubstratePush.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubstratePush.swift; sourceTree = "<group>"; };
 		9558625C18D327C68E8E8B55 /* TabActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabActivity.swift; sourceTree = "<group>"; };
 		96F083441085B2B800071D6F /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		97262EAF9FA2E40D43AC48DD /* SidraWorkspace */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraWorkspace; path = Packages/SidraWorkspace; sourceTree = SOURCE_ROOT; };
@@ -431,6 +434,7 @@
 				76C9664CC8E278BA870F7C7D /* SubstrateAPI.swift */,
 				B10E835F25969CA3EBC4B34A /* SubstrateMarks.swift */,
 				7526F9C00A47BF6E5C7C03C8 /* SubstratePane.swift */,
+				931A11231F408C9DDFBD555F /* SubstratePush.swift */,
 				FCBAAB5658EC405F95ADBB43 /* SubstrateStore.swift */,
 			);
 			path = Substrate;
@@ -853,6 +857,7 @@
 				0C3B79EBE1826CD55B664720 /* SubstrateAPI.swift in Sources */,
 				4ED6627132D1FEE5F59A0A7E /* SubstrateMarks.swift in Sources */,
 				5F7DFA0B39CD1FEDB4A93F87 /* SubstratePane.swift in Sources */,
+				C501BD6DBADAAE8F7BE1101A /* SubstratePush.swift in Sources */,
 				FAAE68B6F81C2ACE5FA5AF7A /* SubstrateStore.swift in Sources */,
 				8862998D27C832D4B9778259 /* SwipeTyping.swift in Sources */,
 				8BB80666014F3FB8C47B03C4 /* TabActivity.swift in Sources */,
@@ -907,6 +912,7 @@
 				C1C35226D86009FC8997D8B9 /* SubstrateAPI.swift in Sources */,
 				A906DDC53DF8C889CAA7BBC7 /* SubstrateMarks.swift in Sources */,
 				5750D87F46B200E1B4B2BA5A /* SubstratePane.swift in Sources */,
+				6A5F030354DB4E6EAFE46ECC /* SubstratePush.swift in Sources */,
 				53D68D47B38410C45761C2AB /* SubstrateStore.swift in Sources */,
 				9DCB82D0A7F49562E8456C1B /* SwipeTyping.swift in Sources */,
 				3314E979ABFFE71D7DBC6CD4 /* TabActivity.swift in Sources */,

@@ -123,6 +123,9 @@ final class SubstrateStore {
 
     func signOut() async {
         struct OK: Decodable { var ok: Bool? }
+        #if os(iOS)
+        if let t = SubstratePush.token { let _: OK? = try? await client.delete("/devices/\(t)") }   // before the token stops working
+        #endif
         let _: OK? = try? await client.post("/auth/logout")
         forget()
     }
@@ -139,6 +142,10 @@ final class SubstrateStore {
     /// Fetches everything and keeps /live open; reconnects after a drop, waiting longer each time (at most a minute).
     func start() {
         guard signedIn, liveTask == nil else { return }
+        #if os(iOS)
+        SubstratePush.enable()
+        if let t = SubstratePush.token { Task { await registerDevice(t) } }
+        #endif
         Task { await refresh() }
         liveTask = Task { [weak self] in
             var wait = 2.0
@@ -194,6 +201,15 @@ final class SubstrateStore {
                             route: .substrate(connection.id, m.id), category: Notifier.approvalCategory, id: "substrate.\(m.id)")
         }
     }
+
+    #if os(iOS)
+    /// Tells Substrate where to push this account's approvals; `client_ref` (this account's id here) comes back in each push.
+    func registerDevice(_ token: String) async {
+        struct OK: Decodable { var ok: Bool? }
+        let _: OK? = try? await client.post("/devices", ["token": token, "bundle": Bundle.main.bundleIdentifier ?? "nl.sadiq.sidra",
+                                                         "sandbox": SubstratePush.sandbox ? "true" : "false", "client_ref": connection.id.uuidString])
+    }
+    #endif
 
     func message(_ id: String) -> Substrate.Message? {
         guard let d = dashboard else { return nil }

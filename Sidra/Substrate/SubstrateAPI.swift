@@ -243,6 +243,8 @@ struct SubstrateClient: Sendable {
 
     func post<T: Decodable>(_ path: String, _ body: [String: String]? = nil) async throws -> T { try await call("POST", path, body) }
 
+    func delete<T: Decodable>(_ path: String) async throws -> T { try await call("DELETE", path, nil) }
+
     private func call<T: Decodable>(_ method: String, _ path: String, _ body: [String: String]?) async throws -> T {
         guard let url = URL(string: base + path) else { throw Substrate.Failure(status: 0, text: "Bad address: \(base + path)") }
         var req = URLRequest(url: url, timeoutInterval: 20)
