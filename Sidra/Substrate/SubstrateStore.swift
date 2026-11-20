@@ -198,11 +198,23 @@ final class SubstrateStore {
 
     /// A local notification per request that started waiting since the last refresh, with Approve and Reject
     /// (2026-11-20). Only while Sidra runs: Notifier skips it when Sidra is in front, where the pill shows it.
+    /// On the Mac, Sidra's own desktop cards by default (SubstrateDesktop).
     private func notifyNewApprovals() {
         let waiting = (dashboard?.waiting ?? []).filter { $0.stage == "pending_approval" || $0.stage == "held" }
         defer { seenWaiting = Set(waiting.map(\.id)) }
+        #if os(macOS)
+        SubstrateDesktop.shared.prune(connection.id, keep: Set(waiting.map(\.id)))
+        #endif
         guard let seen = seenWaiting else { return }
         for m in waiting where !seen.contains(m.id) {
+            #if os(macOS)
+            // The Mac's own cards (default) show whether Sidra is in front or not; System keeps the banner below.
+            switch SubstrateDesktop.mode {
+            case .cards: SubstrateDesktop.shared.show(m, connection: connection.id); continue
+            case .off: continue
+            case .system: break
+            }
+            #endif
             let who = m.sender?.name ?? "Someone"
             Notifier.notify(m.held ? "Held: \(m.project?.name ?? "a project")" : "\(who) asks \(m.project?.name ?? "an agent")",
                             m.held ? "\(who): \(m.text)" : m.text,

@@ -20,6 +20,7 @@ struct SidraApp: App {
         DataLayout.apply()
         #if os(macOS)
         _ = AppUpdater.controller   // starts the scheduled update checks
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { SubstrateDesktop.shared.demoIfAsked() }
         #endif
         // -sidra.forceCrash, -sidra.killAfter N (tests): a real crash and a real SIGKILL.
         if CommandLine.arguments.contains("-sidra.forceCrash") { DispatchQueue.main.asyncAfter(deadline: .now() + 2) { fatalError("sidra.forceCrash") } }

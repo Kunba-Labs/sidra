@@ -81,6 +81,7 @@
 		76818F3F38D7C373C58D6F24 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 788A46258945131DAB264C68 /* PrivacyInfo.xcprivacy */; };
 		77B73B65F1AF1BF0C75C805A /* Herdr.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19FFF77CC7CB50FA454494F7 /* Herdr.swift */; };
 		79E841603FE7F855A5C953C4 /* TheasaPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4250DDEA0881DA0432782662 /* TheasaPill.swift */; };
+		7D141BB2839FA65336CB735B /* SubstrateDesktop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B2A9EA1F5F133DFEE656CAB /* SubstrateDesktop.swift */; };
 		7D35112A9FD505497C6BEB56 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 4E668645064E13D2A7D90C58 /* Sparkle */; };
 		7F8A385915BB93D324C7331C /* SceneStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F90D9F3ACAEC2FB0ADCA51 /* SceneStore.swift */; };
 		7FEC65A5765404B7AA132D5D /* SidraTerminal in Frameworks */ = {isa = PBXBuildFile; productRef = FF0765AB422B0D45A35E475D /* SidraTerminal */; };
@@ -118,6 +119,7 @@
 		B2639D3F1C874E40B5D05384 /* ScreenshotInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF9DBCB951A69CFF27CFD076 /* ScreenshotInbox.swift */; };
 		B5145760F4ED57BEC411375B /* GitLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7188AFC621B1D9E1EFB8CC4 /* GitLab.swift */; };
 		B913C402DDBB59A495B59D5A /* Notifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E196B90CD3E23D5A8642B9E4 /* Notifier.swift */; };
+		B97B54EEAD041A6E1FD2B4CA /* SubstrateDesktop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B2A9EA1F5F133DFEE656CAB /* SubstrateDesktop.swift */; };
 		BA25D9950CF47C88684ED41F /* HackerTabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5878234E78CAE96CF386F927 /* HackerTabUITests.swift */; };
 		BE265D46DCFEE3E497F53DF0 /* HerdrConnectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79C4F81745995413751B61AA /* HerdrConnectSheet.swift */; };
 		BE67F73EEF04D36498A08B32 /* SSHMoshUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A5640D612B671DEF0516D7B /* SSHMoshUITests.swift */; };
@@ -232,6 +234,7 @@
 		628260ACBDFD6ACC103AB75C /* SidraTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = SidraTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		680898FB51F66C3B3F13859C /* Inter-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Regular.ttf"; sourceTree = "<group>"; };
 		69A9BEE59A535B1C6F7572B3 /* StoreScreenshotsUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreScreenshotsUITests.swift; sourceTree = "<group>"; };
+		6B2A9EA1F5F133DFEE656CAB /* SubstrateDesktop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubstrateDesktop.swift; sourceTree = "<group>"; };
 		7154BCD71DBCA78733D7CF59 /* PipelinesUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelinesUITests.swift; sourceTree = "<group>"; };
 		73017469F38A5080D3473461 /* ChessUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChessUITests.swift; sourceTree = "<group>"; };
 		7526F9C00A47BF6E5C7C03C8 /* SubstratePane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubstratePane.swift; sourceTree = "<group>"; };
@@ -432,6 +435,7 @@
 			isa = PBXGroup;
 			children = (
 				76C9664CC8E278BA870F7C7D /* SubstrateAPI.swift */,
+				6B2A9EA1F5F133DFEE656CAB /* SubstrateDesktop.swift */,
 				B10E835F25969CA3EBC4B34A /* SubstrateMarks.swift */,
 				7526F9C00A47BF6E5C7C03C8 /* SubstratePane.swift */,
 				931A11231F408C9DDFBD555F /* SubstratePush.swift */,
@@ -855,6 +859,7 @@
 				20C46E8C36F0060E4F0C91E6 /* SidraAlert.swift in Sources */,
 				283606F2982CFF08E3AC6B34 /* SidraApp.swift in Sources */,
 				0C3B79EBE1826CD55B664720 /* SubstrateAPI.swift in Sources */,
+				7D141BB2839FA65336CB735B /* SubstrateDesktop.swift in Sources */,
 				4ED6627132D1FEE5F59A0A7E /* SubstrateMarks.swift in Sources */,
 				5F7DFA0B39CD1FEDB4A93F87 /* SubstratePane.swift in Sources */,
 				C501BD6DBADAAE8F7BE1101A /* SubstratePush.swift in Sources */,
@@ -910,6 +915,7 @@
 				89E5807F9528CDBF3E265320 /* SidraAlert.swift in Sources */,
 				C4F0602DCB0E3FBB7155B713 /* SidraApp.swift in Sources */,
 				C1C35226D86009FC8997D8B9 /* SubstrateAPI.swift in Sources */,
+				B97B54EEAD041A6E1FD2B4CA /* SubstrateDesktop.swift in Sources */,
 				A906DDC53DF8C889CAA7BBC7 /* SubstrateMarks.swift in Sources */,
 				5750D87F46B200E1B4B2BA5A /* SubstratePane.swift in Sources */,
 				6A5F030354DB4E6EAFE46ECC /* SubstratePush.swift in Sources */,

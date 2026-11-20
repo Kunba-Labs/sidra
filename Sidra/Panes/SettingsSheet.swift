@@ -47,6 +47,7 @@ struct SettingsSheet: View {
 
             #if os(macOS)
             TerminalFontSection(query: query)
+            NotificationsSection(query: query)
             #endif
             VoiceSection(query: query)
             #if os(iOS)
@@ -417,6 +418,35 @@ struct ScreenshotSection: View {
             SectionLabel("Screenshots")
             SettingRow("Send a screenshot", detail: "In Shortcuts, make a shortcut with Take Screenshot, then Send Screenshot to Sidra. Add it to Control Center, ask Siri, or set Apple Pencil Pro's squeeze to run it. Or take a screenshot and share it to Sidra.",
                        isDefault: true, reset: {}) { EmptyView() }
+        }
+    }
+}
+#endif
+
+#if os(macOS)
+/// How Substrate approvals reach the Mac desktop: Sidra's cards, the system banner, or nothing.
+struct NotificationsSection: View {
+    let query: String
+    @AppStorage(SubstrateDesktop.modeKey) private var mode = SubstrateDesktop.Mode.cards.rawValue
+    private let names: [SubstrateDesktop.Mode: String] = [.cards: "Sidra cards", .system: "System banner", .off: "Off"]
+
+    var body: some View {
+        if query.isEmpty || ["Notifications", "Substrate", "approval", "banner"].contains(where: { $0.localizedCaseInsensitiveContains(query) }) {
+            let current = SubstrateDesktop.Mode(rawValue: mode) ?? .cards
+            SectionLabel("Notifications")
+            SettingRow("Substrate approvals", detail: current == .cards ? "Cards top-right over every app, with Approve, Reject and Edit. Touch ID first."
+                       : current == .system ? "The macOS banner, only while Sidra is in the background." : "No notice. The Substrate pill still counts what waits.",
+                       isDefault: current == .cards, reset: { mode = SubstrateDesktop.Mode.cards.rawValue }) {
+                SidraMenu([SidraMenuSection(nil, SubstrateDesktop.Mode.allCases.map { m in SidraMenuItem(names[m] ?? m.rawValue) { mode = m.rawValue } })]) {
+                    HStack(spacing: 6) {
+                        Text(names[current] ?? "").font(SidraFont.ui(13)).foregroundStyle(SidraColor.text)
+                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(SidraColor.muted)
+                    }
+                    .padding(.horizontal, 10).frame(height: 30)
+                    .background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
+                }
+                .accessibilityLabel("Substrate approvals, \(names[current] ?? "")")
+            }
         }
     }
 }
