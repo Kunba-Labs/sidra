@@ -80,6 +80,9 @@ final class SubstrateStore {
     @ObservationIgnored private var liveTask: Task<Void, Never>?
     /// Requests already waiting at the last refresh; nil before the first, so launching does not notify the backlog.
     @ObservationIgnored private var seenWaiting: Set<String>?
+    /// Substrate has this device's push token; until then each refresh tries again (a server without
+    /// /devices yet, or no network at launch, left pushes off until the next launch).
+    @ObservationIgnored private var deviceRegistered = false
 
     init(connection: SubstrateConnection) {
         self.connection = connection
@@ -175,6 +178,9 @@ final class SubstrateStore {
             async let m: Substrate.Machines = client.get("/machines")
             dashboard = try await d
             notifyNewApprovals()
+            #if os(iOS)
+            if !deviceRegistered, let t = SubstratePush.token { await registerDevice(t) }
+            #endif
             sessions = try await s
             machines = try await m.machines
             error = nil
@@ -206,8 +212,9 @@ final class SubstrateStore {
     /// Tells Substrate where to push this account's approvals; `client_ref` (this account's id here) comes back in each push.
     func registerDevice(_ token: String) async {
         struct OK: Decodable { var ok: Bool? }
-        let _: OK? = try? await client.post("/devices", ["token": token, "bundle": Bundle.main.bundleIdentifier ?? "nl.sadiq.sidra",
-                                                         "sandbox": SubstratePush.sandbox ? "true" : "false", "client_ref": connection.id.uuidString])
+        let ok: OK? = try? await client.post("/devices", ["token": token, "bundle": Bundle.main.bundleIdentifier ?? "nl.sadiq.sidra",
+                                                          "sandbox": SubstratePush.sandbox ? "true" : "false", "client_ref": connection.id.uuidString])
+        deviceRegistered = ok != nil
     }
     #endif
 
