@@ -194,7 +194,8 @@ struct SubstrateRequests: View {
                 HStack(spacing: 10) {
                     SubstrateAvatar(name: m.sender?.name ?? "?", url: m.sender?.avatar_url)
                     Text(m.sender?.name ?? "Someone").font(SidraFont.ui(15, weight: .semibold)).foregroundStyle(SidraColor.text)
-                    Text("via " + (m.client ?? "session")).font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted).lineLimit(1)
+                    if let k = Substrate.agentKind(m.client) { HStack(spacing: 5) { Text("via"); AgentTag(agent: k) }.font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted) }
+                    else { Text("via " + (m.client ?? "session")).font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted).lineLimit(1) }
                     if let p = m.project { SubstrateChip { SubstrateProjectLogo(project: p, size: 16); Text(p.name) } }
                     if waiting { SubstrateChip(tone: .warn) { Circle().fill(SidraColor.gold).frame(width: 7, height: 7); Text(m.held ? "held: \(m.risk ?? "")" : "waiting for you") } }
                     else { SubstrateChip { Text(Substrate.stageLabel(m)) } }
@@ -491,7 +492,8 @@ struct SubstrateMachineRow: View {
                         HStack(spacing: 8) {
                             agentMark(a)
                             Text(a.project?.name ?? a.title ?? a.pane_id).font(SidraFont.ui(12.5, weight: .semibold)).foregroundStyle(SidraColor.text)
-                            Text([a.agent, a.workspace, a.status].compactMap { $0 }.joined(separator: " · ")).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim)
+                            if let k = a.agent { AgentTag(agent: k, size: 12) }
+                            Text([a.workspace, a.status].compactMap { $0 }.joined(separator: " · ")).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim)
                         }
                     }
                 }
@@ -647,6 +649,13 @@ struct SubstrateSignIn: View {
 // MARK: - Pieces
 
 extension Substrate {
+    /// The agent mark for a chat client's name (the server's `brand()` rules): Claude, or Codex for OpenAI's clients.
+    static func agentKind(_ client: String?) -> String? {
+        let n = (client ?? "").lowercased()
+        if n.contains("claude") || n.contains("anthropic") { return "claude" }
+        if n.contains("codex") || n.contains("openai") || n.contains("chatgpt") { return "codex" }
+        return nil
+    }
     static func stageLabel(_ m: Message) -> String {
         switch m.deploy_stage {
         case "ci_running", "fix_committed": return "CI running"

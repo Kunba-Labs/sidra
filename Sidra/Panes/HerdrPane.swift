@@ -874,8 +874,7 @@ struct StartAgentRow: View {
                 }
             } label: {
                 HStack(spacing: 6) {
-                    HerdrAgentMark(agent: kind, size: 16)
-                    Text(CodingAgent.all.first { $0.id == kind }?.name ?? kind).font(SidraFont.ui(13, weight: .bold)).foregroundStyle(SidraColor.text)
+                    AgentTag(agent: kind, size: 16)
                     Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(SidraColor.muted)
                 }
                 .padding(.horizontal, 10).frame(height: 30)
@@ -970,7 +969,10 @@ struct BroadcastSheet: View {
                 if let ws { HerdrLogoView(name: ws.label, image: monitor.logo(for: ws), size: 20) }
                 VStack(alignment: .leading, spacing: 1) {
                     Text(ws?.label ?? a.pane_id).font(SidraFont.ui(13.5, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
-                    Text([a.agent, a.terminal_title_stripped].compactMap { $0 }.joined(separator: " · ")).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.muted).lineLimit(1)
+                    HStack(spacing: 5) {
+                        AgentTag(agent: a.agent, size: 12)
+                        if let t = a.terminal_title_stripped { Text(t).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.muted).lineLimit(1) }
+                    }
                 }
                 Spacer()
                 HerdrStatusIcon(status: a.agent_status, size: 9)

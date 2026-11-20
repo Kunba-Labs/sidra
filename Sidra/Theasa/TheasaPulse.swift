@@ -224,8 +224,8 @@ struct TokenBars: View {
             HStack {
                 Text("Tokens per \(bars.count == 24 ? "hour" : "day")")
                 Spacer()
-                HStack(spacing: 4) { RoundedRectangle(cornerRadius: 2).fill(TColor.claude).frame(width: 8, height: 8); Text("Claude Code") }
-                HStack(spacing: 4) { RoundedRectangle(cornerRadius: 2).fill(TColor.codex).frame(width: 8, height: 8); Text("Codex") }
+                HStack(spacing: 4) { RoundedRectangle(cornerRadius: 2).fill(TColor.claude).frame(width: 8, height: 8); AgentTag(agent: "claude", size: 12) }
+                HStack(spacing: 4) { RoundedRectangle(cornerRadius: 2).fill(TColor.codex).frame(width: 8, height: 8); AgentTag(agent: "codex", size: 12) }
             }
             .font(SidraFont.ui(12)).foregroundStyle(SidraColor.dim)
             HStack(alignment: .bottom, spacing: 4) {

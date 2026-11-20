@@ -56,7 +56,7 @@ struct TheasaTurnView: View {
             let meta = [t.model ?? "", TFormat.stamp(t.started_at) + " to " + TFormat.clock(t.ended_at), TFormat.dur(t.duration_ms),
                         TFormat.tok(t.tokens.totalIn) + " in / " + TFormat.tok(t.tokens.output) + " out", TFormat.money(t.cost), t.machine ?? "",
                         t.branch.map { $0 + (t.head.map { " @ " + $0 } ?? "") } ?? ""].filter { !$0.isEmpty }
-            Text("\(Text(agentTagText(t.agent)).foregroundStyle(TColor.agent(t.agent)))   \(meta.joined(separator: "   "))")
+            HStack(spacing: 10) { AgentTag(agent: t.agent); Text(meta.joined(separator: "   ")) }
                 .font(SidraFont.mono(12)).foregroundStyle(SidraColor.dim)
             VStack(alignment: .leading, spacing: 6) {
                 Text("You asked").font(SidraFont.ui(12)).foregroundStyle(SidraColor.dim)
@@ -70,7 +70,6 @@ struct TheasaTurnView: View {
         }
     }
 
-    private func agentTagText(_ a: String) -> String { a == "claude" ? "CLAUDE" : a == "codex" ? "CODEX" : a.uppercased() }
 
     @ViewBuilder private func summary(_ d: TurnDetail) -> some View {
         let t = d.turn

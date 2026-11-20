@@ -113,7 +113,10 @@ struct ScreenshotSendSheet: View {
                 t.icon.frame(width: 22, height: 22)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(t.title).font(SidraFont.ui(13, weight: on ? .bold : .medium)).foregroundStyle(on ? SidraColor.text : SidraColor.muted).lineLimit(1)
-                    Text(t.detail).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim).lineLimit(1)
+                    HStack(spacing: 5) {
+                        if let a = t.agent { AgentTag(agent: a, size: 12) }   // the agent's mark, not its name (2026-11-20)
+                        Text(t.detail).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim).lineLimit(1)
+                    }
                 }
                 Spacer(minLength: 4)
                 if let s = t.status, s != .unknown { HerdrStatusIcon(status: s, size: 9) }
@@ -126,7 +129,7 @@ struct ScreenshotSendSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(t.title), \(t.detail)")
+        .accessibilityLabel([t.title, t.agent.map(agentName), t.detail].compactMap { $0 }.joined(separator: ", "))
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 
@@ -328,6 +331,7 @@ struct ScreenshotTarget: Identifiable, Hashable {
     let tabID: UUID
     let paneID: UUID
     let agentPane: String?
+    var agent: String? = nil
     let space: String?
     let title: String
     let detail: String
@@ -363,8 +367,8 @@ struct ScreenshotTarget: Identifiable, Hashable {
                         }
                         for a in agents {
                             let what = a.terminal_title_stripped.flatMap { $0.isEmpty ? nil : $0 } ?? HerdrStatusIcon.label(a.agent_status)
-                            out.append(.init(id: "\(pane.id)/\(a.pane_id)", tabID: tab.id, paneID: pane.id, agentPane: a.pane_id, space: ws.id,
-                                             title: agents.count > 1 ? "\(ws.label) · \(a.agent)" : ws.label, detail: "\(a.agent) · \(what)",
+                            out.append(.init(id: "\(pane.id)/\(a.pane_id)", tabID: tab.id, paneID: pane.id, agentPane: a.pane_id, agent: a.agent, space: ws.id,
+                                             title: ws.label, detail: what,
                                              status: a.agent_status, group: group, logo: m.logo(for: ws), processIcon: tab.icon))
                         }
                     }

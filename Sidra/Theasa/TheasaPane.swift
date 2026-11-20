@@ -285,15 +285,17 @@ struct VerdictLabel: View {
     }
 }
 
+/// An agent shown by its real mark alone (Waseem, 2026-11-20: marks, not names, wherever Claude or Codex
+/// appears); an agent without a mark keeps its name. VoiceOver reads the name either way.
 struct AgentTag: View {
     let agent: String
+    var size: CGFloat = 14
     var body: some View {
-        HStack(spacing: 4) {
-            // The agent's real mark (asset catalog) before its name; an unknown agent stays text only.
-            if HerdrAgentMark.known.contains(agent) { HerdrAgentMark(agent: agent, size: 12) }
-            Text(agent == "claude" ? "CLAUDE" : agent == "codex" ? "CODEX" : agent.uppercased())
-                .font(SidraFont.mono(10)).kerning(0.6).foregroundStyle(TColor.agent(agent))
+        Group {
+            if HerdrAgentMark.known.contains(agent) { HerdrAgentMark(agent: agent, size: size) }
+            else { Text(agent.uppercased()).font(SidraFont.mono(10)).kerning(0.6).foregroundStyle(TColor.agent(agent)) }
         }
+        .accessibilityElement(children: .ignore).accessibilityLabel(agentName(agent))
     }
 }
 

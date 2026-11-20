@@ -90,9 +90,11 @@ struct TheasaProjectView: View {
                 ForEach([("all", "All agents"), ("claude", "Claude Code"), ("codex", "Codex")], id: \.0) { k, l in
                     Button { live.agentFilter = k } label: {
                         HStack(spacing: 6) {
-                            if HerdrAgentMark.known.contains(k) { HerdrAgentMark(agent: k, size: 14) }   // the real mark; others text only
-                            Text(l).font(SidraFont.ui(12.5, weight: live.agentFilter == k ? .bold : .regular))
-                                .foregroundStyle(live.agentFilter == k ? SidraColor.text : SidraColor.muted)
+                            if HerdrAgentMark.known.contains(k) { AgentTag(agent: k, size: 16) }   // the real mark, no name
+                            else {
+                                Text(l).font(SidraFont.ui(12.5, weight: live.agentFilter == k ? .bold : .regular))
+                                    .foregroundStyle(live.agentFilter == k ? SidraColor.text : SidraColor.muted)
+                            }
                         }
                             .padding(.horizontal, 11).frame(height: 28)
                             .background(live.agentFilter == k ? SidraColor.tabActive : .clear, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
@@ -177,7 +179,7 @@ struct TheasaProjectView: View {
             ItemRows(data: Array(active.prefix(3))) { x in
                 VStack(alignment: .leading, spacing: 4) {
                     Button { open(.turn(x.turn_id)) } label: { Text(x.text).font(SidraFont.ui(13.5)).foregroundStyle(SidraColor.text).multilineTextAlignment(.leading) }.buttonStyle(.plain)
-                    Text("\(agentName(x.agent ?? "")) · \(TFormat.ago(x.created_at))").font(SidraFont.ui(12)).foregroundStyle(SidraColor.dim)
+                    HStack(spacing: 6) { AgentTag(agent: x.agent ?? "", size: 12); Text(TFormat.ago(x.created_at)) }.font(SidraFont.ui(12)).foregroundStyle(SidraColor.dim)
                 }
             }
             if active.count > 3 { TLink("All \(active.count) decisions") { tab = "decisions" } }
@@ -336,7 +338,7 @@ struct DecisionRow: View {
                 Text("Why: \(w)").font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted)
             }
             HStack(spacing: 16) {
-                if !big { Text("\(agentName(x.agent ?? "")) · \(TFormat.ago(x.created_at))\(x.status == "superseded" ? " · replaced by a later decision" : "")").foregroundStyle(SidraColor.dim) }
+                if !big { HStack(spacing: 6) { AgentTag(agent: x.agent ?? "", size: 12); Text(TFormat.ago(x.created_at) + (x.status == "superseded" ? " · replaced by a later decision" : "")) }.foregroundStyle(SidraColor.dim) }
                 if x.status == "active" {
                     TLink("Not a real decision") { Task { await live.act("/api/decisions/\(x.id)/dismiss") } }
                     TLink("Replaced by a later one", action: supersede)
