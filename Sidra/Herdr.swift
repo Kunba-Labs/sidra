@@ -34,6 +34,10 @@ protocol MultiplexerAdapter: Sendable {
     func moveSpaceCommand(session: String?, space: String, index: Int) -> String?
     /// Types `text` into each agent and submits it; prints "FAILED <pane>" for each one that refused.
     func promptAgentsCommand(session: String?, panes: [String], text: String) -> String
+    /// Renames a space (`space` true) or a tab.
+    func renameCommand(session: String?, space: Bool, id: String, label: String) -> String
+    /// Closes a space (`space` true) or a tab, with the shells and agents in it.
+    func closeCommand(session: String?, space: Bool, id: String) -> String
     /// Footer hints for the client's own keys.
     var keyHints: [(key: String, label: String)] { get }
 }
@@ -78,6 +82,12 @@ struct HerdrAdapter: MultiplexerAdapter {
     func movePaneCommand(session: String?, pane: String, tab: String?, space: String) -> String {
         "herdr" + Herdr.sessionArg(session) + " pane move " + Herdr.shellQuote(pane) + " --focus "
             + (tab.map { "--tab " + Herdr.shellQuote($0) + " --split right" } ?? "--new-tab --workspace " + Herdr.shellQuote(space))
+    }
+    func renameCommand(session: String?, space: Bool, id: String, label: String) -> String {
+        "herdr" + Herdr.sessionArg(session) + (space ? " workspace" : " tab") + " rename " + Herdr.shellQuote(id) + " " + Herdr.shellQuote(label)
+    }
+    func closeCommand(session: String?, space: Bool, id: String) -> String {
+        "herdr" + Herdr.sessionArg(session) + (space ? " workspace" : " tab") + " close " + Herdr.shellQuote(id)
     }
     var keyHints: [(key: String, label: String)] { [("^b", "prefix"), ("^b w", "spaces"), ("^b q", "detach")] }
 
@@ -492,6 +502,21 @@ final class MuxMonitor {
     func moveFocusedPaneToNewSpace(_ app: AppModel, label: String) async -> Bool {
         guard let pane = snapshot?.focused_pane_id,
               let r = try? await app.herdrRun(target, adapter.movePaneToNewSpaceCommand(session: session, pane: pane, label: label)) else { return false }
+        await refresh(app)
+        return r.exitCode == 0
+    }
+
+    /// Rename or close a space or a tab; false when herdr refused.
+    @discardableResult
+    func rename(_ app: AppModel, space: Bool, id: String, to label: String) async -> Bool {
+        await run(app, adapter.renameCommand(session: session, space: space, id: id, label: label))
+    }
+    @discardableResult
+    func close(_ app: AppModel, space: Bool, id: String) async -> Bool {
+        await run(app, adapter.closeCommand(session: session, space: space, id: id))
+    }
+    private func run(_ app: AppModel, _ command: String) async -> Bool {
+        guard let r = try? await app.herdrRun(target, command) else { return false }
         await refresh(app)
         return r.exitCode == 0
     }

@@ -43,6 +43,10 @@ struct MuxSpacesBar: View {
     @State private var promptsShown = false
     /// The space whose tabs dropdown is open.
     @State private var tabsOpen: String?
+    /// Right-click → Rename or Close on a space or a tab (2026-11-20).
+    @State private var renaming: (space: Bool, id: String)?
+    @State private var renameText = ""
+    @State private var closing: (space: Bool, id: String, name: String)?
 
     var body: some View {
         if let m = MuxMonitors.shared.byPane[pane.id], let s = m.snapshot {
@@ -66,6 +70,25 @@ struct MuxSpacesBar: View {
                     .sheet(isPresented: $promptsShown) { QuickPromptsSheet(pane: pane.id).environment(app) }
                 }
                 .sheet(isPresented: $broadcastShown) { BroadcastSheet(monitor: m).environment(app) }   // its own view: two sheets on one view clash
+                .alert(renaming?.space == true ? "Rename space" : "Rename tab", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
+                    TextField("Name", text: $renameText).plainTextEntry().autocorrectionDisabled()
+                    Button("Rename") {
+                        guard let r = renaming else { return }
+                        let label = renameText.trimmingCharacters(in: .whitespaces)
+                        guard !label.isEmpty else { return }
+                        Task { if await !m.rename(app, space: r.space, id: r.id, to: label) { app.toast("herdr did not rename it") } }
+                    }
+                    Button("Cancel", role: .cancel) {}
+                }
+                .alert("Close \(closing?.name ?? "")?", isPresented: Binding(get: { closing != nil }, set: { if !$0 { closing = nil } })) {
+                    Button("Close", role: .destructive) {
+                        guard let c = closing else { return }
+                        Task { if await !m.close(app, space: c.space, id: c.id) { app.toast("herdr did not close it") } }
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text(closing?.space == true ? "Its tabs, shells and agents stop." : "Its shells and agents stop.")
+                }
                 if s.focused_workspace_id == nil {
                     // No space yet (a fresh herdr): the first one is made here.
                     Button { pickerShown = true } label: {
@@ -212,7 +235,13 @@ struct MuxSpacesBar: View {
                 Button { tabsOpen = ws.id } label: { label }
                     .buttonStyle(.plain)
                     .popover(isPresented: Binding(get: { tabsOpen == ws.id }, set: { if !$0 { tabsOpen = nil } }), arrowEdge: .top) {
-                        MuxTabsMenu(space: ws, tabs: tabs, shown: s.focused_workspace_id, logo: m.logo(for: ws)) { t in
+                        MuxTabsMenu(space: ws, tabs: tabs, shown: s.focused_workspace_id, logo: m.logo(for: ws), menu: { t, name, rename in
+                            // The popover closes first; an alert can't open over it.
+                            tabsOpen = nil
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                if rename { renameText = name; renaming = (false, t.id) } else { closing = (false, t.id, name) }
+                            }
+                        }) { t in
                             tabsOpen = nil
                             Task {
                                 // A tab of another space in the chip: herdr shows that space first.
@@ -227,9 +256,42 @@ struct MuxSpacesBar: View {
                 Button { Task { await m.focus(app, group[((at ?? -1) + 1) % group.count]) } } label: { label }.buttonStyle(.plain)
             }
         }
+        .contextMenu { spaceMenu(ws, m, s) }
         .accessibilityLabel("\(ws.label)\(tabs.count > 1 ? ", \(tabs.count) tabs" : "")\(up.map { t in ", showing " + (t.label.flatMap { $0.isEmpty ? nil : $0 } ?? "tab \(t.number)") } ?? ""), \(withAgents.isEmpty ? "no agents" : HerdrStatusIcon.label(MuxStatus.worst(withAgents.map(\.agent_status))))")
         .accessibilityAddTraits(on ? .isSelected : [])
         .accessibilityIdentifier("herdr-space-\(ws.label)")
+    }
+
+    /// Right-click on a space: the + menu's actions for this space, plus Rename and Close (Waseem, 2026-11-20).
+    @ViewBuilder private func spaceMenu(_ ws: MuxSnapshot.Workspace, _ m: MuxMonitor, _ s: MuxSnapshot) -> some View {
+        Button("New tab", systemImage: "plus.rectangle.on.rectangle") { Task { await m.newTab(app, in: ws.id) } }
+        Button("Split right", systemImage: "rectangle.split.2x1") {
+            inSpace(ws, m, s) { if await !m.splitFocusedPane(app, down: false) { app.toast("herdr did not split the pane") } }
+        }
+        Button("Split down", systemImage: "rectangle.split.1x2") {
+            inSpace(ws, m, s) { if await !m.splitFocusedPane(app, down: true) { app.toast("herdr did not split the pane") } }
+        }
+        Button("Move to tab", systemImage: "rectangle.portrait.and.arrow.forward") {
+            inSpace(ws, m, s) { if await !m.moveFocusedPane(app, to: nil) { app.toast("herdr did not move the pane") } }
+        }
+        Divider()
+        Button("Rename space…", systemImage: "pencil") { renameText = ws.label; renaming = (true, ws.id) }
+        Button("New space…", systemImage: "rectangle.stack.badge.plus") { pickerShown = true }
+        Button("Move to space…", systemImage: "arrow.up.right.square") {
+            inSpace(ws, m, s) { newSpaceMoving = true; newSpaceLabel = ""; newSpaceShown = true }
+        }
+        Divider()
+        Button("Broadcast…", systemImage: "dot.radiowaves.left.and.right") { broadcastShown = true }
+        Divider()
+        Button("Close space", systemImage: "xmark", role: .destructive) { closing = (true, ws.id, ws.label) }
+    }
+
+    /// Splits and moves act on herdr's focused pane: a space that is not showing is shown first.
+    private func inSpace(_ ws: MuxSnapshot.Workspace, _ m: MuxMonitor, _ s: MuxSnapshot, _ work: @escaping @MainActor () async -> Void) {
+        Task {
+            if ws.id != s.focused_workspace_id { await m.focus(app, ws) }
+            await work()
+        }
     }
 
     /// `request`: a Substrate request waits for an agent in this space; Substrate's mark shows.
@@ -788,6 +850,8 @@ struct MuxTabsMenu: View {
     /// The space herdr shows; its focused tab is the one up.
     let shown: String?
     let logo: PlatformImage?
+    /// Right-click on a tab: (tab, its name, true for Rename / false for Close).
+    var menu: ((MuxSnapshot.Tab, String, Bool) -> Void)?
     let pick: (MuxSnapshot.Tab) -> Void
 
     var body: some View {
@@ -799,7 +863,7 @@ struct MuxTabsMenu: View {
                 Button { pick(t) } label: {
                     HStack(spacing: 10) {
                         HerdrLogoView(name: space.label, image: logo, size: 20)
-                        let name = Text(t.label.flatMap { $0.isEmpty || Int($0) != nil ? nil : $0 } ?? "\(space.label) \(n)")
+                        let name = Text(tabName(t, n))
                             .font(SidraFont.ui(13.5, weight: on ? .bold : .regular))
                         if on {
                             // The tab showing: its name in the gradient, a blinking caret after it.
@@ -815,6 +879,12 @@ struct MuxTabsMenu: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .contextMenu {
+                    if let menu {
+                        Button("Rename tab…", systemImage: "pencil") { menu(t, tabName(t, n), true) }
+                        Button("Close tab", systemImage: "xmark", role: .destructive) { menu(t, tabName(t, n), false) }
+                    }
+                }
                 .accessibilityLabel("\(space.label) tab \(n), \(HerdrStatusIcon.label(t.agent_status))")
                 .accessibilityAddTraits(on ? .isSelected : [])
                 .accessibilityIdentifier("herdr-tab-\(space.label)-\(n)")
@@ -825,6 +895,10 @@ struct MuxTabsMenu: View {
         .padding(6)
         .frame(width: 280)
         .background(SidraColor.popup)
+    }
+
+    private func tabName(_ t: MuxSnapshot.Tab, _ n: Int) -> String {
+        t.label.flatMap { $0.isEmpty || Int($0) != nil ? nil : $0 } ?? "\(space.label) \(n)"
     }
 }
 
