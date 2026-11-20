@@ -162,7 +162,7 @@ struct SubstrateRequests: View {
     private func row(_ m: Substrate.Message, faded: Bool) -> some View {
         let on = m.id == picked?.id
         return Button { store.pickedMessage = m.id } label: {
-            HStack(spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {   // avatar stays on the first line when the text wraps (2026-11-20)
                 SubstrateAvatar(name: m.sender?.name ?? "?", url: m.sender?.avatar_url, project: m.project)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(m.text).font(SidraFont.ui(13, weight: on ? .bold : .medium)).foregroundStyle(on ? SidraColor.text : SidraColor.text.opacity(0.85))
