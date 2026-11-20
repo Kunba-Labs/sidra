@@ -269,7 +269,7 @@ struct SubstrateRequests: View {
                 if let events = conversation?.events, !events.isEmpty {
                     SubstrateGroupLabel("Timeline").padding(.top, 10).padding(.horizontal, 4)
                     VStack(alignment: .leading, spacing: 6) {
-                        ForEach(Array(events.enumerated()), id: \.offset) { _, e in SubstrateEventLine(event: e) }
+                        ForEach(Array(events.enumerated()), id: \.offset) { _, e in SubstrateEventLine(event: e, web: m.web_url.flatMap(URL.init(string:))) }
                     }
                     .padding(.horizontal, 18)
                 }
@@ -871,8 +871,10 @@ struct SubstrateTrack: View {
 
 struct SubstrateEventLine: View {
     let event: Substrate.Event
+    /// The conversation on the web, where a held note is released (2026-11-20: release is web-only).
+    var web: URL?
     var body: some View {
-        HStack(spacing: 9) {
+        HStack(alignment: event.kind == "note" ? .top : .center, spacing: 9) {
             Group {
                 switch event.actor {
                 case "human", "developer": SubstrateAvatar(name: event.name ?? "?", url: event.avatar_url, size: 20)
@@ -881,11 +883,31 @@ struct SubstrateEventLine: View {
                 default: ProcessIcon(.substrate, size: 20).clipShape(Circle())
                 }
             }
-            Text(event.text ?? event.name ?? event.kind ?? "").font(SidraFont.ui(12.5)).foregroundStyle(Color(hex: 0xaab2bd))
+            if event.kind == "note" { note } else {
+                Text(event.text ?? event.name ?? event.kind ?? "").font(SidraFont.ui(12.5)).foregroundStyle(Color(hex: 0xaab2bd))
+            }
             Spacer()
             if let t = event.time { Text(t.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute())).font(SidraFont.mono(11.5)).foregroundStyle(SidraColor.dim) }
         }
         .frame(minHeight: 26)
+    }
+}
+
+extension SubstrateEventLine {
+    /// The developer's talk with the agent, as the agent summed it up (`substrate note`). Held: it looked
+    /// like a secret, so the tester does not see it until it is released on the web.
+    private var note: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(event.text ?? "").font(SidraFont.ui(12.5)).foregroundStyle(Color(hex: 0xaab2bd)).textSelection(.enabled)
+            HStack(spacing: 8) {
+                Text("\(event.name ?? "Developer") · summarized by the agent").font(SidraFont.ui(11)).foregroundStyle(SidraColor.dim)
+                if event.held == true {
+                    SubstrateChip(tone: .warn, small: true) { Text("held: the tester can't see it") }
+                    if let web { Link("Release on the web", destination: web).font(SidraFont.ui(11, weight: .semibold)).foregroundStyle(SidraColor.muted) }
+                }
+            }
+        }
+        .padding(.vertical, 3)
     }
 }
 
