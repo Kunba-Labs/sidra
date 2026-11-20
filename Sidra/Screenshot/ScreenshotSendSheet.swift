@@ -11,7 +11,8 @@ import SidraTerminal
 struct ScreenshotSendSheet: View {
     let image: UIImage
     @Environment(AppModel.self) private var app
-    @Environment(\.dismiss) private var dismiss
+    /// Clears the screenshot, which closes the card (the cover's binding ignores system dismissals).
+    private func dismiss() { ScreenshotInbox.shared.pending = nil }
     /// Built from herdr's live snapshots, so agents appear once a just-started Sidra has read them.
     private var targets: [ScreenshotTarget] { ScreenshotTarget.all(app) }
     /// Your pick; until then the session you were in.

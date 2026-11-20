@@ -52,8 +52,11 @@ struct RootView: View {
         #if os(iOS)
         // A screenshot arriving closes whatever sheet is up: the Send screenshot card covers the window.
         .onChange(of: ScreenshotInbox.shared.pending, initial: true) { _, image in if image != nil { app.sheet = nil } }
-        .fullScreenCover(isPresented: Binding(get: { ScreenshotInbox.shared.pending != nil && app.sheet == nil },
-                                              set: { if !$0 { ScreenshotInbox.shared.pending = nil } })) {
+        // Only the window in front shows it (every window presented it, and a background window's copy being
+        // dismissed cleared the screenshot), and only Cancel or Send clears it: iPadOS closing the cover while
+        // Sidra came to the front cleared it too, so the card flashed and went away (2026-11-20).
+        .fullScreenCover(isPresented: Binding(get: { ScreenshotInbox.shared.pending != nil && app.sheet == nil && app.workspace === store },
+                                              set: { _ in })) {
             if let image = ScreenshotInbox.shared.pending { ScreenshotSendSheet(image: image).environment(app) }
         }
         #endif
