@@ -6,10 +6,10 @@
 
 <p align="center">
   Your coding agents in herdr, on your iPad and iPhone.<br>
-  <a href="https://apps.apple.com/app/id6832359499">App Store</a> ·
-  <a href="https://github.com/Kunba-Labs/sidra/releases/latest">Mac app</a> ·
-  <a href="https://kunba-labs.github.io/sidra/">Website</a> ·
-  <a href="docs/herdr.md">Patch herdr</a> ·
+  <a href="https://apps.apple.com/app/id6832359499">App Store</a> |
+  <a href="https://github.com/Kunba-Labs/sidra/releases/latest">Mac app</a> |
+  <a href="https://kunba-labs.github.io/sidra/">Website</a> |
+  <a href="docs/herdr.md">Patch herdr</a> |
   <a href="https://github.com/Kunba-Labs/theasa">Theasa</a>
 </p>
 

@@ -4,10 +4,10 @@ import SidraWorkspace
 import SidraSSH
 
 final class SmokeTests: XCTestCase {
-    /// Every kind on the new-tab sheet maps to a pane icon, and the six are the baseline's whole set.
+    /// Every kind on the new-tab sheet maps to its own pane icon, and the seven are the baseline's whole set.
     func testNewTabKindsCoverTheBaseline() {
-        XCTAssertEqual(NewTabKind.allCases.map(\.rawValue), ["herdr", "ssh", "theasa", "pipelines", "hackertab", "chess"])
-        XCTAssertEqual(Set(NewTabKind.allCases.map(\.icon)).count, 6)
+        XCTAssertEqual(NewTabKind.allCases.map(\.rawValue), ["herdr", "ssh", "theasa", "pipelines", "substrate", "hackertab", "chess"])
+        XCTAssertEqual(Set(NewTabKind.allCases.map(\.icon)).count, 7)
     }
 
     /// HackerTab and Chess open once; a second request selects the open tab.

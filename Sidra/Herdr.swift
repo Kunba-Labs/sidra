@@ -464,7 +464,7 @@ final class MuxMonitor {
     /// The spaces' parent folders, most used first, then the common folders that exist, then ~.
     nonisolated static func rankRoots(home: String, spaceFolders: [String], existing: [String]) -> [String] {
         let parents = spaceFolders.map { ($0 as NSString).deletingLastPathComponent }
-            .filter { !$0.isEmpty && $0 != "/" && $0 != home }
+            .filter { !$0.isEmpty && $0 != home && !home.hasPrefix($0 + "/") }   // a space at ~ itself must not suggest /home
             .map { $0.hasPrefix(home + "/") ? "~/" + $0.dropFirst(home.count + 1) : $0 }
         let counts = Dictionary(parents.map { ($0, 1) }, uniquingKeysWith: +)
         let ranked = counts.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }.map(\.key)
