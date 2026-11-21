@@ -116,6 +116,7 @@ struct SubstrateRequests: View {
     @State private var fullPrompt = false
     @State private var working = false
     @State private var draft = ""
+    @State private var why = ""
     /// A held request waiting for "Approve anyway"; `text` is the edit, nil for a plain approve.
     @State private var confirmHeld: (message: Substrate.Message, text: String?)?
 
@@ -160,7 +161,7 @@ struct SubstrateRequests: View {
         .background { if keysOn { keys } }
         .task(id: picked?.conversation_id) { if let c = picked?.conversation_id { await store.loadConversation(c) } }
         .onChange(of: picked?.id) { _, _ in fullPrompt = false }
-        .onChange(of: store.editing) { _, id in if let id, let m = store.message(id) { draft = m.text } }
+        .onChange(of: store.editing) { _, id in if let id, let m = store.message(id) { draft = m.proposal?.text ?? m.text; why = m.proposal?.why ?? "" } }
         .confirmationDialog("This request is held: \(confirmHeld?.message.risk ?? "flagged as risky").",
                             isPresented: Binding(get: { confirmHeld != nil }, set: { if !$0 { confirmHeld = nil } }), titleVisibility: .visible) {
             Button(confirmHeld?.text == nil ? "Approve anyway" : "Approve edited message anyway") {
@@ -199,6 +200,7 @@ struct SubstrateRequests: View {
     private func detail(_ m: Substrate.Message) -> some View {
         let conversation = m.conversation_id.flatMap { store.conversations[$0] }
         let prompt = m.prompt ?? conversation?.messages.first { $0.id == m.id }?.prompt
+        let reviewing = m.stage == "reviewing"
         let waiting = m.stage == "pending_approval" || m.stage == "held"
         return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -208,7 +210,8 @@ struct SubstrateRequests: View {
                     if let k = Substrate.agentKind(m.client) { HStack(spacing: 5) { Text("via"); AgentTag(agent: k) }.font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted) }
                     else { Text("via " + (m.client ?? "session")).font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted).lineLimit(1) }
                     if let p = m.project { SubstrateChip { SubstrateProjectLogo(project: p, size: 16); Text(p.name) } }
-                    if waiting { SubstrateChip(tone: .warn) { Circle().fill(SidraColor.gold).frame(width: 7, height: 7); Text(m.held ? "held: \(m.risk ?? "")" : "waiting for you") } }
+                    if reviewing { SubstrateChip(tone: .electric) { Text("in review with your agent") } }
+                    else if waiting { SubstrateChip(tone: .warn) { Circle().fill(SidraColor.gold).frame(width: 7, height: 7); Text(m.held ? "held: \(m.risk ?? "")" : "waiting for you") } }
                     else { SubstrateChip { Text(Substrate.stageLabel(m)) } }
                     if let allow = m.deploy_allow, allow != "none" { SubstrateChip(tone: .electric) { Text("deploys to \(allow)") } }
                     Spacer(minLength: 0)
@@ -229,6 +232,12 @@ struct SubstrateRequests: View {
                 .background(SubstrateStyle.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(SidraColor.hairline))
                 .padding(.horizontal, 18).padding(.top, 16)
+                if let p = m.proposal { proposal(p) }
+                if reviewing {
+                    Text("In review with your agent. Talk it over in the agent's session. Approve it here when the agent sends it back.")
+                        .font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted)
+                        .padding(.horizontal, 18).padding(.top, 12)
+                }
                 if let prompt {
                     Text(prompt).font(SidraFont.mono(12)).foregroundStyle(Color(hex: 0x8b93a0)).textSelection(.enabled)
                         .lineLimit(fullPrompt ? nil : 6)
@@ -240,16 +249,25 @@ struct SubstrateRequests: View {
                 }
                 HStack(spacing: 8) {
                     if waiting {
-                        Button { act(m, approve: true) } label: { Label("Approve", systemImage: "checkmark") }
+                        Button { act(m, approve: true) } label: { Label(m.proposal == nil ? "Approve" : "Approve adjusted", systemImage: "checkmark") }
                             .buttonStyle(SubstrateButtonStyle(electric: true)).disabled(working)
                             .help("Approve (⌘↩)")
                         Button { act(m, approve: false) } label: { Label("Reject", systemImage: "xmark") }
                             .buttonStyle(SubstrateButtonStyle()).disabled(working)
                             .help("Reject (⌘⌫)")
                     }
-                    if waiting, store.editing != m.id {
-                        Button { draft = m.text; store.editing = m.id } label: { Label("Edit before approving", systemImage: "pencil") }
+                    if reviewing {
+                        Button { act(m, approve: false) } label: { Label("Reject", systemImage: "xmark") }
                             .buttonStyle(SubstrateButtonStyle()).disabled(working)
+                    }
+                    if waiting, store.editing != m.id {
+                        Button { draft = m.proposal?.text ?? m.text; why = m.proposal?.why ?? ""; store.editing = m.id } label: { Label("Edit before approving", systemImage: "pencil") }
+                            .buttonStyle(SubstrateButtonStyle()).disabled(working)
+                    }
+                    if waiting || reviewing {
+                        Button { review(m) } label: { Label(reviewing || m.proposal != nil ? "Review again" : "Review with agent", systemImage: "bubble.left.and.bubble.right") }
+                            .buttonStyle(SubstrateButtonStyle()).disabled(working)
+                            .help("Send it to the project's agent, review only, and go over it in the agent's session")
                     }
                     if prompt != nil {
                         Button(fullPrompt ? "Show less of the prompt" : "Show the full prompt") { fullPrompt.toggle() }
@@ -278,6 +296,20 @@ struct SubstrateRequests: View {
         }
     }
 
+    /// "Adjusted in review" (2026-11-21): what the agent and the developer agreed; Approve sends this.
+    private func proposal(_ p: Substrate.Proposal) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Adjusted in review").font(SidraFont.ui(12.5, weight: .semibold)).foregroundStyle(SidraColor.jade)
+            Text(p.text).font(SidraFont.ui(14.5)).foregroundStyle(SidraColor.text).textSelection(.enabled)
+            if let w = p.why, !w.isEmpty { Text("Why: \(w)").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted).textSelection(.enabled) }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(SubstrateStyle.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(SidraColor.jade.opacity(0.35)))
+        .padding(.horizontal, 18).padding(.top, 10)
+    }
+
     /// "Edit before approving" (2026-11-20): the tester's text, prefilled; the agent gets the edited version.
     private func editor(_ m: Substrate.Message) -> some View {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -289,6 +321,11 @@ struct SubstrateRequests: View {
                 .font(SidraFont.ui(14)).foregroundStyle(SidraColor.text)
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: 110, maxHeight: 260)
+                .padding(8)
+                .background(SubstrateStyle.well, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(SidraColor.hairline2))
+            TextField("Why (optional, \(m.sender?.name ?? "the tester") sees it)", text: $why)
+                .textFieldStyle(.plain).font(SidraFont.ui(13)).foregroundStyle(SidraColor.text)
                 .padding(8)
                 .background(SubstrateStyle.well, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(SidraColor.hairline2))
@@ -308,12 +345,21 @@ struct SubstrateRequests: View {
 
     /// `text`: an edit; the same text as the tester's goes as a plain approve. A held request asks first, as on the web.
     private func act(_ m: Substrate.Message, approve: Bool, text: String? = nil, confirmed: Bool = false) {
-        let edit = text == m.text ? nil : text
+        // Unchanged from what Approve would send (the proposal, else the tester's text) goes as a plain approve.
+        let edit = text == (m.proposal?.text ?? m.text) ? nil : text
         if approve, m.held, !confirmed { confirmHeld = (m, edit); return }
         working = true
         Task {
-            do { if approve { try await store.approve(m.id, text: edit) } else { try await store.reject(m.id) } }
+            do { if approve { try await store.approve(m.id, text: edit, why: edit == nil ? nil : why.trimmingCharacters(in: .whitespacesAndNewlines)) } else { try await store.reject(m.id) } }
             catch { app.toast(error.localizedDescription) }
+            working = false
+        }
+    }
+
+    private func review(_ m: Substrate.Message) {
+        working = true
+        Task {
+            do { try await store.review(m.id) } catch { app.toast(error.localizedDescription) }
             working = false
         }
     }
@@ -715,6 +761,7 @@ extension Substrate {
         switch m.stage {
         case "pending_approval": return m.deploy_allow.map { $0 == "none" ? "waiting" : "deploys to \($0)" } ?? "waiting"
         case "held": return "held"
+        case "reviewing": return "in review"
         case "approved", "dispatched", "accepted", "submitted": return "sent to the agent"
         case "working": return "working"
         case "awaiting_sender": return "waiting for the tester"

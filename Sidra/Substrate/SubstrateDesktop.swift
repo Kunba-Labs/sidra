@@ -245,7 +245,7 @@ struct SubstrateDesktopCard: View {
             .padding(.horizontal, 14).padding(.bottom, 14)
         case .waiting, .working:
             HStack(spacing: 8) {
-                Button { desk.act(m.id, approve: true) } label: { Label(m.held ? "Approve anyway" : "Approve", systemImage: "checkmark").lineLimit(1) }
+                Button { desk.act(m.id, approve: true) } label: { Label(m.held ? "Approve anyway" : m.proposal != nil ? "Approve adjusted" : "Approve", systemImage: "checkmark").lineLimit(1) }
                     .buttonStyle(SubstrateButtonStyle(electric: true)).fixedSize()
                 Button { desk.act(m.id, approve: false) } label: { Label("Reject", systemImage: "xmark").lineLimit(1) }
                     .buttonStyle(SubstrateButtonStyle()).fixedSize()

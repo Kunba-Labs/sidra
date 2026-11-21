@@ -217,7 +217,7 @@ final class SubstrateStore {
             #endif
             let who = m.sender?.name ?? "Someone"
             Notifier.notify(m.held ? "Held: \(m.project?.name ?? "a project")" : "\(who) asks \(m.project?.name ?? "an agent")",
-                            m.held ? "\(who): \(m.text)" : m.text,
+                            m.held ? "\(who): \(m.text)" : m.proposal.map { "Adjusted in review: \($0.text)" } ?? m.text,
                             route: .substrate(connection.id, m.id), category: Notifier.approvalCategory, id: "substrate.\(m.id)")
         }
     }
@@ -248,8 +248,15 @@ final class SubstrateStore {
     // MARK: Acting
 
     /// `text`: the developer's edit of the tester's message; the agent gets it in place of the original (2026-11-20).
-    func approve(_ id: String, text: String? = nil) async throws { try await act(id, "approve", text.map { ["text": $0] }) }
+    /// No text approves the proposal when there is one. `why` reaches the tester with an edit (2026-11-21).
+    func approve(_ id: String, text: String? = nil, why: String? = nil) async throws {
+        var body = text.map { ["text": $0] }
+        if let why, !why.isEmpty { body?["why"] = why }
+        try await act(id, "approve", body)
+    }
     func reject(_ id: String) async throws { try await act(id, "reject") }
+    /// "Review with agent": the request goes to the project's agent, review-only; it comes back with a proposal (2026-11-21).
+    func review(_ id: String) async throws { try await act(id, "review") }
 
     private func act(_ id: String, _ verb: String, _ body: [String: String]? = nil) async throws {
         struct R: Decodable { var id: String?; var stage: String? }
@@ -257,7 +264,8 @@ final class SubstrateStore {
             let _: R = try await client.post("/messages/\(id)/\(verb)", body)
         } catch let f as Substrate.Failure where f.status == 409 {
             await refresh()
-            throw Substrate.Failure(status: 409, text: "Someone else decided this request first.")
+            // Review's 409 says why (agent offline, relay too old); show it as is.
+            throw verb == "review" ? f : Substrate.Failure(status: 409, text: "Someone else decided this request first.")
         }
         if editing == id { editing = nil }
         await refresh()

@@ -39,8 +39,15 @@ enum Substrate {
         var web_url: String?
         /// The exact text the agent gets; on waiting messages and in a conversation.
         var prompt: String?
+        /// The request as agreed with the agent in review (`substrate propose`); approving sends this, never the original (2026-11-21).
+        var proposal: Proposal?
 
         var held: Bool { !(risk ?? "").isEmpty }
+    }
+
+    struct Proposal: Codable, Hashable {
+        var text: String
+        var why: String?
     }
 
     struct Counts: Codable, Hashable {
