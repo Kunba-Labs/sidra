@@ -9,14 +9,28 @@ struct HerdrPane: View {
     let target: TerminalTarget
     let session: String?
     @Environment(AppModel.self) private var app
+    @State private var width: CGFloat = 1000
+    /// A phone-width pane shows one tab; the spaces and their tabs are in a drawer (Waseem, 2026-11-21).
+    @State private var drawer = false
+    @State private var newSpace = 0
+    private var compact: Bool { width < 520 }
 
     var body: some View {
         let adapter = pane.kind.multiplexer?.adapter ?? HerdrAdapter()
         VStack(spacing: 0) {
-            MuxSpacesBar(pane: pane)
+            MuxSpacesBar(pane: pane, compact: compact, drawer: $drawer, newSpaceRequest: newSpace)
             TerminalPane(pane: pane, target: target, command: adapter.attachCommand(session: session),
                          prepare: adapter.prepareCommand().map { cmd in { [app, target] in try await app.herdrPrepare(target, cmd) } })
+                .overlay(alignment: .leading) {
+                    // A swipe in from the left edge opens the drawer.
+                    if compact {
+                        Color.clear.frame(width: 16).contentShape(Rectangle())
+                            .gesture(DragGesture(minimumDistance: 12).onEnded { if $0.translation.width > 40 { withAnimation(.easeOut(duration: 0.2)) { drawer = true } } })
+                    }
+                }
         }
+        .overlay { if compact, drawer { MuxDrawer(pane: pane, open: $drawer) { newSpace += 1 } } }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .task { _ = MuxMonitors.shared.monitor(for: pane, app: app) }
         .onDisappear {
             if !app.allWorkspaces.contains(where: { $0.tabs.contains { $0.panes.contains { $0.id == pane.id } } }) { MuxMonitors.shared.remove(pane.id) }
@@ -28,6 +42,11 @@ struct HerdrPane: View {
 /// the title bar's pill tabs on purpose; it switches what one pane shows, not the window.
 struct MuxSpacesBar: View {
     let pane: Pane
+    /// Phone width: the space and tab showing, with a button for the drawer, in place of the chips.
+    var compact = false
+    @Binding var drawer: Bool
+    /// Bumped by the drawer's New space.
+    var newSpaceRequest = 0
     @Environment(AppModel.self) private var app
     /// The order shown while a space is dragged, until herdr's next snapshot has the move.
     @State private var order: [String]?
@@ -51,6 +70,8 @@ struct MuxSpacesBar: View {
     var body: some View {
         if let m = MuxMonitors.shared.byPane[pane.id], let s = m.snapshot {
             HStack(spacing: 0) {
+                Group {
+                if compact { compactRow(m, s) } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 2) {
                         // One chip per space; a space with several tabs opens a dropdown of them (2026-11-16).
@@ -67,8 +88,10 @@ struct MuxSpacesBar: View {
                         if let ws = s.focused_workspace_id { tabsBar(m, s, space: ws) }
                     }
                     .padding(.horizontal, 6)
-                    .sheet(isPresented: $promptsShown) { QuickPromptsSheet(pane: pane.id).environment(app) }
                 }
+                }
+                }
+                .sheet(isPresented: $promptsShown) { QuickPromptsSheet(pane: pane.id).environment(app) }
                 .sheet(isPresented: $broadcastShown) { BroadcastSheet(monitor: m).environment(app) }   // its own view: two sheets on one view clash
                 .alert(renaming?.space == true ? "Rename space" : "Rename tab", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
                     TextField("Name", text: $renameText).plainTextEntry().autocorrectionDisabled()
@@ -110,6 +133,7 @@ struct MuxSpacesBar: View {
             .overlay(alignment: .top) { Rectangle().fill(SidraColor.hairline).frame(height: 1) }
             .overlay(alignment: .bottom) { Rectangle().fill(SidraColor.hairline).frame(height: 1) }
             .background { spaceShortcuts(m, s) }
+            .onChange(of: newSpaceRequest) { pickerShown = true }
             .sheet(isPresented: $pickerShown) {
                 NewSpacePicker(monitor: m, snapshot: s) { newSpaceMoving = false; newSpaceLabel = ""; newSpaceFolder = m.projectRoot + "/"; newSpaceShown = true }
                     .environment(app)
@@ -157,6 +181,40 @@ struct MuxSpacesBar: View {
             .background(SidraColor.ground2)
             .overlay(alignment: .top) { Rectangle().fill(SidraColor.hairline).frame(height: 1) }
             .overlay(alignment: .bottom) { Rectangle().fill(SidraColor.hairline).frame(height: 1) }
+        }
+    }
+
+    /// Phone width: ☰, then the space and the tab showing, then how many agents need you.
+    private func compactRow(_ m: MuxMonitor, _ s: MuxSnapshot) -> some View {
+        let ws = s.workspaces.first { $0.workspace_id == s.focused_workspace_id }
+        let tab = ws.flatMap { w in s.tabs(in: w.workspace_id).first { $0.focused } }
+        let blocked = s.agents.filter { $0.agent_status == .blocked }.count
+        return HStack(spacing: 8) {
+            Button { withAnimation(.easeOut(duration: 0.2)) { drawer = true } } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "sidebar.left").font(.system(size: 14, weight: .semibold)).foregroundStyle(SidraColor.muted)
+                    if let ws {
+                        HerdrLogoView(name: ws.label, image: m.logo(for: ws), size: 18)
+                        Text(ws.label).font(SidraFont.ui(13, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
+                        if let tab, s.tabs(in: ws.workspace_id).count > 1 {
+                            Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold)).foregroundStyle(SidraColor.dim)
+                            Text(tab.name(in: ws.label)).font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted).lineLimit(1)
+                        }
+                    } else {
+                        Text("Spaces").font(SidraFont.ui(13, weight: .bold)).foregroundStyle(SidraColor.text)
+                    }
+                }
+                .padding(.leading, 12).frame(height: 36).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Spaces and tabs" + (ws.map { ", showing \($0.label)" } ?? ""))
+            .accessibilityIdentifier("herdr-drawer")
+            Spacer(minLength: 4)
+            if blocked > 0 {
+                HStack(spacing: 4) { HerdrStatusIcon(status: .blocked, size: 9); Text("\(blocked)").font(SidraFont.ui(11.5, weight: .bold)).foregroundStyle(SidraColor.text) }
+                    .accessibilityLabel("\(blocked) \(blocked == 1 ? "agent needs" : "agents need") you")
+            }
+            if let ws = s.focused_workspace_id { tabsBar(m, s, space: ws) }
         }
     }
 
@@ -338,6 +396,132 @@ struct MuxSpacesBar: View {
             }
         }
     }
+}
+
+/// The drawer at phone width: every space with its tabs and their agents. Tapping a tab shows it and closes the drawer.
+struct MuxDrawer: View {
+    let pane: Pane
+    @Binding var open: Bool
+    let newSpace: () -> Void
+    @Environment(AppModel.self) private var app
+    /// Spaces whose tabs are listed; the one showing starts open.
+    @State private var expanded: Set<String> = []
+
+    var body: some View {
+        if let m = MuxMonitors.shared.byPane[pane.id], let s = m.snapshot {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Color.black.opacity(0.45).onTapGesture { close() }.accessibilityHidden(true)
+                    list(m, s)
+                        .frame(width: min(300, geo.size.width * 0.84))
+                        .frame(maxHeight: .infinity)
+                        .background(SidraColor.panel)
+                        .overlay(alignment: .trailing) { Rectangle().fill(SidraColor.hairline).frame(width: 1) }
+                        .gesture(DragGesture(minimumDistance: 12).onEnded { if $0.translation.width < -40 { close() } })
+                        .transition(.move(edge: .leading))
+                }
+            }
+            .onAppear { if let f = s.focused_workspace_id { expanded = [f] } }
+            .accessibilityAddTraits(.isModal)
+        }
+    }
+
+    private func list(_ m: MuxMonitor, _ s: MuxSnapshot) -> some View {
+        let substrate = SubstrateHub.shared.waitingPanes
+        return VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("Spaces").font(SidraFont.ui(15, weight: .bold)).foregroundStyle(SidraColor.text)
+                Spacer()
+                Button { close() } label: { Image(systemName: "xmark").font(.system(size: 13, weight: .semibold)).foregroundStyle(SidraColor.muted).frame(width: 32, height: 32) }
+                    .buttonStyle(.plain).accessibilityLabel("Close")
+            }
+            .padding(.leading, 16).padding(.trailing, 8).frame(height: 48)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(s.workspaces) { ws in
+                        let tabs = s.tabs(in: ws.workspace_id)
+                        let agents = s.agents(in: ws.workspace_id)
+                        let showing = ws.workspace_id == s.focused_workspace_id
+                        let isOpen = expanded.contains(ws.workspace_id)
+                        HStack(spacing: 0) {
+                            Button { pick(m, s, ws, tab: nil) } label: {
+                                HStack(spacing: 10) {
+                                    HerdrLogoView(name: ws.label, image: m.logo(for: ws), size: 22)
+                                    Text(ws.label).font(SidraFont.ui(14, weight: showing ? .bold : .medium))
+                                        .foregroundStyle(showing ? SidraColor.text : SidraColor.text.opacity(0.8)).lineLimit(1)
+                                    Spacer(minLength: 6)
+                                    if agents.contains(where: { substrate.contains($0.pane_id) }) { ProcessIcon(.substrate, size: 14) }
+                                    if !agents.isEmpty { HerdrStatusIcon(status: MuxStatus.worst(agents.map(\.agent_status)), size: 10) }
+                                }
+                                .padding(.leading, 14).frame(height: 44).contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(ws.label + (showing ? ", showing" : ""))
+                            if tabs.count > 1 {
+                                Button { withAnimation(.easeOut(duration: 0.15)) { if isOpen { expanded.remove(ws.workspace_id) } else { expanded.insert(ws.workspace_id) } } } label: {
+                                    HStack(spacing: 4) {
+                                        Text("\(tabs.count)").font(SidraFont.ui(11, weight: .semibold)).monospacedDigit()
+                                        Image(systemName: isOpen ? "chevron.down" : "chevron.right").font(.system(size: 10, weight: .semibold))
+                                    }
+                                    .foregroundStyle(SidraColor.muted).frame(width: 48, height: 44).contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(isOpen ? "Hide \(ws.label)'s tabs" : "Show \(ws.label)'s \(tabs.count) tabs")
+                            } else { Color.clear.frame(width: 12) }
+                        }
+                        .background(showing ? SidraColor.raised : .clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        if tabs.count > 1, isOpen {
+                            ForEach(tabs) { t in
+                                let on = showing && t.focused
+                                Button { pick(m, s, ws, tab: t) } label: {
+                                    HStack(spacing: 10) {
+                                        Text(t.name(in: ws.label)).font(SidraFont.ui(13.5, weight: on ? .bold : .regular))
+                                            .foregroundStyle(on ? SidraColor.text : SidraColor.muted).lineLimit(1)
+                                        Spacer(minLength: 6)
+                                        if t.agent_status != .unknown {
+                                            HerdrStatusIcon(status: t.agent_status, size: 9)
+                                            Text(HerdrStatusIcon.label(t.agent_status)).font(SidraFont.ui(12)).foregroundStyle(SidraColor.dim)
+                                        }
+                                    }
+                                    .padding(.leading, 46).padding(.trailing, 14).frame(height: 38)
+                                    .overlay(alignment: .leading) {
+                                        if on { UnevenRoundedRectangle(bottomTrailingRadius: 2, topTrailingRadius: 2).fill(SidraGradient.horizontal).frame(width: 3, height: 20).padding(.leading, 34) }
+                                    }
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("\(t.name(in: ws.label)), \(HerdrStatusIcon.label(t.agent_status))")
+                                .accessibilityAddTraits(on ? .isSelected : [])
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 8)
+            }
+            Rectangle().fill(SidraColor.hairline).frame(height: 1)
+            Button { close(); newSpace() } label: {
+                Label("New space", systemImage: "rectangle.stack.badge.plus").font(SidraFont.ui(13.5, weight: .semibold)).foregroundStyle(SidraColor.muted)
+                    .padding(.horizontal, 16).frame(maxWidth: .infinity, minHeight: 48, alignment: .leading).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    /// Shows the space (and the tab, when one was picked), then closes.
+    private func pick(_ m: MuxMonitor, _ s: MuxSnapshot, _ ws: MuxSnapshot.Workspace, tab: MuxSnapshot.Tab?) {
+        close()
+        Task {
+            if ws.workspace_id != s.focused_workspace_id { await m.focus(app, ws) }
+            if let tab { await m.focusTab(app, tab.id) }
+        }
+    }
+
+    private func close() { withAnimation(.easeOut(duration: 0.2)) { open = false } }
+}
+
+extension MuxSnapshot.Tab {
+    /// Its label, or "<space> <number>" when herdr has only the number.
+    func name(in space: String) -> String { label.flatMap { $0.isEmpty || Int($0) != nil ? nil : $0 } ?? "\(space) \(number)" }
 }
 
 /// New space in a folder that is already there: the folders in the machine's projects folder (see

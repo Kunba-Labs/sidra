@@ -28,6 +28,11 @@ final class PhoneTourUITests: XCTestCase {
         app.launchArguments = ["-sidra.demo", "-sidra.freshWorkspace", "-sidra.noAutoFocus"]
         app.launch()
         sleep(6); shot("c0-herdr")
+        let drawer = app.buttons["herdr-drawer"].firstMatch
+        if drawer.waitForExistence(timeout: 5) {
+            drawer.tap(); sleep(1); shot("c0-herdr-drawer")
+            app.buttons["Close"].firstMatch.tap(); sleep(1)
+        }
         for i in 1...8 {
             app.typeKey("\(i)", modifierFlags: .command); sleep(3); shot("c\(i)-tab")
         }
