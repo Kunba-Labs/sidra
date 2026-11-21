@@ -463,6 +463,8 @@ struct NewSpacePicker: View {
             await monitor.loadFolderLogos(app, under: root)
         }
         .onChange(of: monitor.projectRoot) { sub = [] }
+        // The path at the bottom follows the folder opened with ›, so Open makes the space right there.
+        .onChange(of: sub) { path = sub.isEmpty ? "" : dir }
     }
 
     private func create(label: String, folder: String) async {
