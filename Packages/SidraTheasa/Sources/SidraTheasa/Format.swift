@@ -77,7 +77,7 @@ public enum TFormat {
     public static func turnMeta(_ t: Turn) -> String {
         [dur(t.duration_ms), tok(t.tokens.totalIn) + " in / " + tok(t.tokens.output) + " out", money(t.cost),
          (t.model ?? "").replacingOccurrences(of: "^claude-", with: "", options: .regularExpression)]
-            .filter { !$0.isEmpty }.joined(separator: " · ")
+            .filter { !$0.isEmpty }.joined(separator: ", ")
     }
 
     public static func shortPath(_ p: String) -> String {

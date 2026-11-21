@@ -213,7 +213,7 @@ struct PadRoot: View {
             }
             Spacer(minLength: 0)
             if let c = model.current, let i = model.comments.firstIndex(where: { $0.id == c.id }) {
-                Text(verbatim: "thread \(c.root + 1)/\(model.roots.count) · comment \(i + 1)/\(model.comments.count)").layoutPriority(1)
+                Text(verbatim: "thread \(c.root + 1)/\(model.roots.count), comment \(i + 1)/\(model.comments.count)").layoutPriority(1)
             }
         }
         .lineLimit(1).font(T.mono(11)).foregroundStyle(T.dim).frame(height: 28).padding(.horizontal, 14).background(T.deep)

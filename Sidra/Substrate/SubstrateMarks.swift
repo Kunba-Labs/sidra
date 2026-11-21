@@ -13,7 +13,7 @@ struct SubstratePill: View {
             Button { open() } label: {
                 HStack(spacing: 7) {
                     ProcessIcon(.substrate, size: 18)
-                    Text("Substrate ·").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
+                    Text("Substrate:").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
                     Text(verbatim: "\(waiting)").font(SidraFont.ui(12.5, weight: .bold)).foregroundStyle(SidraColor.gold)
                     Text("waiting").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.text)
                 }

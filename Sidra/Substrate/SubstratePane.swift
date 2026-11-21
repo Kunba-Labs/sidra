@@ -179,7 +179,7 @@ struct SubstrateRequests: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(m.text).font(SidraFont.ui(13, weight: on ? .bold : .medium)).foregroundStyle(on ? SidraColor.text : SidraColor.text.opacity(0.85))
                         .lineLimit(3).multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)   // up to 3 lines (2026-11-20)
-                    Text([m.sender?.name, m.project?.name, Substrate.stageLabel(m)].compactMap { $0 }.joined(separator: " · "))
+                    Text([m.sender?.name, m.project?.name, Substrate.stageLabel(m)].compactMap { $0 }.joined(separator: ", "))
                         .font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim).lineLimit(1)
                 }
                 Spacer(minLength: 6)
@@ -208,6 +208,7 @@ struct SubstrateRequests: View {
                     SubstrateAvatar(name: m.sender?.name ?? "?", url: m.sender?.avatar_url)
                     Text(m.sender?.name ?? "Someone").font(SidraFont.ui(15, weight: .semibold)).foregroundStyle(SidraColor.text)
                     if let k = Substrate.agentKind(m.client) { HStack(spacing: 5) { Text("via"); AgentTag(agent: k) }.font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted) }
+                    else if let link = Substrate.sessionLink(m) { SubstrateChip { Image(systemName: "link"); Text(link) } }
                     else { Text("via " + (m.client ?? "session")).font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted).lineLimit(1) }
                     if let p = m.project { SubstrateChip { SubstrateProjectLogo(project: p, size: 16); Text(p.name) } }
                     if reviewing { SubstrateChip(tone: .electric) { Text("in review with your agent") } }
@@ -223,7 +224,7 @@ struct SubstrateRequests: View {
                     HStack(spacing: 8) {
                         SubstrateAvatar(name: m.sender?.name ?? "?", url: m.sender?.avatar_url, size: 24)
                         Text(m.sender?.name ?? "Someone").font(SidraFont.ui(12.5, weight: .semibold)).foregroundStyle(SidraColor.text)
-                        Text("· tester").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
+                        SubstrateChip(small: true) { Text("tester") }
                     }
                     Text(m.text).font(SidraFont.ui(14.5)).foregroundStyle(SidraColor.text).textSelection(.enabled)
                 }
@@ -447,7 +448,7 @@ struct SubstrateSessions: View {
                         if let w = s.waiting, w > 0 { SubstrateChip(tone: .warn, small: true) { Text("\(w) waiting") } }
                     }
                     Text([(s.projects ?? []).map(\.name).joined(separator: ", "), revoked ? "revoked" : s.last_used_at.map { "used \(Substrate.ago($0, long: true))" }]
-                        .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
+                        .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", "))
                         .font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim).lineLimit(1)
                 }
                 Spacer(minLength: 6)
@@ -473,7 +474,8 @@ struct SubstrateSessions: View {
                     if p?.replies == true { SubstrateChip { Text("replies") } }
                     if p?.deploys == true { SubstrateChip { Text("deploys") } }
                     if p?.files == true { SubstrateChip { Text("files") } }
-                    if p?.no_approval == true { SubstrateChip(tone: .warn) { Text("no approval") } }
+                    if p?.no_approval == true { SubstrateChip(tone: .warn) { Image(systemName: "bolt.fill"); Text("auto relay") } }
+                    else { SubstrateChip { Image(systemName: "checkmark.shield"); Text("approval required") } }
                     if p?.deploy_production == true { SubstrateChip(tone: .electric) { Text("deploys to production") } }
                     else if p?.deploy_test == true { SubstrateChip(tone: .electric) { Text("deploys to test") } }
                     Spacer(minLength: 0)
@@ -572,7 +574,7 @@ struct SubstrateMachineRow: View {
                     Text(machine.name).font(SidraFont.ui(13, weight: .semibold)).foregroundStyle(SidraColor.text)
                     if !compact {
                         Text([machine.platform, machine.relay_version.map { "relay \($0)" }, machine.online == true ? "online" : machine.last_seen.map { "seen \(Substrate.ago($0, long: true))" }]
-                            .compactMap { $0 }.joined(separator: " · ")).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim)
+                            .compactMap { $0 }.joined(separator: ", ")).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim)
                     }
                 }
                 if compact {
@@ -586,7 +588,7 @@ struct SubstrateMachineRow: View {
                             agentMark(a)
                             Text(a.project?.name ?? a.title ?? a.pane_id).font(SidraFont.ui(12.5, weight: .semibold)).foregroundStyle(SidraColor.text)
                             if let k = a.agent { AgentTag(agent: k, size: 12) }
-                            Text([a.workspace, a.status].compactMap { $0 }.joined(separator: " · ")).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim)
+                            Text([a.workspace, a.status].compactMap { $0 }.joined(separator: ", ")).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim)
                         }
                     }
                 }
@@ -658,9 +660,8 @@ struct SubstrateSignIn: View {
                     // Two centred lines: the note, then its two actions (one wrapped row read badly, 2026-11-20).
                     VStack(spacing: 6) {
                         Text("Code sent to \(email). It works for 10 minutes.").foregroundStyle(SidraColor.dim).multilineTextAlignment(.center)
-                        HStack(spacing: 6) {
+                        HStack(spacing: 16) {
                             Button("Send again") { code = ""; sendCode() }.buttonStyle(.plain)
-                            Text("·").foregroundStyle(SidraColor.dim)
                             Button("Other email") { sent = false; code = ""; focus = .email }.buttonStyle(.plain)
                         }
                         .foregroundStyle(SidraColor.muted)
@@ -749,6 +750,13 @@ extension Substrate {
         if n.contains("codex") || n.contains("openai") || n.contains("chatgpt") { return "codex" }
         return nil
     }
+    /// `client` "session: <label>" came through a session link; the label is usually the sender's own name (2026-11-21).
+    static func sessionLink(_ m: Message) -> String? {
+        guard let c = m.client, c.hasPrefix("session:") else { return nil }
+        let label = c.dropFirst("session:".count).trimmingCharacters(in: .whitespaces)
+        return label.isEmpty || label == m.sender?.name ? "Session link" : "Session link \(label)"
+    }
+
     static func stageLabel(_ m: Message) -> String {
         switch m.deploy_stage {
         case "ci_running", "fix_committed": return "CI running"
@@ -947,7 +955,7 @@ extension SubstrateEventLine {
         VStack(alignment: .leading, spacing: 3) {
             Text(event.text ?? "").font(SidraFont.ui(12.5)).foregroundStyle(Color(hex: 0xaab2bd)).textSelection(.enabled)
             HStack(spacing: 8) {
-                Text("\(event.name ?? "Developer") · summarized by the agent").font(SidraFont.ui(11)).foregroundStyle(SidraColor.dim)
+                Text("\(event.name ?? "Developer"), summarized by the agent").font(SidraFont.ui(11)).foregroundStyle(SidraColor.dim)
                 if event.held == true {
                     SubstrateChip(tone: .warn, small: true) { Text("held: the tester can't see it") }
                     if let web { Link("Release on the web", destination: web).font(SidraFont.ui(11, weight: .semibold)).foregroundStyle(SidraColor.muted) }

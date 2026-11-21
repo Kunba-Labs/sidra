@@ -114,7 +114,7 @@ struct TheasaTurnView: View {
         if !d.watch.isEmpty {
             let imp = ["high": 0, "medium": 1, "low": 2]
             let sorted = d.watch.sorted { (($0.status == "done" ? 1 : 0), imp[$0.impact] ?? 3) < (($1.status == "done" ? 1 : 0), imp[$1.impact] ?? 3) }
-            TBox(caps: "Watch  ·  \(d.watch.filter { $0.status == "open" }.count) open") {
+            TBox(caps: "Watch: \(d.watch.filter { $0.status == "open" }.count) open") {
                 ForEach(Array(sorted.enumerated()), id: \.element.id) { i, w in
                     let done = w.status == "done"
                     if i > 0 { Rectangle().fill(SidraColor.hairline).frame(height: 1) }
@@ -223,7 +223,7 @@ struct TheasaTurnView: View {
                 }
                 .background(alignment: .leading) { Rectangle().fill(Color(hex: 0x26262B)).frame(width: 1).padding(.leading, 72).padding(.vertical, 10) }
                 let tools = (t.tools ?? [:]).sorted { $0.value > $1.value }.map { "\($0.key)(\($0.value))" }.joined(separator: ", ")
-                Text((tools.isEmpty ? "no tool calls" : tools) + " · " + TFormat.plural(t.model_calls ?? 0, "model call"))
+                Text((tools.isEmpty ? "no tool calls" : tools) + ", " + TFormat.plural(t.model_calls ?? 0, "model call"))
                     .font(SidraFont.mono(12)).foregroundStyle(SidraColor.dim).padding(.leading, 88)
             }
         }

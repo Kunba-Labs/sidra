@@ -194,7 +194,7 @@ struct SubstrateDesktopCard: View {
             switch card.state {
             case .failed: label("Not sent", SidraColor.red)
             default:
-                if m.held { label("Held · \(m.risk ?? "risky")", SidraColor.gold) }
+                if m.held { label("Held: \(m.risk ?? "risky")", SidraColor.gold) }
                 else { Text("NEEDS APPROVAL").font(SidraFont.ui(11, weight: .bold)).tracking(0.8).foregroundStyle(SubstrateStyle.electric) }
             }
             Spacer()
@@ -216,7 +216,7 @@ struct SubstrateDesktopCard: View {
                     .font(SidraFont.ui(15, weight: .semibold)).foregroundStyle(SidraColor.text).lineLimit(1)
             }
             if newest {
-                Text([who, m.client, m.deploy_allow.flatMap { $0 == "none" ? nil : "deploys to \($0)" }].compactMap { $0 }.joined(separator: " · "))
+                Text([who, Substrate.sessionLink(m) ?? m.client, m.deploy_allow.flatMap { $0 == "none" ? nil : "deploys to \($0)" }].compactMap { $0 }.joined(separator: ", "))
                     .font(SidraFont.mono(11.5)).foregroundStyle(SidraColor.muted).lineLimit(1)
                 if case .failed(let why) = card.state {
                     Text(why).font(SidraFont.ui(13)).foregroundStyle(Color(hex: 0xaab2bd)).padding(.top, 4)

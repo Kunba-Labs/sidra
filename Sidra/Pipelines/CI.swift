@@ -29,7 +29,7 @@ struct PipelineConnection: Codable, Identifiable, Hashable, Sendable {
     var title: String { isHosted ? provider.name : host }
     /// Title and account ("GitLab · waseem"): two accounts on one service stay apart, and the label does
     /// not change when another connection is added or removed.
-    var label: String { account.map { "\(title) · \($0)" } ?? title }
+    var label: String { account.map { "\(title), \($0)" } ?? title }
 
     /// https://host[/path] with no trailing slash, https only (every request carries the token); nil if not a URL.
     static func normalize(_ raw: String) -> URL? {

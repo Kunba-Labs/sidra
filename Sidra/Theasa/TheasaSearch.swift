@@ -38,12 +38,11 @@ struct TheasaSearchView: View {
                     .font(SidraFont.ui(14, weight: .bold)).foregroundStyle(SidraColor.text).multilineTextAlignment(.leading)
             }
             Text(snippet(r.snippet)).font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted).lineLimit(4).multilineTextAlignment(.leading)
-            HStack(spacing: 6) {
+            HStack(spacing: 10) {
                 Text(r.project.name)
-                Text("·")
                 AgentTag(agent: r.agent)
-                Text("· " + TFormat.stampShort(r.started_at))
-                if r.verdict != nil { Text("·"); VerdictLabel(verdict: r.verdict).font(SidraFont.ui(12)) }
+                Text(TFormat.stampShort(r.started_at))
+                if r.verdict != nil { VerdictLabel(verdict: r.verdict).font(SidraFont.ui(12)) }
             }
             .font(SidraFont.ui(12)).foregroundStyle(SidraColor.dim)
         }

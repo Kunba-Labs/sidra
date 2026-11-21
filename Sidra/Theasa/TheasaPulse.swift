@@ -140,7 +140,7 @@ struct TheasaPulseView: View {
                         Button { open(.turn(a.turn_id)) } label: { Text(a.text).font(SidraFont.ui(13.5)).foregroundStyle(SidraColor.text).multilineTextAlignment(.leading) }.buttonStyle(.plain)
                         HStack(spacing: 6) {
                             ProjectIconView(a.project, size: 14)
-                            Text("\(a.project?.name ?? "") · \(a.impact)")
+                            Text("\(a.project?.name ?? ""): \(a.impact)")
                             Spacer()
                             Text(TFormat.ago(a.created_at))
                             TLink("Done") { Task { await live.act("/api/watch/\(a.id)/done", done: "Marked done.") } }
@@ -186,7 +186,7 @@ struct PulseItemView: View {
                 ProjectIconView(it.project, size: 24)
                 Button { open(.project(it.project.id)) } label: { Text(it.project.name).font(SidraFont.ui(16, weight: .bold)).foregroundStyle(SidraColor.textBright) }.buttonStyle(.plain)
                 VerdictLabel(verdict: it.health)
-                Text("\(TFormat.plural(it.turns, "turn")) · \(it.agents.map(agentName).joined(separator: ", ")) · \(TFormat.ago(it.last_at))")
+                Text("\(TFormat.plural(it.turns, "turn")) by \(it.agents.map(agentName).joined(separator: ", ")), \(TFormat.ago(it.last_at))")
                     .font(SidraFont.ui(13)).foregroundStyle(SidraColor.dim).lineLimit(1)
             }
             VStack(alignment: .leading, spacing: 4) {
@@ -208,7 +208,7 @@ struct PulseItemView: View {
             .padding(.leading, 34)
             let foot = [it.decisions > 0 ? TFormat.plural(it.decisions, "decision") : "", it.watch > 0 ? TFormat.plural(it.watch, "watch item") : "",
                         it.files > 0 ? TFormat.plural(it.files, "file") + " changed" : "", it.pending > 0 ? TFormat.plural(it.pending, "summary", "summaries") + " waiting" : ""]
-                .filter { !$0.isEmpty }.joined(separator: " · ")
+                .filter { !$0.isEmpty }.joined(separator: ", ")
             if !foot.isEmpty { Text(foot).font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.dim).padding(.leading, 34) }
         }
     }

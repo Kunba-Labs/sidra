@@ -126,8 +126,8 @@ struct WebPane: PlatformViewRepresentable {
                 // A text post (Ask HN and the like): the post itself is the article, in both modes.
                 // It counts as found when the reader has loaded it.
                 readerGen = gen
-                reader.loadHTMLString(html(title: s.title, byline: "\(s.by) · \(s.age)", content: s.text ?? ""), baseURL: nil)
-                page.loadHTMLString(html(title: s.title, byline: "\(s.by) · \(s.age)", content: s.text ?? ""), baseURL: nil)
+                reader.loadHTMLString(html(title: s.title, byline: "\(s.by), \(s.age)", content: s.text ?? ""), baseURL: nil)
+                page.loadHTMLString(html(title: s.title, byline: "\(s.by), \(s.age)", content: s.text ?? ""), baseURL: nil)
                 show()
                 return
             }

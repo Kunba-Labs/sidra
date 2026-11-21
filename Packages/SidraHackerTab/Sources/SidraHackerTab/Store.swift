@@ -76,7 +76,7 @@ import SwiftUI
             }
             if f == feed && q == query { stories = result }
         } catch {
-            if f == feed { feedError = "could not load · pull to retry" }
+            if f == feed { feedError = "could not load. pull to retry" }
         }
     }
 

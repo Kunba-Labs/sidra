@@ -356,7 +356,7 @@ struct ScreenshotTarget: Identifiable, Hashable {
                 switch pane.kind {
                 case .terminal:
                     out.append(.init(id: pane.id.uuidString, tabID: tab.id, paneID: pane.id, agentPane: nil, space: nil, title: pane.title,
-                                     detail: "shell" + (pane.project.map { " · \($0)" } ?? ""), status: nil, group: "Tabs", logo: nil, processIcon: tab.icon))
+                                     detail: "shell" + (pane.project.map { ", \($0)" } ?? ""), status: nil, group: "Tabs", logo: nil, processIcon: tab.icon))
                 case .herdr:
                     guard let m = MuxMonitors.shared.monitor(for: pane, app: app), let s = m.snapshot else { continue }
                     let group = "herdr" + (pane.project.map { " on \($0)" } ?? "")

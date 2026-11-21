@@ -42,7 +42,7 @@ struct TheasaProjectView: View {
         return HStack(spacing: 10) {
             ProjectIconView(p, size: 24)
             Text(p.name).font(SidraFont.ui(15, weight: .bold)).foregroundStyle(SidraColor.textBright)
-            Text([p.remote ?? "", TFormat.shortPath(p.root ?? "")].filter { !$0.isEmpty }.joined(separator: " · "))
+            Text([p.remote ?? "", TFormat.shortPath(p.root ?? "")].filter { !$0.isEmpty }.joined(separator: ", "))
                 .font(SidraFont.mono(12)).foregroundStyle(SidraColor.dim).lineLimit(1).truncationMode(.middle)
             Spacer()
         }
@@ -169,7 +169,7 @@ struct TheasaProjectView: View {
                         Dot(TColor.impact(w.impact)).padding(.top, 6)
                         Button { open(.turn(w.turn_id)) } label: { Text(w.text).font(SidraFont.ui(13.5)).foregroundStyle(SidraColor.text).multilineTextAlignment(.leading) }.buttonStyle(.plain)
                     }
-                    HStack { Text("\(w.impact) · \(TFormat.ago(w.created_at))"); Spacer(); TLink("Mark done") { Task { await live.act("/api/watch/\(w.id)/done", done: "Marked done.") } } }
+                    HStack { Text("\(w.impact), \(TFormat.ago(w.created_at))"); Spacer(); TLink("Mark done") { Task { await live.act("/api/watch/\(w.id)/done", done: "Marked done.") } } }
                         .font(SidraFont.ui(12)).foregroundStyle(SidraColor.dim).padding(.leading, 15)
                 }
             }
@@ -338,7 +338,7 @@ struct DecisionRow: View {
                 Text("Why: \(w)").font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted)
             }
             HStack(spacing: 16) {
-                if !big { HStack(spacing: 6) { AgentTag(agent: x.agent ?? "", size: 12); Text(TFormat.ago(x.created_at) + (x.status == "superseded" ? " · replaced by a later decision" : "")) }.foregroundStyle(SidraColor.dim) }
+                if !big { HStack(spacing: 6) { AgentTag(agent: x.agent ?? "", size: 12); Text(TFormat.ago(x.created_at) + (x.status == "superseded" ? ", replaced by a later decision" : "")) }.foregroundStyle(SidraColor.dim) }
                 if x.status == "active" {
                     TLink("Not a real decision") { Task { await live.act("/api/decisions/\(x.id)/dismiss") } }
                     TLink("Replaced by a later one", action: supersede)
@@ -409,7 +409,7 @@ struct WatchList: View {
                         Text(inlineMD(w.text)).font(SidraFont.ui(13.5)).strikethrough(done).foregroundStyle(done ? SidraColor.dim : SidraColor.text).multilineTextAlignment(.leading)
                     }.buttonStyle(.plain)
                     HStack {
-                        Text("\(w.impact) · \(TFormat.ago(w.created_at))").font(SidraFont.ui(12)).foregroundStyle(SidraColor.dim)
+                        Text("\(w.impact), \(TFormat.ago(w.created_at))").font(SidraFont.ui(12)).foregroundStyle(SidraColor.dim)
                         Spacer()
                         Button(done ? "Open again" : "Mark done") { Task { await live.act("/api/watch/\(w.id)/\(done ? "open" : "done")", done: done ? nil : "Marked done.") } }
                             .buttonStyle(.sidraSecondary)

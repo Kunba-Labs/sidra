@@ -126,7 +126,7 @@ struct IndexView: View {
         if model.loadingFeed { return "loading…" }
         if model.stories.isEmpty {
             switch model.feed {
-            case .saved: return "nothing saved · hold a story to save it"
+            case .saved: return "nothing saved. hold a story to save it"
             case .search: return model.query.isEmpty ? "type a query, then press return" : "no results"
             default: return "no stories"
             }
@@ -242,7 +242,7 @@ struct WireView: View {
     private func leadBlock(_ s: Story, _ wide: Bool) -> some View {
         Button { onOpen(s) } label: {
             VStack(alignment: .leading, spacing: 10) {
-                Text(verbatim: "01 · \(s.host ?? "hn") · \(s.score)p · \(s.age)").font(T.mono(11.5)).foregroundStyle(T.accent)
+                Text(verbatim: "01  \(s.host ?? "hn"), \(s.score)p, \(s.age)").font(T.mono(11.5)).foregroundStyle(T.accent)
                 Text(s.title).font(T.sans(wide ? 44 : 28, .bold)).tracking(wide ? -1 : -0.5).foregroundStyle(T.text).multilineTextAlignment(.leading)
             }
         }
@@ -272,7 +272,7 @@ struct WireView: View {
             Rule()
             if let top = leadThread.first {
                 Text(top.plain).font(T.sans(14.5)).foregroundStyle(T.body).lineLimit(3).padding(.top, 6)
-                (Text(top.author).foregroundStyle(T.text) + Text(" · top thread")).font(T.mono(11)).foregroundStyle(T.dim)
+                (Text(top.author).foregroundStyle(T.text) + Text(", top thread")).font(T.mono(11)).foregroundStyle(T.dim)
             }
         }
     }

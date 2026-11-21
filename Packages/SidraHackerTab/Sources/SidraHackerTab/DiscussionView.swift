@@ -106,7 +106,7 @@ private struct CommentList: View {
                 if model.threadLoading {
                     Skeleton()
                 } else if let e = model.threadError {
-                    MonoButton(label: e + " · tap to retry") { model.reloadThread() }.frame(maxWidth: .infinity, minHeight: 120)
+                    MonoButton(label: e + ". tap to retry") { model.reloadThread() }.frame(maxWidth: .infinity, minHeight: 120)
                 } else {
                     if model.focus == nil && !model.finding { SummaryBlock() }
                     if let f = model.comment(model.focus) { context(f) }
@@ -127,7 +127,7 @@ private struct CommentList: View {
     private func context(_ f: Comment) -> some View {
         let all = model.ancestors(of: f)
         return VStack(alignment: .leading, spacing: 6) {
-            Text(all.isEmpty ? "focused on one thread · \(f.subtree + 1) comments" : "context · \(all.count) above").font(T.mono(11)).foregroundStyle(T.dim)
+            Text(all.isEmpty ? "focused on one thread, \(f.subtree + 1) comments" : "context: \(all.count) above").font(T.mono(11)).foregroundStyle(T.dim)
             ForEach(all) { a in
                 Button { model.focus = a.id } label: {
                     (Text(a.author + "  ").font(T.mono(11.5, bold: true)).foregroundStyle(T.rails[a.depth % 4]) + Text(a.plain).font(T.sans(14)).foregroundStyle(T.body))
@@ -254,7 +254,7 @@ struct SummaryBlock: View {
                             .buttonStyle(.plain).accessibilityHint("Goes to the thread")
                         }
                         Rule()
-                        Text(verbatim: "generated on this \(Platform.deviceName) · may be wrong · nothing left the device")
+                        Text(verbatim: "generated on this \(Platform.deviceName). may be wrong. nothing left the device")
                             .font(T.mono(10.5)).foregroundStyle(T.dim).padding(.top, 8)
                     }
                     .padding(.horizontal, 12).padding(.bottom, 12)
@@ -283,10 +283,10 @@ struct SummaryBlock: View {
     }
     private var detail: String {
         switch model.summary.phase {
-        case .running(let done, let total): "on device · thread \(done)/\(total)"
+        case .running(let done, let total): "on device: thread \(done)/\(total)"
         case .waiting: "the on-device model is downloading; it starts when the model is in"
         case .unavailable(let why), .failed(let why): why
-        default: model.summary.result.map { "on device · \($0.comments) comments · \($0.seconds)s" } ?? ""
+        default: model.summary.result.map { "on device: \($0.comments) comments, \($0.seconds)s" } ?? ""
         }
     }
 }
