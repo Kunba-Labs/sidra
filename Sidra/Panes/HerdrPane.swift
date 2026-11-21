@@ -587,7 +587,7 @@ struct MuxAgentsMenu: View {
         .frame(maxHeight: 560)
         .fixedSize(horizontal: false, vertical: true)
         .padding(8)
-        .frame(width: 420)
+        .frame(maxWidth: 420)
         .background(SidraColor.popup)
     }
 

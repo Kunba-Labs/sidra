@@ -60,7 +60,7 @@ struct TheasaConnectSheet: View {
             }
             .padding(24)
         }
-        .frame(width: 600)
+        .frame(maxWidth: 600)
         .frame(maxHeight: 700)
         .fixedSize(horizontal: false, vertical: true)
         .background(SidraColor.panel)

@@ -41,7 +41,7 @@ private struct SidraAlertSheet: View {
     var body: some View {
         SidraAlertBody(alert: alert) { dismiss() }
             .padding(22)
-            .frame(width: 480)
+            .frame(maxWidth: 480)
             .background(SidraColor.panel)
             .presentationBackground(SidraColor.panel)
     }

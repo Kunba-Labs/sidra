@@ -209,7 +209,7 @@ struct EmptyWorkspace: View {
     let hero: AnyView?
     var body: some View {
         VStack(spacing: 16) {
-            if let hero { hero } else {   // the hero offers its own way in
+            if let hero { ViewThatFits(in: .vertical) { hero; ScrollView { hero.padding(.vertical, 8) }.scrollIndicators(.hidden) } } else {   // the hero offers its own way in
                 Text("No panes open").font(SidraFont.ui(15)).foregroundStyle(SidraColor.muted)
                 newTabMenu
             }

@@ -91,6 +91,7 @@
 		89DBEEDE718CFC48E796A670 /* SSHKeyLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46309641DF73FE9E9FFCF88B /* SSHKeyLifecycleTests.swift */; };
 		89E5807F9528CDBF3E265320 /* SidraAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61631DB9FAA738AF8DC58B30 /* SidraAlert.swift */; };
 		89EE6431B83ABF55E9BB00B9 /* FloatingMic.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC861FD0DBC61E527D1B8C68 /* FloatingMic.swift */; };
+		8A7FB3146F93747BF6C44A18 /* PhoneTourUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9CF5756787ED15F93F0D6C6 /* PhoneTourUITests.swift */; };
 		8B3BAB38512BEE5F05DA6D60 /* Platform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898FEE6677F04B352643E7AB /* Platform.swift */; };
 		8BB80666014F3FB8C47B03C4 /* TabActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9558625C18D327C68E8E8B55 /* TabActivity.swift */; };
 		8BD74A1D373F10633931A4DC /* SidraSSHTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EE6DFA8F7CAB8895B0EC7A3 /* SidraSSHTests.swift */; };
@@ -270,6 +271,7 @@
 		B1F4667A0E51BA7C24D920DD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B2191D66F65F6BF852EB4C5F /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		B800AF5E86A152DF6C1EA49A /* FloatingKeyboardUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingKeyboardUITests.swift; sourceTree = "<group>"; };
+		C9CF5756787ED15F93F0D6C6 /* PhoneTourUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneTourUITests.swift; sourceTree = "<group>"; };
 		CCFB137D3245A2A62F70ECB5 /* FloatingKeyboardPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingKeyboardPanel.swift; sourceTree = "<group>"; };
 		D109603D341FACD0A06F2B12 /* SidraTheasa */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraTheasa; path = Packages/SidraTheasa; sourceTree = SOURCE_ROOT; };
 		D7188AFC621B1D9E1EFB8CC4 /* GitLab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitLab.swift; sourceTree = "<group>"; };
@@ -335,6 +337,7 @@
 				DAA664C38BC9D52E3E799088 /* FloatingOrbUITests.swift */,
 				5878234E78CAE96CF386F927 /* HackerTabUITests.swift */,
 				835D989F13A564BB23920914 /* NewTabUITests.swift */,
+				C9CF5756787ED15F93F0D6C6 /* PhoneTourUITests.swift */,
 				7154BCD71DBCA78733D7CF59 /* PipelinesUITests.swift */,
 				2A5640D612B671DEF0516D7B /* SSHMoshUITests.swift */,
 				69A9BEE59A535B1C6F7572B3 /* StoreScreenshotsUITests.swift */,
@@ -809,6 +812,7 @@
 				DC868DBE1BEA62F52598D3CC /* FloatingOrbUITests.swift in Sources */,
 				BA25D9950CF47C88684ED41F /* HackerTabUITests.swift in Sources */,
 				F54C10CBFB1A977F03FE4746 /* NewTabUITests.swift in Sources */,
+				8A7FB3146F93747BF6C44A18 /* PhoneTourUITests.swift in Sources */,
 				098F1638832F56C4252C669C /* PipelinesUITests.swift in Sources */,
 				BE67F73EEF04D36498A08B32 /* SSHMoshUITests.swift in Sources */,
 				52D8473D4545285327988653 /* StoreScreenshotsUITests.swift in Sources */,

@@ -40,7 +40,7 @@ struct ShortcutsSheet: View {
             }
             HStack { Spacer(); Button("Done") { dismiss() }.buttonStyle(.sidraPrimary) }
         }
-        .padding(24).frame(width: 620, height: 620).background(SidraColor.panel).presentationBackground(SidraColor.panel)
+        .padding(24).frame(maxWidth: 620, maxHeight: 620).background(SidraColor.panel).presentationBackground(SidraColor.panel)
         .onAppear { if reg.commands.isEmpty { reg.replaceAll(WorkspaceCommands.all(app)) } }
     }
 }

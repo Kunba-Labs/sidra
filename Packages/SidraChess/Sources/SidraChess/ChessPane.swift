@@ -492,7 +492,7 @@ struct RoundCard: View {
                         .accessibilityIdentifier("chess.outcome")
                 }
                 heading("How strong should the engine play?")
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 6)], spacing: 6) {
                     ForEach(ChessLevel.allCases) { l in
                         ChoiceChip(title: l.name, detail: "\(l.elo)", on: store.level == l) { store.level = l }
                     }
@@ -531,7 +531,7 @@ struct ChoiceChip: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 7) {
-                Text(title).font(SidraFont.ui(13, weight: .bold)).foregroundStyle(SidraColor.text)
+                Text(title).font(SidraFont.ui(13, weight: .bold)).lineLimit(1).foregroundStyle(SidraColor.text)
                 if let detail { Text(detail).font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted) }
             }
             .padding(.horizontal, 12).frame(minWidth: 0, maxWidth: detail == nil ? nil : .infinity, alignment: .leading).frame(height: 34)

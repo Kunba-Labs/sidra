@@ -88,7 +88,7 @@ struct NewTabSheet: View {
                 Spacer()
                 Button("Cancel") { dismiss() }.buttonStyle(.sidraSecondary)
             }
-            if pickingHost { hostList } else { NewTabCards(onPick: pick) }
+            if pickingHost { hostList } else { ScrollView { NewTabCards(onPick: pick) }.scrollIndicators(.hidden) }   // a phone is shorter than the cards
         }
         .padding(24)
         .frame(maxWidth: 640)

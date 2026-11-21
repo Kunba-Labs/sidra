@@ -126,6 +126,9 @@ struct PadRoot: View {
                                 .frame(width: pane == .discussion ? nil : 428)
                         }
                     }
+                } else if geo.size.width < 500, showIndex {
+                    index   // a phone: the index alone; picking a story shows it in the index's place
+                        .onChange(of: model.selected?.id) { model.showIndex = false }
                 } else {
                     HStack(spacing: 0) {
                         if showIndex { index.frame(width: min(300, geo.size.width * 0.42)); VRule() }

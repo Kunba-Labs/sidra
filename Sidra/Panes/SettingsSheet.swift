@@ -91,7 +91,7 @@ struct SettingsSheet: View {
         }
         .padding(24)
         }
-        .frame(width: 720, height: 680)
+        .frame(maxWidth: 720, maxHeight: 680)
         .background(SidraColor.panel)
         .presentationBackground(SidraColor.panel)
         .sheet(item: $editing) { h in HostEditor(profile: h, password: $password) { saved, pw in
@@ -228,7 +228,7 @@ struct HostEditor: View {
         }
         .padding(24)
         }
-        .frame(width: 520)
+        .frame(maxWidth: 520)
         .frame(maxHeight: 680)
         .background(SidraColor.panel)
         .presentationBackground(SidraColor.panel)

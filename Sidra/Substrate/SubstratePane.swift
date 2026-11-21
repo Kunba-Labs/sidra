@@ -670,7 +670,7 @@ struct SubstrateSignIn: View {
                 }
             }
             .padding(28)
-            .frame(width: 440)
+            .frame(maxWidth: 440)
             .background(Color(hex: 0x14181e), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(SidraColor.hairline2))
             .shadow(color: .black.opacity(0.6), radius: 40, y: 30)

@@ -384,7 +384,7 @@ struct SupersedeSheet: View {
             }
         }
         .padding(24)
-        .frame(width: 520)
+        .frame(maxWidth: 520)
         .background(SidraColor.panel)
         .presentationBackground(SidraColor.panel)
         .task {

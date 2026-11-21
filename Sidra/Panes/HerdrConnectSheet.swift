@@ -65,7 +65,7 @@ struct HerdrConnectSheet: View {
         }
         .padding(24)
         }
-        .frame(width: 640)
+        .frame(maxWidth: 640)
         .frame(maxHeight: 680)
         .fixedSize(horizontal: false, vertical: true)
         .background(SidraColor.panel)
