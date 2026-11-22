@@ -9,6 +9,7 @@ command -v herdr >/dev/null || { echo 'herdr is not installed on this machine'; 
 
 # Sidra draws the sidebar and the tab row itself, so its client reads a copy of config.toml with the
 # sidebar collapsed to zero width, a lone tab's tab row hidden and the first-run dialog skipped.
+# herdr's own phone header (below 64 columns) is off too: on an iPhone Sidra shows the space and tab itself.
 # Rewritten owner-only on every attach, so edits to config.toml carry over and a private config never
 # leaks. A copy herdr rejects is not used.
 #
@@ -21,7 +22,7 @@ own="$d/sidra-client.toml"
 c="$d/config.toml"
 [ -f "$c" ] || c=/dev/null
 mkdir -p "$d"
-if (umask 077; awk -v k='sidebar_start_collapsed = true\nsidebar_collapsed_mode = "hidden"\nhide_tab_bar_when_single_tab = true' '
+if (umask 077; awk -v k='sidebar_start_collapsed = true\nsidebar_collapsed_mode = "hidden"\nhide_tab_bar_when_single_tab = true\nmobile_width_threshold = 0' '
       BEGIN { print "onboarding = false" }
       /^onboarding[[:space:]]*=/ { next }
       /^[[:space:]]*(mobile_width_threshold|hide_tab_bar_when_single_tab|sidebar_start_collapsed|sidebar_collapsed_mode)[[:space:]]*=/ { next }
