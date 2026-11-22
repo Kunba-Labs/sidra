@@ -202,6 +202,11 @@ public final class FloatingKeyboard {
         lastSwiped = nil; line = nil; typed = ""
     }
 
+    /// A paste into the target (the paste key, ⌘V or the menu; an image as its uploaded path): the typed line shows it.
+    public func pasted(_ text: String) {
+        typed += text.replacingOccurrences(of: "\r\n", with: " ").replacingOccurrences(of: "\n", with: " ")
+    }
+
     private func insert(_ text: String) {
         forward { target?.keyboardInsert(text, ctrl: false, alt: false) }
         line = line.map { $0 + text }
@@ -230,7 +235,7 @@ public final class FloatingKeyboard {
         alternatives = []; lastSwiped = nil
         forward { target?.keyboardKey(k) }
         line = nil   // the line can no longer be followed (history, completion, cursor moves)
-        typed = ""
+        if k != .paste { typed = "" }   // a paste reports its text (pasted(_:))
     }
 
     public func enter() {
