@@ -51,6 +51,8 @@ struct FloatingMic: View {
                 }
             }
         }
+        // Terminals underneath ignore touches here: a hold on the mic was also a long press for them.
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { FloatingControls.frames["mic"] = $0 }
         .padding(.trailing, 24).padding(.bottom, 24 + SidraSpace.paneFooterHeight).padding(.leading, 16)   // above the pane footer
         .background(WindowReader(window: $window).frame(width: 0, height: 0))
         .animation(.easeOut(duration: 0.18), value: voice.isActive)
@@ -62,6 +64,9 @@ struct MicKey: View {
     let voice: VoiceInput
     let window: PlatformWindow?
     @State private var holding = false
+    /// Resets when the touch ends in any way. A touch the system cancels (the terminal under the mic took it
+    /// as a long press) never reaches onEnded, and the card stayed on "release to insert" (Waseem, 2026-11-22).
+    @GestureState private var touching = false
 
     var body: some View {
         let recording = voice.phase == .recording
@@ -78,6 +83,7 @@ struct MicKey: View {
         .shadow(color: .black.opacity(0.45), radius: 12, y: 6)
         .contentShape(Circle())
         .gesture(DragGesture(minimumDistance: 0)
+            .updating($touching) { _, state, _ in state = true }
             .onChanged { v in
                 if !holding {
                     holding = true
@@ -86,6 +92,7 @@ struct MicKey: View {
                 if voice.phase == .recording { voice.cancelling = v.translation.width < -70 }
             }
             .onEnded { _ in holding = false; voice.release(cancel: voice.cancelling) })
+        .onChange(of: touching) { _, now in if !now, holding { holding = false; voice.release(cancel: voice.cancelling) } }
         .accessibilityLabel(recording ? "Stop and insert" : "Hold to talk")
         .accessibilityAddTraits(.isButton)
         .accessibilityAction { recording ? voice.release(cancel: false) : voice.press(in: window) }   // VoiceOver: tap to start, tap again to stop

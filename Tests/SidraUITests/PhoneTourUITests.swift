@@ -112,6 +112,13 @@ final class PhoneTourUITests: XCTestCase {
         XCTAssertFalse(done.exists, "Done ends select mode")
         app.buttons["Select text"].firstMatch.tap(); sleep(1)
         XCTAssertTrue(done.waitForExistence(timeout: 3), "the footer's Select starts select mode")
+        done.tap(); sleep(1)
+        // A hold on the floating mic is the mic's, not a long press for the terminal under it.
+        let mic = app.buttons["Hold to talk"].firstMatch
+        if mic.waitForExistence(timeout: 3) {
+            mic.press(forDuration: 1.5); sleep(1)
+            XCTAssertFalse(done.exists, "holding the mic does not start select mode in the terminal behind it")
+        }
     }
 
     private func shot(_ name: String) {

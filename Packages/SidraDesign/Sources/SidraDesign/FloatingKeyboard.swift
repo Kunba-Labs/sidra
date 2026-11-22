@@ -1,3 +1,12 @@
+import CoreGraphics
+
+/// Floating controls over the panes (the mic, its voice card, the keyboard button), by name, in window
+/// coordinates: terminals underneath ignore touches inside them, which they otherwise also got.
+@MainActor public enum FloatingControls {
+    public static var frames: [String: CGRect] = [:]
+    public static func covers(_ p: CGPoint) -> Bool { frames.values.contains { $0.contains(p) } }
+}
+
 #if os(iOS)   // touch keyboard UI: a Mac has a hardware keyboard
 import UIKit
 import Observation
