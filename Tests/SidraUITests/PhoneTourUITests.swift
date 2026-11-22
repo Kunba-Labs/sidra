@@ -65,6 +65,12 @@ final class PhoneTourUITests: XCTestCase {
             // A swipe across the letters: its suggestions float above the keyboard, clear of the typed line.
             app.buttons["t"].firstMatch.press(forDuration: 0.05, thenDragTo: app.buttons["o"].firstMatch)
             sleep(1); shot("g-keyboard-swipe")
+            // A finger between two keys types the nearer one (no gap falls through to the terminal as a click).
+            app.buttons["return"].firstMatch.tap(); sleep(1)
+            let h = app.buttons["h"].firstMatch.frame, j = app.buttons["j"].firstMatch.frame
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: (h.maxX + j.minX) / 2 - 0.5, dy: h.midY)).tap()
+            sleep(1); shot("g-keyboard-gap")
+            XCTAssertTrue(app.descendants(matching: .any)["Typed: h"].exists || app.descendants(matching: .any)["Typed: j"].exists, "the gap tap typed h or j")
         }
     }
 

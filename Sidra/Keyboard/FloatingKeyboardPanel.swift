@@ -148,7 +148,10 @@ struct FloatingKeyboardPanel<G: Gesture>: View {
             .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 10).padding(.top, 4).padding(.bottom, 10)
-        .background(SidraColor.popup, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        // The background takes any touch the keys miss (the edge, the padding): none reaches the terminal underneath
+        // as a click, which moved Claude Code's cursor under herdr (Waseem, 2026-11-22).
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(SidraColor.popup).gesture(DragGesture(minimumDistance: 0)))
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { kb.coveredFrame = $0 }
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(SidraColor.hairline2))
         // The mic: a round key on the top-right corner, mostly outside the keyboard, so it takes no row or
         // column of its own (Waseem, 2026-11-14). It used to be a full-height tile beside the keys.
@@ -461,7 +464,7 @@ private struct KeyCap: View {
             }
         }
         .zIndex(lit ? 1 : 0)
-        .contentShape(Rectangle())
+        .contentShape(Rectangle().inset(by: -2.5))   // half the 5 pt gap each side: a tap between keys types the nearest one
         .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("keys"))
             .onChanged { v in
                 if let swipe {

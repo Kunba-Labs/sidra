@@ -52,6 +52,12 @@ public final class FloatingKeyboard {
     public private(set) var hardware = FloatingKeyboard.hardwareAttached
     /// -sidra.softKeyboard (Simulator, UI tests): the Mac's keyboard shows up as a hardware keyboard there.
     static var hardwareAttached: Bool { HardwareKeyboard.attached && !CommandLine.arguments.contains("-sidra.softKeyboard") }
+    /// Where the keyboard sits, in window coordinates: terminals ignore touches there (and in the suggestions row above it).
+    @ObservationIgnored public var coveredFrame: CGRect?
+    public func covers(_ windowPoint: CGPoint) -> Bool {
+        guard visible, let f = coveredFrame else { return false }
+        return f.insetBy(dx: -20, dy: 0).union(CGRect(x: f.minX, y: f.minY - 56, width: f.width, height: 56)).contains(windowPoint)   // + the suggestions row and the corner mic
+    }
     public var visible: Bool { enabled && focused && !dismissed && (!hardware || shownWithHardware) }
     /// The expand button can bring the keys up beside a hardware keyboard; reset when one comes or goes.
     public var shownWithHardware = false

@@ -516,6 +516,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
 
     /// A tap on a thumbnail is the thumbnail's, not a click for the program.
     public func gestureRecognizer(_ g: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if FloatingKeyboard.shared.covers(touch.location(in: nil)) { return false }   // the keyboard's touch, never a click here
         if g === dragRecognizer { dragIsTouch = touch.type == .direct }
         return !thumbnails.owns(touch.view) && !(touch.view is UIButton)   // thumbnails, the Copy offer and Done take their own taps
     }
