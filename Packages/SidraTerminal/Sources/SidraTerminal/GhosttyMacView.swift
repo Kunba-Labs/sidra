@@ -22,6 +22,10 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
     public var onOpenLink: ((URL) -> Void)?
     public var onSearchResult: ((Int, Int?) -> Void)?
     public var onPasteImage: ((Data) async -> String?)?
+    /// Image paths on screen get a thumbnail at the right edge; a click opens it (as on iPad).
+    private lazy var thumbnails = TerminalThumbnails(host: self)
+    public var onFetchImage: ((String) async -> Data?)? { get { thumbnails.fetch } set { thumbnails.fetch = newValue } }
+    public var onOpenImage: ((String, PlatformImage) -> Void)? { get { thumbnails.open } set { thumbnails.open = newValue } }
     private var selectionAnchor: (x: Int, y: Int)?
     private var searchMatches: [GhosttyEngine.Match] = []
     private var searching = false
@@ -435,6 +439,7 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
         guard let upload = onPasteImage, let data = Platform.pasteImagePNG else { return }
         Task { @MainActor [weak self] in
             guard let path = await upload(data) else { return }
+            if let image = NSImage(data: data) { self?.thumbnails.remember(path, image) }
             if let self, self.window?.firstResponder === self { self.pasteText(path) } else { Platform.pasteString = path }
         }
     }
@@ -456,7 +461,7 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
         if let text = pb.string(forType: .string), !text.isEmpty { pasteText(text); return true }
         if let upload = onPasteImage, let image = NSImage(pasteboard: pb), let tiff = image.tiffRepresentation,
            let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
-            Task { @MainActor [weak self] in if let path = await upload(png) { self?.pasteText(path) } }
+            Task { @MainActor [weak self] in if let path = await upload(png) { self?.thumbnails.remember(path, image); self?.pasteText(path) } }
             return true
         }
         return false
@@ -527,6 +532,7 @@ public final class GhosttyMacView: NSView, NSMenuItemValidation, NSTextInputClie
         guard let ctx = NSGraphicsContext.current?.cgContext else { return }
         if let f = engine.frame(force: frame_ == nil) { frame_ = f } else { frame_?.cursor = engine.cursor() }   // a cursor-only move
         guard let frame = frame_ else { NSColor(SidraColor.pane).setFill(); bounds.fill(); return }
+        thumbnails.update(rows: frame.rows, cell: cellSize)
         // The program turned blinking on or off (DECSCUSR): start or stop the timer after this pass.
         if shouldBlink(frame) != (blinkTimer != nil) {
             DispatchQueue.main.async { [weak self] in self?.restartBlink() }

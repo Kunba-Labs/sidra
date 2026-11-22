@@ -2,6 +2,10 @@ import Foundation
 import SidraDesign
 #if os(iOS)
 import UIKit
+typealias ThumbHost = UIView
+#else
+import AppKit
+typealias ThumbHost = NSView
 #endif
 
 /// Image paths printed in a terminal (Claude Code's `[image] /tmp/…/shot.png` lines), found on screen so
@@ -103,29 +107,28 @@ public enum TerminalLinks {
 }
 
 /// Thumbnails at the terminal's right edge, one per image path on screen; a tap opens the image.
-#if os(iOS)   // thumbnails: iOS only for now
 @MainActor final class TerminalThumbnails {
-    private weak var host: UIView?
-    private var views: [String: UIImageView] = [:]
-    private var images: [String: UIImage] = [:]
+    private weak var host: ThumbHost?
+    private var views: [String: ThumbHost] = [:]
+    private var images: [String: PlatformImage] = [:]
     private var pending: Set<String> = []
     /// Paths that could not be read, and when; tried again after 15 s (the file may not exist yet).
     private var failed: [String: Date] = [:]
     private var lastLayout: [String] = []
     /// Images pasted from this device, by their path on the far side: shown without reading them back,
     /// since a read shares the shell's SSH connection and typing waited behind it (Waseem, 2026-11-19).
-    private var local: [String: UIImage] = [:]
+    private var local: [String: PlatformImage] = [:]
     var fetch: ((String) async -> Data?)?
-    var open: ((String, UIImage) -> Void)?
+    var open: ((String, PlatformImage) -> Void)?
 
-    init(host: UIView) { self.host = host }
+    init(host: ThumbHost) { self.host = host }
 
-    func remember(_ path: String, _ image: UIImage) {
+    func remember(_ path: String, _ image: PlatformImage) {
         if local.count >= 4 { local.removeAll() }   // ponytail: only the last few pastes; older ones are read back like any image
         local[path] = image
     }
 
-    func owns(_ view: UIView?) -> Bool { view.map { v in views.values.contains { $0 === v } } ?? false }
+    func owns(_ view: ThumbHost?) -> Bool { view.map { v in views.values.contains { $0 === v } } ?? false }
 
     func update(rows: [TerminalRow], cell: CGSize) {
         guard let host, fetch != nil else { return }
@@ -162,7 +165,8 @@ public enum TerminalLinks {
         for (key, v) in views where !seen.contains(key) { v.removeFromSuperview(); views[key] = nil }
     }
 
-    private func makeView(_ image: UIImage, path: String, key: String) -> UIImageView {
+    #if os(iOS)
+    private func makeView(_ image: UIImage, path: String, key: String) -> ThumbHost {
         let v = UIImageView(image: image.preparingThumbnail(of: CGSize(width: 192, height: 120)) ?? image)
         v.contentMode = .scaleAspectFill
         v.clipsToBounds = true
@@ -174,14 +178,41 @@ public enum TerminalLinks {
         v.accessibilityLabel = "Image " + (path as NSString).lastPathComponent
         v.accessibilityTraits = .button
         v.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapped(_:))))
-        v.accessibilityIdentifier = path
         host?.addSubview(v)
         views[key] = v
         return v
     }
 
-    @objc private func tapped(_ g: UITapGestureRecognizer) {
-        guard let path = g.view?.accessibilityIdentifier, let image = images[path] else { return }
+    @objc private func tapped(_ g: UITapGestureRecognizer) { opened(g.view) }
+    private func redraw() { host?.setNeedsDisplay() }
+    #else
+    private func makeView(_ image: NSImage, path: String, key: String) -> ThumbHost {
+        let v = NSView()
+        v.wantsLayer = true
+        v.layer?.contents = image
+        v.layer?.contentsGravity = .resizeAspectFill
+        v.layer?.masksToBounds = true
+        v.layer?.cornerRadius = SidraRadius.icon
+        v.layer?.borderWidth = 1
+        v.layer?.borderColor = NSColor(white: 1, alpha: 0.14).cgColor
+        v.setAccessibilityElement(true)
+        v.setAccessibilityRole(.button)
+        v.setAccessibilityLabel("Image " + (path as NSString).lastPathComponent)
+        v.addGestureRecognizer(NSClickGestureRecognizer(target: self, action: #selector(tapped(_:))))
+        host?.addSubview(v)
+        views[key] = v
+        return v
+    }
+
+    @objc private func tapped(_ g: NSClickGestureRecognizer) { opened(g.view) }
+    private func redraw() { host?.needsDisplay = true }
+    #endif
+
+    /// The tapped thumbnail's image, full size.
+    private func opened(_ view: ThumbHost?) {
+        guard let key = views.first(where: { $0.value === view })?.key,
+              let path = key.split(separator: ":", maxSplits: 1).last.map(String.init),
+              let image = images[path] ?? local[path] else { return }
         open?(path, image)
     }
 
@@ -192,18 +223,17 @@ public enum TerminalLinks {
             let data = await fetch(path)
             guard let self else { return }
             self.pending.remove(path)
-            if let data, let image = UIImage(data: data), self.lastLayout.contains(where: { $0.hasSuffix(":" + path) }) {
+            if let data, let image = PlatformImage(data: data), self.lastLayout.contains(where: { $0.hasSuffix(":" + path) }) {
                 self.images[path] = image
                 self.lastLayout = []   // lay out again with the new image
-                (self.host as? GhosttyTerminalView)?.setNeedsDisplay()
+                self.redraw()
             } else {
                 self.failed[path] = Date()
                 // Try again in 15 s even if nothing else redraws the terminal.
                 try? await Task.sleep(for: .seconds(15.5))
                 self.lastLayout = []
-                (self.host as? GhosttyTerminalView)?.setNeedsDisplay()
+                self.redraw()
             }
         }
     }
 }
-#endif

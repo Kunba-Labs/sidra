@@ -4,7 +4,7 @@ import SwiftUI
 import SidraDesign
 
 /// SwiftUI face of a terminal on the Mac: always the Ghostty view. `engine` is accepted for the shared
-/// signature; the SwiftTerm fallback is an iPad setting. Inline image thumbnails are iOS-only for now.
+/// signature; the SwiftTerm fallback is an iPad setting.
 public struct TerminalPaneView: NSViewRepresentable {
     let io: TerminalIO
     var onTitle: ((String) -> Void)?
@@ -15,6 +15,8 @@ public struct TerminalPaneView: NSViewRepresentable {
     var onSearchResult: ((Int, Int?) -> Void)?
     var onPasteImage: ((Data) async -> String?)?
     var onOpenLink: ((URL) -> Void)?
+    var onFetchImage: ((String) async -> Data?)?
+    var onOpenImage: ((String, PlatformImage) -> Void)?
     var lost: Bool
 
     public init(io: TerminalIO, engine: TerminalEngineKind = .ghostty, focusToken: Int = 0, onTitle: ((String) -> Void)? = nil,
@@ -30,6 +32,8 @@ public struct TerminalPaneView: NSViewRepresentable {
         self.onSearchResult = onSearchResult
         self.onPasteImage = onPasteImage
         self.onOpenLink = onOpenLink
+        self.onFetchImage = onFetchImage
+        self.onOpenImage = onOpenImage
         self.lost = lost
     }
 
@@ -50,6 +54,8 @@ public struct TerminalPaneView: NSViewRepresentable {
         g.onSearchResult = onSearchResult
         g.onPasteImage = onPasteImage
         g.onOpenLink = onOpenLink
+        g.onFetchImage = onFetchImage
+        g.onOpenImage = onOpenImage
         g.lost = lost
         if context.coordinator.lastQuery != searchQuery {
             context.coordinator.lastQuery = searchQuery
