@@ -14,6 +14,14 @@ struct HerdrPane: View {
     @State private var drawer = false
     @State private var newSpace = 0
     private var compact: Bool { width < 520 }
+    @Environment(\.scenePhase) private var scenePhase
+    /// Sidra is in the background: no zoom for the phone (it would come back with the next snapshot otherwise).
+    @State private var away = false
+    /// What decides whether the shown tab is zoomed for the phone.
+    private var phoneFit: String {
+        let l = MuxMonitors.shared.byPane[pane.id]?.snapshot?.focusedLayout
+        return "\(compact && !away) \(l?.tab_id ?? "") \(l?.panes.count ?? 0) \(l?.zoomed ?? false)"
+    }
 
     var body: some View {
         let adapter = pane.kind.multiplexer?.adapter ?? HerdrAdapter()
@@ -31,6 +39,20 @@ struct HerdrPane: View {
         }
         .overlay { if compact, drawer { MuxDrawer(pane: pane, open: $drawer) { newSpace += 1 } } }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        // A split tab on a phone: one pane at a time (herdr's zoom), unzoomed again when the phone leaves it.
+        .task(id: phoneFit) { await MuxMonitors.shared.byPane[pane.id]?.fitPhone(app, compact: compact && !away) }
+        .onDisappear { if let m = MuxMonitors.shared.byPane[pane.id] { Task { await m.fitPhone(app, compact: false) } } }
+        .onChange(of: scenePhase) { _, phase in
+            // In the background the phone shows nothing: unzoom, with time granted to send it before iOS suspends Sidra.
+            away = phase == .background
+            guard away, let m = MuxMonitors.shared.byPane[pane.id] else { return }
+            #if os(iOS)
+            let grant = UIApplication.shared.beginBackgroundTask()
+            Task { await m.fitPhone(app, compact: false); UIApplication.shared.endBackgroundTask(grant) }
+            #else
+            Task { await m.fitPhone(app, compact: false) }
+            #endif
+        }
         .task { _ = MuxMonitors.shared.monitor(for: pane, app: app) }
         .onDisappear {
             if !app.allWorkspaces.contains(where: { $0.tabs.contains { $0.panes.contains { $0.id == pane.id } } }) { MuxMonitors.shared.remove(pane.id) }
@@ -210,6 +232,21 @@ struct MuxSpacesBar: View {
             .accessibilityLabel("Spaces and tabs" + (ws.map { ", showing \($0.label)" } ?? ""))
             .accessibilityIdentifier("herdr-drawer")
             Spacer(minLength: 4)
+            if let l = s.focusedLayout, l.panes.count > 1 {
+                // A split tab, one pane shown: step to the next pane.
+                let at = l.panes.firstIndex { $0.pane_id == l.focused_pane_id } ?? 0
+                Button { Task { await m.showPane(app, l.panes[(at + 1) % l.panes.count].pane_id) } } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "rectangle.split.2x1").font(.system(size: 11, weight: .semibold))
+                        Text("\(at + 1)/\(l.panes.count)").font(SidraFont.ui(11.5, weight: .bold)).monospacedDigit()
+                    }
+                    .foregroundStyle(SidraColor.text).padding(.horizontal, 8).frame(height: 24)
+                    .background(SidraColor.raised, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Pane \(at + 1) of \(l.panes.count). Show the next pane")
+            }
             if blocked > 0 {
                 HStack(spacing: 4) { HerdrStatusIcon(status: .blocked, size: 9); Text("\(blocked)").font(SidraFont.ui(11.5, weight: .bold)).foregroundStyle(SidraColor.text) }
                     .accessibilityLabel("\(blocked) \(blocked == 1 ? "agent needs" : "agents need") you")

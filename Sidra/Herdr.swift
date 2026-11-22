@@ -19,6 +19,8 @@ protocol MultiplexerAdapter: Sendable {
     func focusSpaceCommand(session: String?, space: String) -> String
     func focusAgentCommand(session: String?, pane: String) -> String
     func focusTabCommand(session: String?, tab: String) -> String
+    /// Zooms `pane`'s tab to that pane (focusing it), or unzooms the tab.
+    func zoomCommand(session: String?, pane: String, on: Bool) -> String
     func newTabCommand(session: String?, space: String) -> String
     /// A new space (herdr workspace) named `label` working in `folder`. Prints JSON with `.result.root_pane.pane_id`.
     func newSpaceCommand(session: String?, label: String, folder: String) -> String
@@ -64,6 +66,7 @@ struct HerdrAdapter: MultiplexerAdapter {
     func focusSpaceCommand(session: String?, space: String) -> String { "herdr" + Herdr.sessionArg(session) + " workspace focus " + Herdr.shellQuote(space) }
     func focusAgentCommand(session: String?, pane: String) -> String { "herdr" + Herdr.sessionArg(session) + " agent focus " + Herdr.shellQuote(pane) }
     func focusTabCommand(session: String?, tab: String) -> String { "herdr" + Herdr.sessionArg(session) + " tab focus " + Herdr.shellQuote(tab) }
+    func zoomCommand(session: String?, pane: String, on: Bool) -> String { "herdr" + Herdr.sessionArg(session) + " pane zoom " + Herdr.shellQuote(pane) + (on ? " --on" : " --off") }
     func newTabCommand(session: String?, space: String) -> String { "herdr" + Herdr.sessionArg(session) + " tab create --focus --workspace " + Herdr.shellQuote(space) }
     func newSpaceCommand(session: String?, label: String, folder: String) -> String {
         // The folder may start with ~, which only the shell expands; quote the rest.
@@ -198,6 +201,18 @@ struct MuxSnapshot: Decodable, Sendable {
     let tabs: [Tab]?
     let focused_pane_id: String?
     let panes: [PaneInfo]
+    /// Each tab's split: its panes and whether it is zoomed to one. Optional for older herdr.
+    struct Layout: Decodable, Sendable {
+        struct Cell: Decodable, Sendable { let pane_id: String }
+        let tab_id: String
+        let focused_pane_id: String?
+        let panes: [Cell]
+        let zoomed: Bool?
+    }
+    let layouts: [Layout]?
+    let focused_tab_id: String?
+    /// The split of the tab herdr shows.
+    var focusedLayout: Layout? { layouts?.first { $0.tab_id == focused_tab_id } }
     let focused_workspace_id: String?
     let version: String?
 
@@ -408,6 +423,35 @@ final class MuxMonitor {
               let r = try? await app.herdrRun(target, cmd) else { return false }
         await refresh(app)
         return r.exitCode == 0 && r.stdoutText.contains("\"result\"")
+    }
+
+    /// The split tab Sidra zoomed for a phone-width pane, so it can unzoom it when the phone leaves (Waseem, 2026-11-22).
+    /// herdr's zoom is shared by every client: the Mac shows the tab zoomed while the phone does.
+    private(set) var phoneZoomedTab: String?
+
+    /// Phone width: a split tab shows one pane (herdr's zoom on its focused pane). Not phone width, or a
+    /// different tab up: the tab Sidra zoomed is unzoomed, and herdr stays on the tab it was showing.
+    func fitPhone(_ app: AppModel, compact: Bool) async {
+        guard let s = snapshot else { return }
+        let up = s.focusedLayout
+        if let z = phoneZoomedTab, !compact || up?.tab_id != z {
+            phoneZoomedTab = nil
+            if let pane = s.layouts?.first(where: { $0.tab_id == z })?.focused_pane_id {
+                var cmd = adapter.zoomCommand(session: session, pane: pane, on: false)
+                // --off focuses that pane's tab: go back to the tab that was up.
+                if let current = up?.tab_id, current != z { cmd += " && " + adapter.focusTabCommand(session: session, tab: current) }
+                _ = await run(app, cmd)
+            }
+        }
+        if compact, let l = up, l.panes.count > 1, l.zoomed != true, let pane = l.focused_pane_id {
+            phoneZoomedTab = l.tab_id
+            _ = await run(app, adapter.zoomCommand(session: session, pane: pane, on: true))
+        }
+    }
+
+    /// Phone width: shows another pane of the zoomed split tab.
+    func showPane(_ app: AppModel, _ pane: String) async {
+        _ = await run(app, adapter.zoomCommand(session: session, pane: pane, on: true))
     }
 
     func focusTab(_ app: AppModel, _ tab: String) async {
