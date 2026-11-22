@@ -91,11 +91,17 @@ struct FloatingKeyboardPanel<G: Gesture>: View {
             var length: CGFloat = 0
             for i in trail.indices.dropFirst() { length += SwipeTyping.dist(trail[i - 1], trail[i]) }
             guard length > width * 0.9 else { return false }   // a tap, not a swipe
-            let words = SwipeTyping.decode(trail, keys: letters.mapValues { CGPoint(x: $0.midX, y: $0.midY) }, keyWidth: width, used: kb.swipeHistory)
+            let words = SwipeTyping.decode(trail, keys: letters.mapValues { CGPoint(x: $0.midX, y: $0.midY) }, keyWidth: width, used: kb.swipeHistory, after: Self.previousWord(kb.typed))
             guard !words.isEmpty else { return false }   // nothing fits: the touch types its starting letter instead
             kb.swipe(words)
             return true
         })
+    }
+
+    /// The last whole word before the cursor, for the next-word odds; nil at the start of a line or mid-word.
+    static func previousWord(_ typed: String) -> String? {
+        guard typed.last?.isWhitespace == true else { return nil }
+        return WordModel.sentences(typed).last?.last
     }
 
     @ViewBuilder private var strip: some View {

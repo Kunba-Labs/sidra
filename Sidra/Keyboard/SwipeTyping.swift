@@ -10,7 +10,9 @@ enum SwipeTyping {
 
     /// Best words first. `keys` maps "a"…"z" to key centres in the same space as `path`;
     /// `keyWidth` scales distances so a sloppy swipe on a big keyboard scores like one on a small one.
-    static func decode(_ path: [CGPoint], keys: [Character: CGPoint], keyWidth: CGFloat, language: String = "en_US", limit: Int = 4, used: [String: Int] = [:]) -> [String] {
+    /// `after`: the word before, for how often you follow it with each candidate (WordModel).
+    @MainActor static func decode(_ path: [CGPoint], keys: [Character: CGPoint], keyWidth: CGFloat, language: String = "en_US", limit: Int = 4, used: [String: Int] = [:], after prev: String? = nil) -> [String] {
+        let model = WordModel.shared
         guard path.count >= 2, keyWidth > 0, !keys.isEmpty else { return [] }
         let swipe = resample(path, samples)
         let swipeLength = length(path)
@@ -40,6 +42,8 @@ enum SwipeTyping {
                 }
             }
             // Words swiped before join even when iOS's list leaves them out (names, jargon).
+            // Your own words (Theasa prompts, lines you sent) join the same way, ranked mid-list unless iOS knows them.
+            for w in model.words(startingWith: s, endingIn: ends) where w.allSatisfy({ keys[$0] != nil }) { pool[w] = min(pool[w] ?? .max, 30) }
             for (w, _) in used where w.first == s && w.count >= 2 && w.allSatisfy({ keys[$0] != nil }) && ends.contains(w.last!) { pool[w] = min(pool[w] ?? .max, 0) }
             if s == "a" || s == "i", let one = keys[s], dist(one, path[path.count - 1]) < keyWidth { pool[String(s)] = 0 }   // the one-letter words
         }
@@ -58,7 +62,9 @@ enum SwipeTyping {
             let stretch = abs(log(Double(max(swipeLength, keyWidth * 0.5) / idealLength)))
             // Each use pulls a word up, less and less: picked once from the alternatives (3) is worth about
             // half a key's width of shape error.
-            let habit = 0.3 * log(Double(used[word] ?? 0) + 1)
+            // How much you use the word, and how often it follows the previous one: "pull request" over "pull requite".
+            let habit = 0.3 * log(Double(used[word] ?? 0) + 1) + 0.06 * log(Double(model.count(word)) + 1)
+                + 0.25 * log(Double(model.follows(word, after: prev)) + 1)
             return (word, shape + 0.9 * stretch + 0.12 * log(Double(rank) + 1) - habit)
         }
         return scored.sorted { $0.1 < $1.1 }.prefix(limit).map(\.0)

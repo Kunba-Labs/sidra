@@ -88,6 +88,11 @@ struct RootView: View {
             store.tabAccessory = { tab in SubstrateTabMark.accessory(for: tab) }
             store.attention = { [app] in MuxMonitors.shared.count(.blocked, live: Set(app.allWorkspaces.flatMap { $0.tabs.flatMap { $0.panes.map(\.id) } })) }
             PipelinesHub.shared.start()
+            // Your words for swipe and voice: each line sent with Sidra's keys, and your Theasa prompts once a day.
+            #if os(iOS)
+            FloatingKeyboard.shared.onLine = { WordModel.shared.learn($0) }
+            #endif
+            Task { await WordModel.shared.refreshFromTheasa() }
             if UserDefaults.standard.bool(forKey: "hackertab.open") { app.openSingle(.hackertab) }
         }
     }

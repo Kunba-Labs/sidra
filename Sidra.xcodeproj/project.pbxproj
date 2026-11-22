@@ -121,6 +121,7 @@
 		B5145760F4ED57BEC411375B /* GitLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7188AFC621B1D9E1EFB8CC4 /* GitLab.swift */; };
 		B913C402DDBB59A495B59D5A /* Notifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E196B90CD3E23D5A8642B9E4 /* Notifier.swift */; };
 		B97B54EEAD041A6E1FD2B4CA /* SubstrateDesktop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B2A9EA1F5F133DFEE656CAB /* SubstrateDesktop.swift */; };
+		B9C64D70522BB51AFC8349D1 /* WordModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B8474AFC839AAA5FC0D6CBF /* WordModel.swift */; };
 		BA25D9950CF47C88684ED41F /* HackerTabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5878234E78CAE96CF386F927 /* HackerTabUITests.swift */; };
 		BE265D46DCFEE3E497F53DF0 /* HerdrConnectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79C4F81745995413751B61AA /* HerdrConnectSheet.swift */; };
 		BE67F73EEF04D36498A08B32 /* SSHMoshUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A5640D612B671DEF0516D7B /* SSHMoshUITests.swift */; };
@@ -154,6 +155,7 @@
 		F3B50A34F450608051F45D1C /* SmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA53C89AF6EAA63E1ABAC641 /* SmokeTests.swift */; };
 		F402F5555A9BCAFABE9759C4 /* CI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CE3882D2B474C66E4A47CC6 /* CI.swift */; };
 		F54C10CBFB1A977F03FE4746 /* NewTabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835D989F13A564BB23920914 /* NewTabUITests.swift */; };
+		F63F05793C4504E801BC019E /* WordModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B8474AFC839AAA5FC0D6CBF /* WordModel.swift */; };
 		F6B9EC8C6A87955ED5F21628 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 64C542AF4A8DB04D5DB7B0AF /* WhisperKit */; };
 		F9857DFFC09F44DEC6F754E1 /* CommandRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BF97F13FCCEA3B5097ACB1 /* CommandRegistry.swift */; };
 		FAAE68B6F81C2ACE5FA5AF7A /* SubstrateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBAAB5658EC405F95ADBB43 /* SubstrateStore.swift */; };
@@ -208,6 +210,7 @@
 		1480327CDF081DB259C98E5F /* TheasaPulse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaPulse.swift; sourceTree = "<group>"; };
 		16A78597AF77F3BBAB81F25F /* SSHKeysTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHKeysTests.swift; sourceTree = "<group>"; };
 		19FFF77CC7CB50FA454494F7 /* Herdr.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Herdr.swift; sourceTree = "<group>"; };
+		1B8474AFC839AAA5FC0D6CBF /* WordModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordModel.swift; sourceTree = "<group>"; };
 		1B9151B661C8A5150FD6B3DD /* TheasaTurn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaTurn.swift; sourceTree = "<group>"; };
 		21F90D9F3ACAEC2FB0ADCA51 /* SceneStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneStore.swift; sourceTree = "<group>"; };
 		2323BA0EF5F04A337E394E14 /* SwipeTyping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeTyping.swift; sourceTree = "<group>"; };
@@ -377,6 +380,7 @@
 			children = (
 				CCFB137D3245A2A62F70ECB5 /* FloatingKeyboardPanel.swift */,
 				2323BA0EF5F04A337E394E14 /* SwipeTyping.swift */,
+				1B8474AFC839AAA5FC0D6CBF /* WordModel.swift */,
 			);
 			path = Keyboard;
 			sourceTree = "<group>";
@@ -883,6 +887,7 @@
 				8C757D4D63D9B6A172165FE2 /* TheasaStore.swift in Sources */,
 				4CA48703B87A8CEA83D0A3E5 /* TheasaTurn.swift in Sources */,
 				2553C3C8A4C8DBF875700ABD /* VoiceInput.swift in Sources */,
+				B9C64D70522BB51AFC8349D1 /* WordModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -939,6 +944,7 @@
 				D329A6E8E848BD422D1D1A71 /* TheasaStore.swift in Sources */,
 				CD424996DA892604811FC96E /* TheasaTurn.swift in Sources */,
 				80C7DE4FD589E3B35B8C54A2 /* VoiceInput.swift in Sources */,
+				F63F05793C4504E801BC019E /* WordModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

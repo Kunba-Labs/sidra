@@ -263,9 +263,13 @@ public final class FloatingKeyboard {
         if k != .paste { typed = "" }   // a paste reports its text (pasted(_:))
     }
 
+    /// Each line sent with return, as typed on these keys: the app learns your words from it.
+    @ObservationIgnored public var onLine: ((String) -> Void)?
+
     public func enter() {
         alternatives = []; lastSwiped = nil
         learn()
+        if !typed.trimmingCharacters(in: .whitespaces).isEmpty { onLine?(typed) }
         forward { target?.keyboardInsert("\n", ctrl: false, alt: false) }
         line = ""; typed = ""
     }

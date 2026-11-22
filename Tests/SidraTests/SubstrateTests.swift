@@ -54,3 +54,16 @@ final class SubstrateTests: XCTestCase {
         XCTAssertEqual(Substrate.stageLabel(r), "in review")
     }
 }
+
+/// The word model behind swipe ranking and voice hints (2026-11-22).
+@MainActor final class WordModelTests: XCTestCase {
+    func testLearnsWordsAndWhatFollows() {
+        XCTAssertEqual(WordModel.sentences("Open the PR. Merge it!"), [["open", "the", "pr"], ["merge", "it"]])
+        let m = WordModel.shared
+        let before = m.count("zqxherdr")
+        m.learn("restart zqxherdr now. restart zqxherdr")
+        XCTAssertEqual(m.count("zqxherdr"), before + 2)
+        XCTAssertGreaterThanOrEqual(m.follows("zqxherdr", after: "restart"), 2)
+        XCTAssertEqual(m.follows("zqxherdr", after: "now"), 0, "a sentence break is not a pair")
+    }
+}

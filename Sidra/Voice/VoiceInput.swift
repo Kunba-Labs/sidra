@@ -199,7 +199,7 @@ final class VoiceInput {
             let text: String
             await live?.value   // one decode at a time on the Whisper instance
             do {
-                if sessionEngine == .whisper, let whisper { text = Self.tidy(try await Self.decode(whisper, audioStore.all, final: true)) }
+                if sessionEngine == .whisper, let whisper { text = Self.tidy(try await Self.decode(whisper, audioStore.all, final: true, hint: WordModel.shared.projectWords(40).joined(separator: ", "))) }
                 else { text = Self.tidy(await finishApple()) }
             } catch {
                 guard session == id else { return }
@@ -231,6 +231,7 @@ final class VoiceInput {
     }
 
     private func place(_ text: String, in dest: DictationSurface?) {
+        WordModel.shared.learn(text)
         #if os(macOS)
         if let t = dest, t.window != nil, !t.isHiddenOrHasHiddenAncestor, !t.lost {
             t.window?.makeFirstResponder(t)
@@ -377,6 +378,10 @@ final class VoiceInput {
             guard !Task.isCancelled, session == id else { return }
         }
         let analyzer = SpeechAnalyzer(modules: [transcriber])
+        // Your project words (herdr, Theasa, repo names) as hints, so dictation spells them as you do.
+        let context = AnalysisContext()
+        context.contextualStrings[.general] = WordModel.shared.projectWords()
+        try? await analyzer.setContext(context)
         let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber])
         guard !Task.isCancelled, session == id else { return }
         appleFormat = format
@@ -477,17 +482,19 @@ final class VoiceInput {
             try? await Task.sleep(for: .milliseconds(1200))
             guard phase == .recording, audioStore.count > 8_000, !busy, let whisper else { continue }
             busy = true
-            let text = (try? await Self.decode(whisper, Array(audioStore.all.suffix(16_000 * 28)), final: false)) ?? ""
+            let text = (try? await Self.decode(whisper, Array(audioStore.all.suffix(16_000 * 28)), final: false, hint: WordModel.shared.projectWords(40).joined(separator: ", "))) ?? ""
             busy = false
             if phase == .recording, !text.isEmpty { partial = text }
         }
     }
 
-    static func decode(_ whisper: WhisperKit, _ audio: [Float], final: Bool) async throws -> String {
+    /// `hint`: your project words, as Whisper's prompt ("previous text"), so it spells them as you do.
+    static func decode(_ whisper: WhisperKit, _ audio: [Float], final: Bool, hint: String = "") async throws -> String {
         var padded = audio
         if padded.count < 32_000 { padded += [Float](repeating: 0, count: 32_000 - padded.count) }   // Whisper skips sub-second clips
-        let options = DecodingOptions(task: .transcribe, language: nil, temperatureFallbackCount: final ? 2 : 0,
+        var options = DecodingOptions(task: .transcribe, language: nil, temperatureFallbackCount: final ? 2 : 0,
                                       skipSpecialTokens: true, withoutTimestamps: true, suppressBlank: true, chunkingStrategy: final ? .vad : nil)
+        if !hint.isEmpty, let tokens = whisper.tokenizer?.encode(text: " " + hint) { options.promptTokens = tokens }
         let results = try await whisper.transcribe(audioArray: padded, decodeOptions: options)
         return results.map(\.text).joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
     }
