@@ -65,7 +65,9 @@ public final class FloatingKeyboard {
     public private(set) var often: [(command: String, count: Int)] = []
     public var pasteLabel = "⌘V"
 
-    private var line: String? = ""
+    /// What was typed since the last return; nil once it can't be followed (history, arrows, ctrl).
+    /// The phone's keyboard shows it above the keys, since the keys cover the terminal's own line.
+    public private(set) var line: String? = ""
     private var counts: [String: Int]
 
     private init() {

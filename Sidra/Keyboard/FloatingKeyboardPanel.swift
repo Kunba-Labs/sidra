@@ -130,6 +130,7 @@ struct FloatingKeyboardPanel<G: Gesture>: View {
                 }
             }
             .frame(height: 22).contentShape(Rectangle()).gesture(grab)
+            if compact, let typed = kb.line, !typed.isEmpty { typedRow(typed) }
             strip.padding(.bottom, 8).padding(.trailing, 30)   // clear of the corner mic
             HStack(alignment: .top, spacing: 6) {
                     VStack(spacing: 5) { ForEach(Array((compact ? compactRows : rows).enumerated()), id: \.offset) { i, row in if compact && i == 0 { scrollingRow(row) } else { keyRow(row) } } }
@@ -153,6 +154,20 @@ struct FloatingKeyboardPanel<G: Gesture>: View {
             }
         }
         .shadow(color: .black.opacity(0.55), radius: 30, y: 16)
+    }
+
+    /// Phone: the keys cover the terminal's input line, so what you type shows here until return.
+    private func typedRow(_ text: String) -> some View {
+        HStack(spacing: 0) {
+            Text(text).font(SidraFont.mono(14)).foregroundStyle(SidraColor.terminalText).lineLimit(1).truncationMode(.head)
+            Rectangle().fill(SidraColor.jade).frame(width: 2, height: 17).padding(.leading, 1)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10).frame(height: 34)
+        .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline))
+        .padding(.trailing, 30).padding(.bottom, 8)   // clear of the corner mic
+        .accessibilityElement().accessibilityLabel("Typed: \(text)")
     }
 
     private var oftenRow: some View {
@@ -393,7 +408,9 @@ private struct KeyCap: View {
     /// The swipe's finger is over this key: a darker fill shows where the finger is.
     var swipeOver = false
     @State private var pressed = false
-    private var lit: Bool { pressed && !swiping }
+    /// A quick tap ends before its press is drawn: the pressed look stays at least this long, as on Apple's keyboard.
+    @State private var lingering = false
+    private var lit: Bool { (pressed || lingering) && !swiping }
     @State private var repeater: Task<Void, Never>?
 
     var body: some View {
@@ -442,7 +459,12 @@ private struct KeyCap: View {
             }
             .onEnded { _ in
                 pressed = false; repeater?.cancel(); repeater = nil
-                if let swipe, !swipe.ended() { action() }
+                let tapped = swipe.map { !$0.ended() } ?? true   // false: a swipe typed a word
+                if swipe != nil, tapped { action() }
+                if tapped {
+                    lingering = true
+                    Task { @MainActor in try? await Task.sleep(for: .milliseconds(110)); lingering = false }
+                }
             })
         .onDisappear { repeater?.cancel(); repeater = nil }
         .accessibilityLabel(cap.label.isEmpty ? "space" : cap.label)
