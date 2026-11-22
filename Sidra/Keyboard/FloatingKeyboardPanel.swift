@@ -45,6 +45,12 @@ struct FloatingKeyboardLayer: View {
     }
 }
 
+/// A light tap under the finger on each key press, like Apple's keyboard with Keyboard Feedback on. iPhone only: an iPad has no Taptic Engine.
+@MainActor enum KeyHaptic {
+    private static let generator = UIImpactFeedbackGenerator(style: .light)
+    static func tap() { generator.impactOccurred(intensity: 0.6) }
+}
+
 struct KeyboardCap {
     enum Action { case text(String), key(SidraKeyRow.Key), backspace, enter, shift, ctrl, alt, hide, language, returnSlot }
     let label: String
@@ -130,7 +136,7 @@ struct FloatingKeyboardPanel<G: Gesture>: View {
                 }
             }
             .frame(height: 22).contentShape(Rectangle()).gesture(grab)
-            if compact, let typed = kb.line, !typed.isEmpty { typedRow(typed) }
+            if compact, !kb.typed.isEmpty { typedRow(kb.typed) }
             strip.padding(.bottom, 8).padding(.trailing, 30)   // clear of the corner mic
             HStack(alignment: .top, spacing: 6) {
                     VStack(spacing: 5) { ForEach(Array((compact ? compactRows : rows).enumerated()), id: \.offset) { i, row in if compact && i == 0 { scrollingRow(row) } else { keyRow(row) } } }
@@ -314,12 +320,13 @@ private struct ReturnKey: View {
             let top = rects.min { $0.minY < $1.minY }!, bottom = rects.max { $0.minY < $1.minY }!
             let shape = LShape(top: top, bottom: bottom)
             ZStack(alignment: .topLeading) {
-                shape.fill(pressed ? Color(hex: 0x56606f) : Color(hex: 0x2f3640)).shadow(color: Color(hex: 0x0a0c10), radius: 0, y: pressed ? 0 : 1.5)
+                let down = pressed || FloatingKeyboard.shared.held.contains("return")
+                shape.fill(down ? Color(hex: 0x56606f) : Color(hex: 0x2f3640)).shadow(color: Color(hex: 0x0a0c10), radius: 0, y: down ? 0 : 1.5)
                 Text("return").font(SidraFont.ui(13)).foregroundStyle(Color(hex: 0xe6e9ee))
                     .frame(width: bottom.width, height: bottom.height).offset(x: bottom.minX, y: bottom.minY)
             }
             .contentShape(shape)
-            .gesture(DragGesture(minimumDistance: 0).onChanged { _ in if !pressed { pressed = true; action() } }.onEnded { _ in pressed = false })
+            .gesture(DragGesture(minimumDistance: 0).onChanged { _ in if !pressed { pressed = true; KeyHaptic.tap(); action() } }.onEnded { _ in pressed = false })
             .accessibilityElement().accessibilityLabel("return").accessibilityAddTraits(.isButton).accessibilityAction { action() }
         }
     }
@@ -410,7 +417,22 @@ private struct KeyCap: View {
     @State private var pressed = false
     /// A quick tap ends before its press is drawn: the pressed look stays at least this long, as on Apple's keyboard.
     @State private var lingering = false
-    private var lit: Bool { (pressed || lingering) && !swiping }
+    /// The matching hardware key is down: the key lights (no letter bubble).
+    private var hardwareDown: Bool {
+        let id: String? = switch cap.action {
+        case .text(let s): s
+        case .key(let k): ["esc": "esc", "tab": "tab", "↑": "↑", "↓": "↓", "←": "←", "→": "→"][k.rawValue]
+        case .backspace: "⌫"
+        case .enter: "return"
+        case .shift: "⇧"
+        case .ctrl: "ctrl"
+        case .alt: "alt"
+        default: nil
+        }
+        return id.map(FloatingKeyboard.shared.held.contains) ?? false
+    }
+    private var touched: Bool { (pressed || lingering) && !swiping }
+    private var lit: Bool { touched || hardwareDown }
     @State private var repeater: Task<Void, Never>?
 
     var body: some View {
@@ -427,7 +449,7 @@ private struct KeyCap: View {
         .animation(.easeOut(duration: 0.06), value: lit)
         // Letters and symbols pop up above the finger, which hides the key itself.
         .overlay(alignment: .top) {
-            if lit, cap.style == .letter || cap.style == .symbol, !cap.label.isEmpty {
+            if touched, cap.style == .letter || cap.style == .symbol, !cap.label.isEmpty {
                 Text(cap.label).font(cap.style == .letter ? SidraFont.ui(24, weight: .semibold) : SidraFont.mono(20))
                     .foregroundStyle(Color(hex: 0xf2f4f7))
                     .frame(minWidth: 44).frame(height: 50)
@@ -443,12 +465,13 @@ private struct KeyCap: View {
             .onChanged { v in
                 if let swipe {
                     // Letters: follow the finger for a swipe; the letter itself types on lift-off.
-                    if !pressed { pressed = true; swipe.moved(v.startLocation) }
+                    if !pressed { pressed = true; KeyHaptic.tap(); swipe.moved(v.startLocation) }
                     swipe.moved(v.location)
                     return
                 }
                 guard !pressed else { return }
                 pressed = true
+                KeyHaptic.tap()
                 action()
                 if cap.repeats {
                     repeater = Task { @MainActor in

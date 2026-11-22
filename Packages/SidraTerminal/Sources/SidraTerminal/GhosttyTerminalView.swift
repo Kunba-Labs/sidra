@@ -678,6 +678,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
 
     public override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
         FloatingKeyboard.shared.externalInput()
+        FloatingKeyboard.shared.hardware(presses, down: true)
         withdrawSend()
         var handled = false
         for press in presses {
@@ -760,10 +761,12 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     }
 
     public override func pressesEnded(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        FloatingKeyboard.shared.hardware(presses, down: false)
         stopRepeat(presses); super.pressesEnded(presses, with: event)
     }
 
     public override func pressesCancelled(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+        FloatingKeyboard.shared.hardware(presses, down: false)
         stopRepeat(presses); super.pressesCancelled(presses, with: event)
     }
 

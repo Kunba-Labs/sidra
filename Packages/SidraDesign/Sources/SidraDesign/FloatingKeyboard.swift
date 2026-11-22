@@ -66,8 +66,10 @@ public final class FloatingKeyboard {
     public var pasteLabel = "⌘V"
 
     /// What was typed since the last return; nil once it can't be followed (history, arrows, ctrl).
-    /// The phone's keyboard shows it above the keys, since the keys cover the terminal's own line.
-    public private(set) var line: String? = ""
+    private var line: String? = ""
+    /// What was typed on these keys since the last return, tap, arrow or other input: the phone's keyboard
+    /// shows it above the keys, which cover the terminal's own line (Waseem, 2026-11-22).
+    public private(set) var typed = ""
     private var counts: [String: Int]
 
     private init() {
@@ -95,7 +97,7 @@ public final class FloatingKeyboard {
     }
 
     public func focus(_ t: any FloatingKeyboardTarget) {
-        if target !== t { line = ""; alternatives = []; lastSwiped = nil }
+        if target !== t { line = ""; typed = ""; alternatives = []; lastSwiped = nil }
         target = t; focused = true; pasteLabel = t.keyboardPasteLabel
         targetWindow = ((t as? UIView)?.window).map(ObjectIdentifier.init)
     }
@@ -143,7 +145,7 @@ public final class FloatingKeyboard {
     /// Swaps the last swiped word for one of its alternatives.
     public func replaceSwipe(with word: String) {
         guard let last = lastSwiped, let t = target, t === swipeTarget else { alternatives = []; lastSwiped = nil; undoingVoice = false; return }
-        for _ in last { forward { target?.keyboardBackspace() }; if var l = line { if !l.isEmpty { l.removeLast() }; line = l } }
+        for _ in last { forward { target?.keyboardBackspace() }; if var l = line { if !l.isEmpty { l.removeLast() }; line = l }; if !typed.isEmpty { typed.removeLast() } }
         if undoingVoice {   // a dictation: put the original back as is, no swipe learning
             undoingVoice = false
             insert(word); lastSwiped = nil; alternatives = []
@@ -165,17 +167,45 @@ public final class FloatingKeyboard {
     private var forwarding = false
     private func forward(_ body: () -> Void) { forwarding = true; body(); forwarding = false }
 
+    /// Hardware keys held down, by the on-screen key they match ("a", "return", "⇧"…): those keys light up.
+    public private(set) var held: Set<String> = []
+
+    /// The on-screen key a hardware key matches, if any.
+    public static func keyID(_ key: UIKey) -> String? {
+        switch key.keyCode {
+        case .keyboardReturnOrEnter, .keypadEnter: "return"
+        case .keyboardDeleteOrBackspace: "⌫"
+        case .keyboardTab: "tab"
+        case .keyboardEscape: "esc"
+        case .keyboardSpacebar: " "
+        case .keyboardLeftShift, .keyboardRightShift: "⇧"
+        case .keyboardLeftControl, .keyboardRightControl: "ctrl"
+        case .keyboardLeftAlt, .keyboardRightAlt: "alt"
+        case .keyboardUpArrow: "↑"
+        case .keyboardDownArrow: "↓"
+        case .keyboardLeftArrow: "←"
+        case .keyboardRightArrow: "→"
+        default: key.charactersIgnoringModifiers.isEmpty ? nil : key.charactersIgnoringModifiers.lowercased()
+        }
+    }
+
+    public func hardware(_ presses: Set<UIPress>, down: Bool) {
+        guard visible else { if !held.isEmpty { held = [] }; return }
+        for p in presses { if let k = p.key, let id = Self.keyID(k) { if down { held.insert(id) } else { held.remove(id) } } }
+    }
+
     /// Called by targets on every input or cursor move. Anything not from this keyboard means the
     /// swiped word may no longer sit before the cursor: drop the alternatives and the line followed.
     public func externalInput() {
         guard !forwarding else { return }
         if !alternatives.isEmpty { alternatives = [] }
-        lastSwiped = nil; line = nil
+        lastSwiped = nil; line = nil; typed = ""
     }
 
     private func insert(_ text: String) {
         forward { target?.keyboardInsert(text, ctrl: false, alt: false) }
         line = line.map { $0 + text }
+        typed += text
     }
 
     public func type(_ s: String) {
@@ -186,25 +216,28 @@ public final class FloatingKeyboard {
         shift = false; ctrl = false; alt = false
         forward { target?.keyboardInsert(text, ctrl: c, alt: a) }
         line = (c || a) ? nil : line.map { $0 + text }
+        if c || a { typed = "" } else { typed += text }
     }
 
     public func backspace() {
         alternatives = []; lastSwiped = nil
         forward { target?.keyboardBackspace() }
         if var l = line { if !l.isEmpty { l.removeLast() }; line = l }
+        if !typed.isEmpty { typed.removeLast() }
     }
 
     public func key(_ k: SidraKeyRow.Key) {
         alternatives = []; lastSwiped = nil
         forward { target?.keyboardKey(k) }
         line = nil   // the line can no longer be followed (history, completion, cursor moves)
+        typed = ""
     }
 
     public func enter() {
         alternatives = []; lastSwiped = nil
         learn()
         forward { target?.keyboardInsert("\n", ctrl: false, alt: false) }
-        line = ""
+        line = ""; typed = ""
     }
 
     /// Pastes into `expected` only if it still has focus; otherwise the text goes to the clipboard.
@@ -212,7 +245,7 @@ public final class FloatingKeyboard {
     public func paste(_ text: String, into expected: (any FloatingKeyboardTarget)?) -> Bool {
         guard let t = target, let expected, t === expected else { UIPasteboard.general.string = text; return false }
         forward { t.keyboardPaste(text) }
-        line = nil
+        line = nil; typed += text
         return true
     }
 
@@ -220,6 +253,7 @@ public final class FloatingKeyboard {
     public func insertCommand(_ cmd: String) {
         forward { target?.keyboardInsert(cmd, ctrl: false, alt: false) }
         line = line.map { $0 + cmd }
+        typed += cmd
     }
 
     // MARK: Learning
