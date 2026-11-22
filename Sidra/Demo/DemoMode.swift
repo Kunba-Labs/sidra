@@ -127,6 +127,7 @@ enum DemoMode {
             c(dim, "  ⎿  ") + c(green, "PASS") + " test/auth/login.test.ts (14 tests)",
             c(orange, "● ") + c(bold, "Read") + c(dim, "(login.png)"),
             c(dim, "  ⎿  ") + "/home/dev/webapp/login.png",
+            c(dim, "  ⎿  ") + "/home/dev/api/flow.png",
             "",
             "",
             "",

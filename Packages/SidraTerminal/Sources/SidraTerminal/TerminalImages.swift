@@ -115,6 +115,9 @@ public enum TerminalLinks {
     /// Paths that could not be read, and when; tried again after 15 s (the file may not exist yet).
     private var failed: [String: Date] = [:]
     private var lastLayout: [String] = []
+    /// Image paths on screen now. A load checks this, not `lastLayout`, which another load's redraw clears:
+    /// two paths on adjacent lines lost the second image to that race (Waseem, 2026-11-22).
+    private var onScreenPaths: Set<String> = []
     /// Images pasted from this device, by their path on the far side: shown without reading them back,
     /// since a read shares the shell's SSH connection and typing waited behind it (Waseem, 2026-11-19).
     private var local: [String: PlatformImage] = [:]
@@ -141,6 +144,7 @@ public enum TerminalLinks {
         lastLayout = signature
         // Only images whose path is on screen stay in memory; scrolling back fetches them again.
         let onScreen = Set(found.map(\.path))
+        onScreenPaths = onScreen
         images = images.filter { onScreen.contains($0.key) }
         failed = failed.filter { onScreen.contains($0.key) }
         var seen = Set<String>()
@@ -223,7 +227,7 @@ public enum TerminalLinks {
             let data = await fetch(path)
             guard let self else { return }
             self.pending.remove(path)
-            if let data, let image = PlatformImage(data: data), self.lastLayout.contains(where: { $0.hasSuffix(":" + path) }) {
+            if let data, let image = PlatformImage(data: data), self.onScreenPaths.contains(path) {
                 self.images[path] = image
                 self.lastLayout = []   // lay out again with the new image
                 self.redraw()
