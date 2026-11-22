@@ -246,10 +246,14 @@ public final class FloatingKeyboard {
     }
 
     public func backspace() {
-        alternatives = []; lastSwiped = nil
-        forward { target?.keyboardBackspace() }
-        if var l = line { if !l.isEmpty { l.removeLast() }; line = l }
-        if !typed.isEmpty { typed.removeLast() }
+        // Right after a swipe, backspace takes the whole swiped word and its space, as on Apple's keyboard (Waseem, 2026-11-22).
+        let n = !undoingVoice && target === swipeTarget ? max(1, lastSwiped?.count ?? 1) : 1
+        alternatives = []; lastSwiped = nil; undoingVoice = false
+        for _ in 0..<n {
+            forward { target?.keyboardBackspace() }
+            if var l = line { if !l.isEmpty { l.removeLast() }; line = l }
+            if !typed.isEmpty { typed.removeLast() }
+        }
     }
 
     public func key(_ k: SidraKeyRow.Key) {

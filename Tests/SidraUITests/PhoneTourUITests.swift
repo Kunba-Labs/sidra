@@ -65,6 +65,8 @@ final class PhoneTourUITests: XCTestCase {
             // A swipe across the letters: its suggestions float above the keyboard, clear of the typed line.
             app.buttons["t"].firstMatch.press(forDuration: 0.05, thenDragTo: app.buttons["o"].firstMatch)
             sleep(1); shot("g-keyboard-swipe")
+            app.buttons["⌫"].firstMatch.tap(); sleep(1)
+            XCTAssertTrue(app.descendants(matching: .any)["Typed: ls -la"].exists, "one backspace after a swipe takes the whole swiped word")
             // A finger between two keys types the nearer one (no gap falls through to the terminal as a click).
             app.buttons["return"].firstMatch.tap(); sleep(1)
             let h = app.buttons["h"].firstMatch.frame, j = app.buttons["j"].firstMatch.frame
