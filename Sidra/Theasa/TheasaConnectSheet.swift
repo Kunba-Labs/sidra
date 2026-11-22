@@ -96,9 +96,13 @@ struct TheasaConnectSheet: View {
             Image(systemName: "server.rack").font(.system(size: 15)).foregroundStyle(SidraColor.muted)
                 .frame(width: 34, height: 34).background(SidraColor.tabActive, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             VStack(alignment: .leading, spacing: 5) {
-                Text(c.name).font(SidraFont.ui(13, weight: .bold)).foregroundStyle(SidraColor.text)
-                FooterChip([.init(c.url, color: SidraColor.muted), .init(store.token(c) == nil ? "no token" : "token saved", color: store.token(c) == nil ? SidraColor.yellow : SidraColor.muted)]
-                           + (store.active?.id == c.id ? [.init("in use", color: SidraColor.jade)] : []))
+                Text(c.name).font(SidraFont.ui(13, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
+                Text(c.url).font(SidraFont.ui(12)).foregroundStyle(SidraColor.muted).lineLimit(1).truncationMode(.middle)
+                HStack(spacing: 8) {
+                    Text(store.token(c) == nil ? "no token" : "token saved").foregroundStyle(store.token(c) == nil ? SidraColor.yellow : SidraColor.dim)
+                    if store.active?.id == c.id { Text("in use").foregroundStyle(SidraColor.jade) }
+                }
+                .font(SidraFont.ui(11.5, weight: .semibold)).lineLimit(1)
             }
             Spacer()
             IconButton("pencil", label: "Edit \(c.name)", size: 30) {

@@ -46,6 +46,13 @@ public struct PaneCard<Content: View, Extra: View, Footer: View>: View {
         self.footer = footer
     }
 
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var phone: Bool { sizeClass == .compact }
+    #else
+    private let phone = false
+    #endif
+
     public var body: some View {
         VStack(spacing: 0) {
             header
@@ -76,12 +83,25 @@ public struct PaneCard<Content: View, Extra: View, Footer: View>: View {
             .lineLimit(1)
             Spacer(minLength: 8)
             extra()
+            if phone {
+                // A phone: the split and size actions in one menu, so the title keeps its room.
+                Menu {
+                    Button("Split right", systemImage: "rectangle.split.2x1", action: actions.splitRight)
+                    Button("Split down", systemImage: "rectangle.split.1x2", action: actions.splitDown)
+                    Button(maximized ? "Restore" : "Maximize", systemImage: maximized ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right", action: actions.maximize)
+                } label: {
+                    Image(systemName: "ellipsis").font(.system(size: 13, weight: .semibold)).foregroundStyle(SidraColor.muted).frame(width: 30, height: 30).contentShape(Rectangle())
+                }
+                .accessibilityLabel("Pane actions")
+                IconButton("xmark", label: "Close pane", action: actions.close)
+            } else {
             HStack(spacing: 4) {
                 IconButton("rectangle.split.2x1", label: "Split right", action: actions.splitRight)
                 IconButton("rectangle.split.1x2", label: "Split down", action: actions.splitDown)
                 IconButton(maximized ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right",
                            label: maximized ? "Restore" : "Maximize", action: actions.maximize)
                 IconButton("xmark", label: "Close pane", action: actions.close)
+            }
             }
         }
         .padding(.leading, 14)
@@ -91,12 +111,14 @@ public struct PaneCard<Content: View, Extra: View, Footer: View>: View {
 
     @ViewBuilder private var footerBar: some View {
         let f = footer()
-        HStack(spacing: 14) { f }
+        // Too wide for the pane (a phone): the footer scrolls sideways.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 14) { f }.padding(.horizontal, 14).frame(maxWidth: .infinity, alignment: .leading)
+            ScrollView(.horizontal, showsIndicators: false) { HStack(spacing: 14) { f }.padding(.horizontal, 14) }
+        }
             .font(SidraFont.mono(11.5))
             .foregroundStyle(SidraColor.dim)
-            .padding(.horizontal, 14)
             .frame(height: SidraSpace.paneFooterHeight)
-            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

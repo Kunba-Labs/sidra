@@ -389,6 +389,7 @@ public struct FooterChip: View {
         .frame(height: 18)
         .background(Color(hex: 0x1b2028), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(Color.white.opacity(0.07)))
+        .fixedSize()   // labels never cut short ("spa… 4"); a full footer scrolls instead (PaneCard)
     }
 }
 

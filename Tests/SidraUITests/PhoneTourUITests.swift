@@ -31,6 +31,8 @@ final class PhoneTourUITests: XCTestCase {
         let drawer = app.buttons["herdr-drawer"].firstMatch
         if drawer.waitForExistence(timeout: 5) {
             drawer.tap(); sleep(1); shot("c0-herdr-drawer")
+            let more = app.buttons["Show mobile's 2 tabs"].firstMatch
+            if more.exists { more.tap(); sleep(1); shot("c0-herdr-drawer-tabs") }
             app.buttons["Close"].firstMatch.tap(); sleep(1)
         }
         for i in 1...8 {

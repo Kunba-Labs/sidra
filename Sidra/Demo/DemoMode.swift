@@ -75,8 +75,13 @@ enum DemoMode {
         let agents = [agent("claude", "blocked", "w1", "1", "Rate limit login"), agent("codex", "working", "w1", "2", "Fix flaky test"),
                       agent("claude", "working", "w2", "1", "Add /v2/orders"), agent("claude", "working", "w3", "1", "Dark mode"),
                       agent("codex", "idle", "w3", "2", "Release notes"), agent("claude", "done", "w4", "1", "API guide")]
+        // A tab per agent, named for its task; t1 is the one up.
+        let tabs = [("w1", 1, "Rate limit login", "blocked"), ("w1", 2, "Fix flaky test", "working"), ("w2", 1, "Add /v2/orders", "working"),
+                    ("w3", 1, "Dark mode", "working"), ("w3", 2, "Release notes", "idle"), ("w4", 1, "API guide", "done")].map { ws, n, label, status in
+            #"{"tab_id":"\#(ws):t\#(n)","workspace_id":"\#(ws)","label":"\#(label)","number":\#(n),"focused":\#(n == 1),"agent_status":"\#(status)"}"#
+        }
         let panes = ["w1", "w2", "w3", "w4"].map { #"{"pane_id":"\#($0):p1","workspace_id":"\#($0)","cwd":"/home/dev/\#(["w1": "webapp", "w2": "api", "w3": "mobile", "w4": "docs"][$0]!)"}"# }
-        return #"{"id":"cli:api:snapshot","result":{"snapshot":{"version":"0.9.1","protocol":22,"focused_workspace_id":"\#(focused)","focused_pane_id":"\#(focused):p1","focused_tab_id":"\#(focused):t1","workspaces":[\#(spaces.joined(separator: ","))],"agents":[\#(agents.joined(separator: ","))],"panes":[\#(panes.joined(separator: ","))],"tabs":[],"layouts":[]}}}"#
+        return #"{"id":"cli:api:snapshot","result":{"snapshot":{"version":"0.9.1","protocol":22,"focused_workspace_id":"\#(focused)","focused_pane_id":"\#(focused):p1","focused_tab_id":"\#(focused):t1","workspaces":[\#(spaces.joined(separator: ","))],"agents":[\#(agents.joined(separator: ","))],"panes":[\#(panes.joined(separator: ","))],"tabs":[\#(tabs.joined(separator: ","))],"layouts":[]}}}"#
     }
 
     /// The made-up projects' icons, from tools/dev/demo-icons in this checkout.
@@ -110,6 +115,10 @@ enum DemoMode {
             "",
             c(orange, "● ") + c(bold, "Bash") + c(dim, "(npm test -- auth)"),
             c(dim, "  ⎿  ") + c(green, "PASS") + " test/auth/login.test.ts (14 tests)",
+            c(orange, "● ") + c(bold, "Read") + c(dim, "(login.png)"),
+            c(dim, "  ⎿  ") + "/home/dev/webapp/login.png",
+            "",
+            "",
             "",
             "╭────────────────────────────────────────────╮",
             "│ " + c(bold, "Run database migration?") + "                    │",
