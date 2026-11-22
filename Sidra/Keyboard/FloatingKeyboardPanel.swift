@@ -136,7 +136,7 @@ struct FloatingKeyboardPanel<G: Gesture>: View {
                 }
             }
             .frame(height: 22).contentShape(Rectangle()).gesture(grab)
-            if compact, !kb.typed.isEmpty { typedRow(kb.typed) }
+            if compact { typedRow(kb.typed) }   // always there, so the keys never jump when it fills
             strip.padding(.bottom, 8).padding(.trailing, 30)   // clear of the corner mic
             HStack(alignment: .top, spacing: 6) {
                     VStack(spacing: 5) { ForEach(Array((compact ? compactRows : rows).enumerated()), id: \.offset) { i, row in if compact && i == 0 { scrollingRow(row) } else { keyRow(row) } } }
@@ -173,7 +173,7 @@ struct FloatingKeyboardPanel<G: Gesture>: View {
         .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline))
         .padding(.trailing, 30).padding(.bottom, 8)   // clear of the corner mic
-        .accessibilityElement().accessibilityLabel("Typed: \(text)")
+        .accessibilityElement().accessibilityLabel(text.isEmpty ? "Nothing typed" : "Typed: \(text)")
     }
 
     private var oftenRow: some View {
