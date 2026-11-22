@@ -198,7 +198,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
         let p = g.location(in: self)
         if engine.mouseTracking {
             switch g.state {
-            case .began: _ = report(.press, .left, at: p)
+            case .began: let t = g.translation(in: self); _ = report(.press, .left, at: CGPoint(x: p.x - t.x, y: p.y - t.y))
             case .changed: _ = report(.motion, .left, at: p)
             case .ended, .cancelled, .failed: _ = report(.release, .left, at: p)
             default: break
@@ -207,7 +207,9 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
         }
         switch g.state {
         case .began:
-            selectionAnchor = cell(at: p)
+            // The pan is recognised ~10 pt after touch-down (a character on a phone): anchor where the finger landed.
+            let t = g.translation(in: self)
+            selectionAnchor = cell(at: CGPoint(x: p.x - t.x, y: p.y - t.y))
         case .changed:
             if let a = selectionAnchor { engine.select(from: a, to: cell(at: p)); setNeedsDisplay() }
         case .ended:
