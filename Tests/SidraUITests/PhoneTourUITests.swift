@@ -62,6 +62,9 @@ final class PhoneTourUITests: XCTestCase {
         if app.buttons["return"].waitForExistence(timeout: 5) {
             for k in ["l", "s", " ", "-", "l", "a"] { (k == " " ? app.buttons["space"] : app.buttons[k]).firstMatch.tap() }
             shot("g-keyboard-typed")
+            // A swipe across the letters: its suggestions float above the keyboard, clear of the typed line.
+            app.buttons["t"].firstMatch.press(forDuration: 0.05, thenDragTo: app.buttons["o"].firstMatch)
+            sleep(1); shot("g-keyboard-swipe")
         }
     }
 
