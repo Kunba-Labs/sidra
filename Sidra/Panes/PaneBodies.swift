@@ -3,6 +3,7 @@ import SidraDesign
 import SidraWorkspace
 import SidraHackerTab
 import SidraChess
+import SidraTerminal
 
 /// Maps a pane to its body.
 enum PaneBodies {
@@ -13,6 +14,7 @@ enum PaneBodies {
             return PaneBody {
                 TerminalPane(pane: pane, target: target)
             } footer: {
+                SelectModeButton(paneID: pane.id)
                 TerminalFooter(target: target)
             }
         case .herdr(let target, let session):
@@ -21,6 +23,7 @@ enum PaneBodies {
             } extra: {
                 EmptyView()
             } footer: {
+                SelectModeButton(paneID: pane.id)
                 HerdrFooter(pane: pane)
             }
         case .pipelines(let id):
@@ -71,6 +74,26 @@ struct PlaceholderPane: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .padding(.horizontal, 16)
             .padding(.top, 4)
+    }
+}
+
+/// Turns on select mode in a pane's terminal: finger drags select until its Done pill (iPad, iPhone).
+struct SelectModeButton: View {
+    let paneID: UUID
+    var body: some View {
+        #if os(iOS)
+        Button {
+            if let io = TerminalLink.of(paneID).session, let view = TerminalPaneView.ghostty(for: io) { view.selectMode.toggle() }
+        } label: {
+            Label("Select", systemImage: "character.cursor.ibeam").labelStyle(.titleAndIcon).font(SidraFont.ui(11.5, weight: .semibold))
+                .foregroundStyle(SidraColor.muted).padding(.horizontal, 8).frame(height: 20)
+                .background(Color(hex: 0x1b2028), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(Color.white.opacity(0.07)))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Select text")
+        .accessibilityHint("Drags select text until you tap Done selecting")
+        #endif
     }
 }
 

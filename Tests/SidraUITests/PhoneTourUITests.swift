@@ -82,6 +82,27 @@ final class PhoneTourUITests: XCTestCase {
         }
     }
 
+    /// A finger drag scrolls; a long press or the footer's Select starts select mode, Done ends it (2026-11-22).
+    func testDragScrollsAndSelectIsAMode() throws {
+        app = XCUIApplication()
+        app.launchArguments = ["-sidra.demo", "-sidra.freshWorkspace", "-sidra.noAutoFocus", "-sidra.floatingKeyboard", "NO"]
+        app.launch()
+        sleep(4)
+        app.typeKey("2", modifierFlags: .command); sleep(2)   // the demo's SSH shell
+        let done = app.buttons["Done selecting"]
+        let mid = app.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.3))
+        mid.press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.4, dy: 0.5)))
+        sleep(1)
+        XCTAssertFalse(done.exists, "a finger drag scrolls; it does not start selecting")
+        mid.press(forDuration: 1.2); sleep(1)
+        XCTAssertTrue(done.waitForExistence(timeout: 3), "a long press starts select mode")
+        shot("i-select-mode")
+        done.tap(); sleep(1)
+        XCTAssertFalse(done.exists, "Done ends select mode")
+        app.buttons["Select text"].firstMatch.tap(); sleep(1)
+        XCTAssertTrue(done.waitForExistence(timeout: 3), "the footer's Select starts select mode")
+    }
+
     private func shot(_ name: String) {
         guard let dir else { return }
         try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent("\(name).png"))

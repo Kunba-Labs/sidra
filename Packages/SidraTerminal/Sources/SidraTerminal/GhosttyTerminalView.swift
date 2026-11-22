@@ -122,11 +122,13 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
         let tap = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         tap.require(toFail: double)
         [triple, double, tap].forEach(addGestureRecognizer)
-        // One finger drags select (or report to the program); two fingers and the trackpad wheel scroll.
+        // A finger drag scrolls; in select mode it selects (or reports to the program). A trackpad or mouse
+        // drag always selects; two fingers and the trackpad wheel scroll.
         let drag = UIPanGestureRecognizer(target: self, action: #selector(handleDrag(_:)))
         drag.maximumNumberOfTouches = 1
         drag.allowedScrollTypesMask = []
         addGestureRecognizer(drag)
+        dragRecognizer = drag
         let scroll = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         scroll.allowedScrollTypesMask = [.continuous, .discrete]
         scroll.minimumNumberOfTouches = 2
@@ -193,7 +195,36 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
         showEditMenu(at: g.location(in: self))
     }
 
+    /// A finger drag scrolls unless select mode is on (Waseem, 2026-11-22: selecting by default suits a desktop,
+    /// not a phone). A long press or the footer's Select turns it on; the Done pill turns it off.
+    public var selectMode = false {
+        didSet {
+            guard selectMode != oldValue else { return }
+            if !selectMode, engine.hasSelection { engine.clearSelection(); setNeedsDisplay() }
+            selectBadge.isHidden = !selectMode
+            if selectMode { selectBadge.sizeToFit(); selectBadge.frame.origin = CGPoint(x: SidraSpace.gap, y: SidraSpace.gap); bringSubviewToFront(selectBadge) }
+        }
+    }
+    private weak var dragRecognizer: UIGestureRecognizer?
+    /// The drag under way came from a finger (not a trackpad or mouse pointer).
+    private var dragIsTouch = true
+
+    private lazy var selectBadge: UIButton = {
+        var c = UIButton.Configuration.filled()
+        c.baseBackgroundColor = UIColor(SidraColor.raised)
+        c.baseForegroundColor = UIColor(SidraColor.text)
+        c.image = UIImage(systemName: "checkmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 12, weight: .semibold))
+        c.imagePadding = 6
+        c.cornerStyle = .capsule
+        c.title = "Done selecting"
+        let b = UIButton(configuration: c, primaryAction: UIAction { [weak self] _ in self?.selectMode = false })
+        b.isHidden = true
+        addSubview(b)
+        return b
+    }()
+
     @objc private func handleDrag(_ g: UIPanGestureRecognizer) {
+        if dragIsTouch, !selectMode { handlePan(g); return }   // scroll: history, or wheel events for herdr
         copyGrant = Date()   // a drag-select copies on release, however long it took
         let p = g.location(in: self)
         if engine.mouseTracking {
@@ -225,6 +256,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
         switch g.state {
         case .began:
             _ = becomeFirstResponder()
+            selectMode = true   // a long press starts select mode: drags select until Done
             let c = cell(at: p)
             engine.selectWord(x: c.x, y: c.y)
             setNeedsDisplay()
@@ -484,7 +516,8 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
 
     /// A tap on a thumbnail is the thumbnail's, not a click for the program.
     public func gestureRecognizer(_ g: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        !thumbnails.owns(touch.view) && !(touch.view is UIButton)   // thumbnails and the Copy offer take their own taps
+        if g === dragRecognizer { dragIsTouch = touch.type == .direct }
+        return !thumbnails.owns(touch.view) && !(touch.view is UIButton)   // thumbnails, the Copy offer and Done take their own taps
     }
 
     public func gestureRecognizer(_ g: UIGestureRecognizer, shouldReceive event: UIEvent) -> Bool {
