@@ -628,14 +628,14 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     public var smartInsertDeleteType: UITextSmartInsertDeleteType = .no
 
     public func insertText(_ text: String) {
-        FloatingKeyboard.shared.externalInput()
+        FloatingKeyboard.shared.typedElsewhere(text)
         let mods = keyRow.consumeModifiers()
         if mods.ctrl, let c = text.first { send(.ctrl(c)); return }
         if mods.alt, let c = text.first { send(.alt(c)); return }
         if text == "\n" { send(.enter) } else if text == "\t" { send(.tab) } else { send(.text(text)) }
     }
 
-    public func deleteBackward() { FloatingKeyboard.shared.externalInput(); send(.backspace) }
+    public func deleteBackward() { FloatingKeyboard.shared.backspacedElsewhere(); send(.backspace) }
 
     /// CSI I / CSI O when the program asked for focus reports (mode 1004), once per change.
     private var reportedFocus: Bool?
@@ -677,10 +677,10 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     }
 
     public override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
-        FloatingKeyboard.shared.externalInput()
         FloatingKeyboard.shared.hardware(presses, down: true)
-        withdrawSend()
         var handled = false
+        defer { if handled { FloatingKeyboard.shared.externalInput() } }   // arrows, esc, ctrl…: the typed line can't follow; text keys go through insertText
+        withdrawSend()
         for press in presses {
             guard let key = press.key else { continue }
             let mods = key.modifierFlags

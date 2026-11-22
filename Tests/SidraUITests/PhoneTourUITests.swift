@@ -65,6 +65,23 @@ final class PhoneTourUITests: XCTestCase {
         }
     }
 
+    /// The space key in a herdr tab: it types a space and keeps the typed line.
+    func testPhoneSpaceInHerdr() throws {
+        guard dir != nil else { throw XCTSkip("set SIDRA_SHOT_DIR") }
+        app = XCUIApplication()
+        app.launchArguments = ["-sidra.demo", "-sidra.freshWorkspace", "-sidra.noAutoFocus",
+                               "-sidra.softKeyboard", "-sidra.floatingKeyboard", "YES", "-sidra.floatingKeyboardCollapsed", "NO"]
+        app.launch()
+        sleep(5)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
+        if app.buttons["return"].waitForExistence(timeout: 5) {
+            for k in ["h", "i", " ", "y", "o"] { (k == " " ? app.buttons["space"] : app.buttons[k]).firstMatch.tap(); sleep(1) }
+            shot("h-herdr-space")
+            for k in [" ", "u", "p"] { app.typeKey(k, modifierFlags: []) }   // a hardware keyboard adds to the same line
+            sleep(1); shot("h-herdr-hardware")
+        }
+    }
+
     private func shot(_ name: String) {
         guard let dir else { return }
         try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir).appendingPathComponent("\(name).png"))

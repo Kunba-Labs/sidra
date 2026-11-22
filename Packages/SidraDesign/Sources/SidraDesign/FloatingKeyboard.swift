@@ -202,6 +202,21 @@ public final class FloatingKeyboard {
         lastSwiped = nil; line = nil; typed = ""
     }
 
+    /// Text from a hardware keyboard (or iOS) into the target: the typed line follows it too.
+    public func typedElsewhere(_ text: String) {
+        guard !forwarding else { return }
+        if !alternatives.isEmpty { alternatives = [] }
+        lastSwiped = nil; line = nil
+        if text == "\n" { typed = "" } else { typed += text }
+    }
+
+    public func backspacedElsewhere() {
+        guard !forwarding else { return }
+        if !alternatives.isEmpty { alternatives = [] }
+        lastSwiped = nil; line = nil
+        if !typed.isEmpty { typed.removeLast() }
+    }
+
     /// A paste into the target (the paste key, ⌘V or the menu; an image as its uploaded path): the typed line shows it.
     public func pasted(_ text: String) {
         typed += text.replacingOccurrences(of: "\r\n", with: " ").replacingOccurrences(of: "\n", with: " ")

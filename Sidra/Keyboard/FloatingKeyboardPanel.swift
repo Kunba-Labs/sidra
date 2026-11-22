@@ -136,7 +136,8 @@ struct FloatingKeyboardPanel<G: Gesture>: View {
                 }
             }
             .frame(height: 22).contentShape(Rectangle()).gesture(grab)
-            if compact { typedRow(kb.typed) }   // always there, so the keys never jump when it fills
+            // Always there, so the keys never jump; swipe alternatives take its place while they show.
+            if compact { if kb.alternatives.isEmpty { typedRow(kb.typed) } else { inlineAlternatives } }
             strip.padding(.bottom, 8).padding(.trailing, 30)   // clear of the corner mic
             HStack(alignment: .top, spacing: 6) {
                     VStack(spacing: 5) { ForEach(Array((compact ? compactRows : rows).enumerated()), id: \.offset) { i, row in if compact && i == 0 { scrollingRow(row) } else { keyRow(row) } } }
@@ -155,11 +156,30 @@ struct FloatingKeyboardPanel<G: Gesture>: View {
         .overlay(alignment: .topTrailing) { MicKey(voice: VoiceInput.shared, window: window).offset(x: 18, y: -18) }
         // Swipe alternatives float above the keyboard, so the keys never move (Waseem, 2026-11-15).
         .overlay(alignment: .topLeading) {
-            if !kb.alternatives.isEmpty {
-                alternativesRow.alignmentGuide(.top) { $0[.bottom] + 8 }.padding(.leading, 10)
+            // Above the keyboard (the row is 40 pt tall). On a phone they sit in the typed line instead.
+            if !kb.alternatives.isEmpty, !compact {
+                alternativesRow.padding(.leading, 10).offset(y: -48)
             }
         }
         .shadow(color: .black.opacity(0.55), radius: 30, y: 16)
+    }
+
+    /// Phone: the swipe alternatives in the typed line's slot, same height, so nothing moves or overlaps.
+    private var inlineAlternatives: some View {
+        HStack(spacing: 6) {
+            Text(kb.undoingVoice ? "HEARD" : "OR").font(SidraFont.ui(10.5, weight: .semibold)).tracking(0.8).foregroundStyle(SidraColor.dim)
+            ForEach(kb.alternatives, id: \.self) { w in
+                Button { kb.replaceSwipe(with: w) } label: {
+                    Text(w).font(SidraFont.ui(13.5)).foregroundStyle(SidraColor.text).lineLimit(1).truncationMode(.middle)
+                        .padding(.horizontal, 10).frame(maxWidth: .infinity).frame(height: 28)
+                        .background(Color(hex: 0x20252d), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(SidraColor.hairline))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .frame(height: 34)
+        .padding(.trailing, 30).padding(.bottom, 8)   // clear of the corner mic
     }
 
     /// Phone: the keys cover the terminal's input line, so what you type shows here until return.
