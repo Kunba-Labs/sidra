@@ -698,6 +698,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     public func pasteText(_ text: String) {
         withdrawSend()
         guard !lost else { return }
+        FloatingKeyboard.shared.pasted(text, into: self)   // every paste, dictation included, shows in the keyboard's typed line
         let bytes = engine.encodePaste(text)
         guard !bytes.isEmpty else { return }
         io.write(bytes)
@@ -841,7 +842,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
         // Paste after a hold: the held text was only the way to the menu, so its highlight goes.
         if engine.hasSelection { engine.clearSelection(); setNeedsDisplay() }
         let board = UIPasteboard.general
-        if board.hasStrings, let s = board.string { FloatingKeyboard.shared.pasted(s); pasteText(s); return }
+        if board.hasStrings, let s = board.string { pasteText(s); return }
         guard let data = board.image?.pngData() else { return }
         pasteImage(data)
     }
@@ -854,7 +855,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
         Task { @MainActor [weak self] in
             guard let path = await upload(data) else { return }
             if let image = UIImage(data: data) { self?.thumbnails.remember(path, image) }
-            if let self, here || self.isFirstResponder { FloatingKeyboard.shared.pasted(path); self.pasteText(path) } else { UIPasteboard.general.string = path }
+            if let self, here || self.isFirstResponder { self.pasteText(path) } else { UIPasteboard.general.string = path }
         }
     }
 }

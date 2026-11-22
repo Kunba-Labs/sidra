@@ -223,8 +223,10 @@ public final class FloatingKeyboard {
         if !typed.isEmpty { typed.removeLast() }
     }
 
-    /// A paste into the target (the paste key, ⌘V or the menu; an image as its uploaded path): the typed line shows it.
-    public func pasted(_ text: String) {
+    /// Text pasted into `into` (the paste key, ⌘V, the menu, dictation, an image's uploaded path): the typed line
+    /// shows it when that is the view these keys type into. Terminals call it from their one paste path.
+    public func pasted(_ text: String, into t: AnyObject) {
+        guard t === target else { return }
         typed += text.replacingOccurrences(of: "\r\n", with: " ").replacingOccurrences(of: "\n", with: " ")
     }
 
@@ -278,8 +280,8 @@ public final class FloatingKeyboard {
     @discardableResult
     public func paste(_ text: String, into expected: (any FloatingKeyboardTarget)?) -> Bool {
         guard let t = target, let expected, t === expected else { UIPasteboard.general.string = text; return false }
-        forward { t.keyboardPaste(text) }
-        line = nil; typed += text
+        forward { t.keyboardPaste(text) }   // the terminal's paste reports it to the typed line
+        line = nil
         return true
     }
 
