@@ -219,9 +219,10 @@ struct FloatingKeyboardPanel<G: Gesture>: View {
                 : Cap(label: s, alt: FloatingKeyboard.shifted[s], action: .text(s), style: .symbol) },
             Array("1234567890").map { Cap(label: String($0), alt: FloatingKeyboard.shifted[String($0)], action: .text(String($0))) },
             "qwertyuiop".map { letter(String($0)) },
-            "asdfghjkl".map { letter(String($0)) } + [Cap(label: "return", action: .enter, width: 1.5, style: .wide)],
+            // Backspace above return, as on Apple's keyboard (Waseem, 2026-11-22).
+            "asdfghjkl".map { letter(String($0)) } + [Cap(label: "⌫", action: .backspace, width: 1.5, style: .glyph, repeats: true)],
             [Cap(label: "⇧", action: .shift, width: 1.5, style: .glyph)] + "zxcvbnm".map { letter(String($0)) }
-                + [Cap(label: "⌫", action: .backspace, width: 1.5, style: .glyph, repeats: true)],
+                + [Cap(label: "return", action: .enter, width: 1.5, style: .wide)],
             [Cap(label: "ctrl", action: .ctrl, style: .modifier), Cap(label: "alt", action: .alt, style: .modifier), Cap(label: "⌄", action: .hide, style: .glyph),
              Cap(label: "", action: .text(" "), width: 3, repeats: true),
              Cap(label: "←", action: .key(.left), style: .glyph, repeats: true), Cap(label: "↑", action: .key(.up), style: .glyph, repeats: true),
