@@ -40,7 +40,7 @@ struct ScreenshotSendSheet: View {
     /// cannot be sized that freely.
     var body: some View {
         GeometryReader { geo in
-            card
+            card(phone: geo.size.width < 600)
                 .frame(width: geo.size.width * 0.96, height: geo.size.height * 0.96)
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(SidraColor.hairline2))
@@ -50,7 +50,8 @@ struct ScreenshotSendSheet: View {
         .presentationBackground(.clear)
     }
 
-    private var card: some View {
+    /// A phone stacks it: the tools, the screenshot, then a menu of sessions above Send (Waseem, 2026-11-22).
+    private func card(phone: Bool) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
                 Text("Send screenshot").font(SidraFont.ui(15, weight: .bold)).foregroundStyle(SidraColor.text)
@@ -60,17 +61,26 @@ struct ScreenshotSendSheet: View {
             }
             .padding(.horizontal, 18).frame(height: 50)
             Divider().overlay(SidraColor.hairline)
-            HStack(spacing: 0) {
-                list.frame(width: 260)
-                Rectangle().fill(SidraColor.hairline).frame(width: 1)
-                VStack(spacing: 0) {
-                    tools
-                    Divider().overlay(SidraColor.hairline)
-                    canvas.padding(16)
+            if phone {
+                phoneTools
+                Divider().overlay(SidraColor.hairline)
+                canvas.padding(10)
+                Divider().overlay(SidraColor.hairline)
+                targetMenu
+                Divider().overlay(SidraColor.hairline)
+            } else {
+                HStack(spacing: 0) {
+                    list.frame(width: 260)
+                    Rectangle().fill(SidraColor.hairline).frame(width: 1)
+                    VStack(spacing: 0) {
+                        tools
+                        Divider().overlay(SidraColor.hairline)
+                        canvas.padding(16)
+                    }
                 }
+                Divider().overlay(SidraColor.hairline)
             }
-            Divider().overlay(SidraColor.hairline)
-            footer
+            footer(phone: phone)
         }
         .background(SidraColor.raised)
         .onAppear { updatePreview() }
@@ -134,7 +144,54 @@ struct ScreenshotSendSheet: View {
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 
+    /// Phone: the picked session as a button; its menu lists the others.
+    private var targetMenu: some View {
+        Menu {
+            ForEach(groups, id: \.name) { g in
+                Section(g.name) {
+                    ForEach(g.items) { t in
+                        Button { picked = t.id } label: {
+                            if t.id == picked { Label(t.title + ", " + t.detail, systemImage: "checkmark") } else { Text(t.title + ", " + t.detail) }
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 9) {
+                if let t = target {
+                    t.icon.frame(width: 22, height: 22)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(t.title).font(SidraFont.ui(13.5, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
+                        Text(t.detail).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim).lineLimit(1)
+                    }
+                } else {
+                    Text("No terminal or herdr tab is open").font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted)
+                }
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.up.chevron.down").font(.system(size: 11, weight: .semibold)).foregroundStyle(SidraColor.muted)
+            }
+            .padding(.horizontal, 16).frame(height: 54).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(targets.isEmpty)
+        .accessibilityLabel("Send to " + (target?.title ?? "nothing"))
+    }
+
     // MARK: Drawing
+
+    /// Phone: Draw and Move, then Undo and Whole; zoom is a pinch.
+    private var phoneTools: some View {
+        HStack(spacing: 6) {
+            toolToggle("Draw", "pencil.and.outline", on: !moving) { moving = false }
+            toolToggle("Move", "hand.draw", on: moving) { moving = true }
+            Spacer(minLength: 4)
+            Button("Undo") { shape = history.popLast() ?? []; updatePreview() }
+                .buttonStyle(.sidraSecondary).disabled(shape.isEmpty)
+            Button("Whole") { if !shape.isEmpty { history.append(shape) }; shape = []; updatePreview() }
+                .buttonStyle(.sidraSecondary).disabled(shape.isEmpty)
+        }
+        .padding(.horizontal, 10).frame(height: 48)
+    }
 
     private var tools: some View {
         HStack(spacing: 8) {
@@ -248,7 +305,7 @@ struct ScreenshotSendSheet: View {
 
     private func updatePreview() { preview = cut() }
 
-    private var footer: some View {
+    private func footer(phone: Bool) -> some View {
         HStack(spacing: 12) {
             Group {
                 if let preview { Image(uiImage: preview).resizable().scaledToFit() } else { Color.clear }
@@ -256,15 +313,15 @@ struct ScreenshotSendSheet: View {
             .frame(width: 64, height: 44)
             .background(SidraColor.pane, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(SidraColor.hairline2))
-            if let p = preview?.cgImage {
+            if !phone, let p = preview?.cgImage {
                 Text(verbatim: "\(shape.isEmpty ? "Whole" : "Cut") \(p.width) × \(p.height) px").font(SidraFont.mono(12)).foregroundStyle(SidraColor.muted)
             }
             Spacer()
             Button("Cancel") { dismiss() }.buttonStyle(.sidraSecondary).keyboardShortcut(.cancelAction)
-            Button(target.map { "Send to \($0.title)" } ?? "Send") { send() }
+            Button(phone ? "Send" : target.map { "Send to \($0.title)" } ?? "Send") { send() }
                 .buttonStyle(.sidraPrimary).keyboardShortcut(.defaultAction).disabled(target == nil)
         }
-        .padding(.horizontal, 18).frame(height: 64)
+        .padding(.horizontal, phone ? 12 : 18).frame(height: 64)
     }
 
     /// ↑ and ↓ move the pick; ⌘+, ⌘− and ⌘0 zoom.

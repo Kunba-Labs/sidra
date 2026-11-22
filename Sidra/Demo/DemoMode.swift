@@ -1,5 +1,8 @@
 #if DEBUG
 import Foundation
+#if os(iOS)
+import UIKit
+#endif
 import SidraSSH
 import SidraWorkspace
 import SidraTerminal
@@ -38,6 +41,13 @@ enum DemoMode {
     @MainActor static func install(_ app: AppModel) {
         guard isOn else { return }
         if app.hosts.host(hostID) == nil { app.hosts.upsert(host) }
+        // -sidra.demoScreenshot: the Send screenshot card opens on one of the site's screenshots (UI tests).
+        #if os(iOS)
+        if CommandLine.arguments.contains("-sidra.demoScreenshot"),
+           let data = try? Data(contentsOf: repo.appendingPathComponent("docs/media/ipad-01-herdr.png")) {
+            ScreenshotInbox.shared.pending = UIImage(data: data)
+        }
+        #endif
         guard app.workspace.tabs.isEmpty else { return }
         app.openTab(kind: .herdr(target: .ssh(hostID: hostID), session: nil))
         app.openTab(kind: .terminal(.ssh(hostID: hostID)))
