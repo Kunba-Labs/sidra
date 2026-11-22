@@ -107,15 +107,17 @@ struct HerdrConnectSheet: View {
         } else if let p = probe {
             VStack(alignment: .leading, spacing: 10) {
                 if let v = p.version {
-                    HStack(spacing: 6) {
-                        FooterChip([.init(v, label: "herdr", color: SidraColor.jade)])
-                        FooterChip([.init(p.running ? "running" : "starts when you open it", label: "server")])
-                        if let s = p.snapshot {
-                            HStack(spacing: 4) {
-                                ForEach(s.workspaces.prefix(8)) { ws in HerdrLogoView(name: ws.label, image: logos.logo(for: ws), size: 14) }
-                                FooterChip([.init("\(s.workspaces.count)", label: "spaces")])
+                    let version = FooterChip([.init(v, label: "herdr", color: SidraColor.jade)])
+                    let server = FooterChip([.init(p.running ? "running" : "starts when you open it", label: "server")])
+                    // One row when it fits; on a phone, one line per group.
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 6) { version; server; if let s = p.snapshot { spaces(s); FooterChip([.init("\(s.agents.count)", label: "agents")]) } }
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(spacing: 6) { version; server }
+                            if let s = p.snapshot {
+                                HStack(spacing: 6) { FooterChip([.init("\(s.workspaces.count)", label: "spaces")]); FooterChip([.init("\(s.agents.count)", label: "agents")]) }
+                                HStack(spacing: 4) { ForEach(s.workspaces.prefix(8)) { ws in HerdrLogoView(name: ws.label, image: logos.logo(for: ws), size: 14) } }
                             }
-                            FooterChip([.init("\(s.agents.count)", label: "agents")])
                         }
                     }
                     if p.sessions.count > 1 {
@@ -129,6 +131,13 @@ struct HerdrConnectSheet: View {
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(SidraColor.jade.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+        }
+    }
+
+    private func spaces(_ s: MuxSnapshot) -> some View {
+        HStack(spacing: 4) {
+            ForEach(s.workspaces.prefix(8)) { ws in HerdrLogoView(name: ws.label, image: logos.logo(for: ws), size: 14) }
+            FooterChip([.init("\(s.workspaces.count)", label: "spaces")])
         }
     }
 

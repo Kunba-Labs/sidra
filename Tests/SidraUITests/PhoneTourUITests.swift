@@ -39,6 +39,12 @@ final class PhoneTourUITests: XCTestCase {
             app.typeKey("\(i)", modifierFlags: .command); sleep(3); shot("c\(i)-tab")
         }
         app.typeKey("1", modifierFlags: .command); sleep(1)
+        // The herdr sheet with a machine found (the demo's devbox): its chips must fit the phone.
+        app.buttons["New tab"].firstMatch.tap(); sleep(1)
+        if app.buttons["newtab-herdr"].firstMatch.waitForExistence(timeout: 3) {
+            app.buttons["newtab-herdr"].firstMatch.tap(); sleep(4); shot("e-herdr-found")
+            if app.buttons["Cancel"].firstMatch.exists { app.buttons["Cancel"].firstMatch.tap(); sleep(1) }
+        }
         if app.buttons["theasa-pill"].firstMatch.exists { app.buttons["theasa-pill"].firstMatch.tap(); sleep(3); shot("d-theasa-pill") }
     }
 
