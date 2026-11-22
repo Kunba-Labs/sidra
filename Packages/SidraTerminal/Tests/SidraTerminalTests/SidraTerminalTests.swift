@@ -67,6 +67,16 @@ final class TerminalInteractionTests: XCTestCase {
         XCTAssertTrue(String(decoding: wheel, as: UTF8.self).hasPrefix("\u{1b}[<64;"), String(decoding: wheel, as: UTF8.self))
     }
 
+    /// A phone's cell is fractional (~7.8 pt): a click on column 40 must report column 40, not the
+    /// truncated 7-pt grid's 44 (Waseem, 2026-11-22: copying in herdr started a letter late).
+    func testMouseCellWithFractionalCellWidth() {
+        let e = GhosttyEngine(cols: 50, rows: 5)
+        e.feed(Data("\u{1b}[?1000h\u{1b}[?1006h".utf8))
+        let cell = CGSize(width: 7.8, height: 18.6)
+        let press = e.encodeMouse(.press, button: .left, at: CGPoint(x: 40 * 7.8 + 0.5, y: 2 * 18.6 + 1), cell: cell, viewSize: CGSize(width: 390, height: 93))
+        XCTAssertEqual(String(decoding: press, as: UTF8.self), "\u{1b}[<0;41;3M")
+    }
+
     func testPasteWrapsWhenBracketedAndStripsOneTrailingNewline() {
         let e = GhosttyEngine(cols: 20, rows: 5)
         XCTAssertEqual(String(decoding: e.encodePaste("ls\n"), as: UTF8.self), "ls")

@@ -148,10 +148,16 @@ public extension GhosttyEngine {
               ghostty_mouse_event_new(nil, &ev) == GHOSTTY_SUCCESS, let ev else { return Data() }
         defer { ghostty_mouse_encoder_free(enc); ghostty_mouse_event_free(ev) }
         _ = ghostty_mouse_encoder_set_from_terminal(enc, term)
+        // The encoder takes whole-number cell sizes; a phone's cell is ~7.8 pt, and truncating it put each
+        // click a cell further right every ~8 columns. So Sidra picks the cell and hands the encoder an exact
+        // grid of 10-unit cells with the pointer at that cell's centre.
+        // ponytail: SGR-pixel mode (1016) then reports these grid units, not view points
+        let unit: UInt32 = 10
+        let cx = max(0, min(Int(point.x / max(1, cell.width)), cols - 1)), cy = max(0, min(Int(point.y / max(1, cell.height)), rows - 1))
         var size = GhosttyMouseEncoderSize()
         size.size = MemoryLayout<GhosttyMouseEncoderSize>.size
-        size.screen_width = UInt32(max(1, viewSize.width)); size.screen_height = UInt32(max(1, viewSize.height))
-        size.cell_width = UInt32(max(1, cell.width)); size.cell_height = UInt32(max(1, cell.height))
+        size.screen_width = UInt32(cols) * unit; size.screen_height = UInt32(rows) * unit
+        size.cell_width = unit; size.cell_height = unit
         _ = ghostty_mouse_encoder_set(enc, GHOSTTY_MOUSE_ENCODER_OPT_SIZE, &size)
         var pressed = action == .motion && button != .none
         _ = ghostty_mouse_encoder_set(enc, GHOSTTY_MOUSE_ENCODER_OPT_ANY_BUTTON_PRESSED, &pressed)
@@ -165,7 +171,7 @@ public extension GhosttyEngine {
         case .wheelDown: _ = ghostty_mouse_event_set_button(ev, GHOSTTY_MOUSE_BUTTON_FIVE)
         case .none: _ = ghostty_mouse_event_clear_button(ev)
         }
-        _ = ghostty_mouse_event_set_position(ev, GhosttyMousePosition(x: Float(point.x), y: Float(point.y)))
+        _ = ghostty_mouse_event_set_position(ev, GhosttyMousePosition(x: Float(cx) * Float(unit) + Float(unit) / 2, y: Float(cy) * Float(unit) + Float(unit) / 2))
         var out = [UInt8](repeating: 0, count: 64)
         var written = 0
         guard ghostty_mouse_encoder_encode(enc, ev, &out, out.count, &written) == GHOSTTY_SUCCESS, written > 0 else { return Data() }
