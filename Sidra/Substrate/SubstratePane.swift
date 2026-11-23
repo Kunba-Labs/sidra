@@ -53,7 +53,9 @@ struct SubstrateHeader: View {
                         let on = store.section == s
                         Button { store.section = s } label: {
                             HStack(spacing: 6) {
-                                Text(s.rawValue).font(SidraFont.ui(12.5, weight: on ? .bold : .regular))
+                                // iPhone: icons, so the three fit beside the pane title (2026-11-23).
+                                if Platform.isPhone { Image(systemName: s.icon).font(.system(size: 13, weight: on ? .bold : .regular)).accessibilityLabel(s.rawValue) }
+                                else { Text(s.rawValue).font(SidraFont.ui(12.5, weight: on ? .bold : .regular)) }
                                 if s == .requests, store.waiting > 0 {
                                     Text(verbatim: "\(store.waiting)").font(SidraFont.mono(10, weight: .semibold))
                                         .padding(.horizontal, 5).frame(minWidth: 16, minHeight: 16)
@@ -62,7 +64,7 @@ struct SubstrateHeader: View {
                                 }
                             }
                             .foregroundStyle(on ? .white : SidraColor.muted)
-                            .padding(.horizontal, 11).frame(height: 26)
+                            .padding(.horizontal, Platform.isPhone ? 9 : 11).frame(height: 26)
                             .background { if on { RoundedRectangle(cornerRadius: 7, style: .continuous).fill(SubstrateStyle.electric).shadow(color: SubstrateStyle.glow, radius: 8, y: 2) } }
                             .contentShape(Rectangle())
                         }
@@ -73,13 +75,15 @@ struct SubstrateHeader: View {
                 .padding(3)
                 .background(SubstrateStyle.main, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(SidraColor.hairline))
-                SidraMenu([SidraMenuSection("Signed in as \(store.connection.name ?? store.connection.email)", [
+                let newSession = (store.dashboard?.new_session_url ?? store.sessions?.new_session_url).flatMap(URL.init(string:))
+                SidraMenu([SidraMenuSection("Signed in as \(store.connection.name ?? store.connection.email)",
+                    (Platform.isPhone ? newSession.map { u in [SidraMenuItem("New session", systemImage: "arrow.up.right.square") { Platform.open(u) }] } ?? [] : []) + [
                     SidraMenuItem("Sign out", systemImage: "rectangle.portrait.and.arrow.right") { Task { await store.signOut() } },
                 ])]) {
                     Image(systemName: "person.crop.circle").font(.system(size: 14)).foregroundStyle(SidraColor.muted).frame(width: 28, height: 26).contentShape(Rectangle())
                 }
                 .accessibilityLabel("Substrate account")
-                if let u = store.dashboard?.new_session_url ?? store.sessions?.new_session_url, let url = URL(string: u) {
+                if !Platform.isPhone, let url = newSession {
                     SubstrateChip { Text("New session"); Image(systemName: "arrow.up.right.square") }.onTapGesture { Platform.open(url) }
                         .accessibilityAddTraits(.isButton).accessibilityLabel("New session, opens the browser")
                 }
@@ -108,6 +112,22 @@ struct SubstrateFooter: View {
 
 // MARK: - Requests
 
+/// Narrow panes (iPhone, a thin split) show the list or one item, never both side by side (2026-11-23).
+private let substrateNarrow: CGFloat = 560
+
+struct SubstrateBack: View {
+    let title: String
+    let back: () -> Void
+    var body: some View {
+        Button(action: back) {
+            HStack(spacing: 6) { Image(systemName: "chevron.left").font(.system(size: 13, weight: .semibold)); Text(title).font(SidraFont.ui(13.5, weight: .semibold)) }
+                .foregroundStyle(SidraColor.muted).padding(.horizontal, 14).frame(height: 40).frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .overlay(alignment: .bottom) { Rectangle().fill(SidraColor.hairline).frame(height: 1) }
+    }
+}
+
 struct SubstrateRequests: View {
     @Bindable var store: SubstrateStore
     let keysOn: Bool
@@ -127,8 +147,41 @@ struct SubstrateRequests: View {
     private var all: [Substrate.Message] { groups.flatMap(\.1) }
     private var picked: Substrate.Message? { store.pickedMessage.flatMap(store.message) ?? all.first }
 
+    private var narrow: Bool { width < substrateNarrow }
+
     var body: some View {
-        HStack(spacing: 0) {
+        Group {
+            if narrow {
+                // Narrow: a picked request covers the list; Back clears the pick.
+                if store.pickedMessage != nil, let m = picked {
+                    VStack(spacing: 0) { SubstrateBack(title: "Requests") { store.pickedMessage = nil }; detail(m) }
+                } else { list }
+            } else {
+                HStack(spacing: 0) {
+                    list.frame(width: min(300, width * 0.42))   // HackerTab's index column (2026-11-20)
+                    Rectangle().fill(SidraColor.hairline).frame(width: 1)
+                    Group {
+                        if let m = picked { detail(m) } else if store.dashboard != nil { SubstrateEmpty(text: "Nothing waits for you.") }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+        }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .background { if keysOn { keys } }
+        .task(id: picked?.conversation_id) { if let c = picked?.conversation_id { await store.loadConversation(c) } }
+        .onChange(of: picked?.id) { _, _ in fullPrompt = false }
+        .onChange(of: store.editing) { _, id in if let id, let m = store.message(id) { draft = m.proposal?.text ?? m.text; why = m.proposal?.why ?? "" } }
+        .confirmationDialog("This request is held: \(confirmHeld?.message.risk ?? "flagged as risky").",
+                            isPresented: Binding(get: { confirmHeld != nil }, set: { if !$0 { confirmHeld = nil } }), titleVisibility: .visible) {
+            Button(confirmHeld?.text == nil ? "Approve anyway" : "Approve edited message anyway") {
+                if let c = confirmHeld { act(c.message, approve: true, text: c.text ?? c.message.text, confirmed: true) }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+
+    private var list: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(groups, id: \.0) { name, items, color in
@@ -149,26 +202,7 @@ struct SubstrateRequests: View {
                 }
                 .padding(.vertical, 6)
             }
-            .frame(width: min(300, width * 0.42))   // HackerTab's index column (2026-11-20)
             .background(SubstrateStyle.side)
-            Rectangle().fill(SidraColor.hairline).frame(width: 1)
-            Group {
-                if let m = picked { detail(m) } else if store.dashboard != nil { SubstrateEmpty(text: "Nothing waits for you.") }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-        .background { if keysOn { keys } }
-        .task(id: picked?.conversation_id) { if let c = picked?.conversation_id { await store.loadConversation(c) } }
-        .onChange(of: picked?.id) { _, _ in fullPrompt = false }
-        .onChange(of: store.editing) { _, id in if let id, let m = store.message(id) { draft = m.proposal?.text ?? m.text; why = m.proposal?.why ?? "" } }
-        .confirmationDialog("This request is held: \(confirmHeld?.message.risk ?? "flagged as risky").",
-                            isPresented: Binding(get: { confirmHeld != nil }, set: { if !$0 { confirmHeld = nil } }), titleVisibility: .visible) {
-            Button(confirmHeld?.text == nil ? "Approve anyway" : "Approve edited message anyway") {
-                if let c = confirmHeld { act(c.message, approve: true, text: c.text ?? c.message.text, confirmed: true) }
-            }
-            Button("Cancel", role: .cancel) {}
-        }
     }
 
     private func row(_ m: Substrate.Message, faded: Bool) -> some View {
@@ -202,9 +236,12 @@ struct SubstrateRequests: View {
         let prompt = m.prompt ?? conversation?.messages.first { $0.id == m.id }?.prompt
         let reviewing = m.stage == "reviewing"
         let waiting = m.stage == "pending_approval" || m.stage == "held"
+        let row = narrow ? AnyLayout(FlowLayout(spacing: 8)) : AnyLayout(HStackLayout(spacing: 10))
+        let buttons = narrow ? AnyLayout(FlowLayout(spacing: 8)) : AnyLayout(HStackLayout(spacing: 8))
+        let inset: CGFloat = narrow ? 14 : 18
         return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 10) {
+                row {
                     SubstrateAvatar(name: m.sender?.name ?? "?", url: m.sender?.avatar_url)
                     Text(m.sender?.name ?? "Someone").font(SidraFont.ui(15, weight: .semibold)).foregroundStyle(SidraColor.text)
                     if let k = Substrate.agentKind(m.client) { HStack(spacing: 5) { Text("via"); AgentTag(agent: k) }.font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted) }
@@ -215,10 +252,10 @@ struct SubstrateRequests: View {
                     else if waiting { SubstrateChip(tone: .warn) { Circle().fill(SidraColor.gold).frame(width: 7, height: 7); Text(m.held ? "held: \(m.risk ?? "")" : "waiting for you") } }
                     else { SubstrateChip { Text(Substrate.stageLabel(m)) } }
                     if let allow = m.deploy_allow, allow != "none" { SubstrateChip(tone: .electric) { Text("deploys to \(allow)") } }
-                    Spacer(minLength: 0)
+                    if !narrow { Spacer(minLength: 0) }
                     SubstrateChip { Text(Substrate.ago(m.created_at, long: true)) }
                 }
-                .padding(.horizontal, 18).padding(.vertical, 14)
+                .padding(.horizontal, inset).padding(.vertical, 14)
                 Divider().overlay(SidraColor.hairline)
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
@@ -232,12 +269,12 @@ struct SubstrateRequests: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(SubstrateStyle.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(SidraColor.hairline))
-                .padding(.horizontal, 18).padding(.top, 16)
+                .padding(.horizontal, inset).padding(.top, 16)
                 if let p = m.proposal { proposal(p) }
                 if reviewing {
                     Text("In review with your agent. Talk it over in the agent's session. Approve it here when the agent sends it back.")
                         .font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted)
-                        .padding(.horizontal, 18).padding(.top, 12)
+                        .padding(.horizontal, inset).padding(.top, 12)
                 }
                 if let prompt {
                     Text(prompt).font(SidraFont.mono(12)).foregroundStyle(Color(hex: 0x8b93a0)).textSelection(.enabled)
@@ -246,9 +283,9 @@ struct SubstrateRequests: View {
                         .padding(.horizontal, 14).padding(.vertical, 10)
                         .background(SubstrateStyle.well, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(SidraColor.hairline))
-                        .padding(.horizontal, 18).padding(.top, 10)
+                        .padding(.horizontal, inset).padding(.top, 10)
                 }
-                HStack(spacing: 8) {
+                buttons {
                     if waiting {
                         Button { act(m, approve: true) } label: { Label(m.proposal == nil ? "Approve" : "Approve adjusted", systemImage: "checkmark") }
                             .buttonStyle(SubstrateButtonStyle(electric: true)).disabled(working)
@@ -274,23 +311,23 @@ struct SubstrateRequests: View {
                         Button(fullPrompt ? "Show less of the prompt" : "Show the full prompt") { fullPrompt.toggle() }
                             .buttonStyle(.plain).font(SidraFont.ui(13, weight: .semibold)).foregroundStyle(SidraColor.muted).padding(.horizontal, 8)
                     }
-                    Spacer()
+                    if !narrow { Spacer() }
                     if let agent = store.agent(for: m.project) {
                         Button { openInHerdr(agent) } label: { Label("Open in herdr", systemImage: "arrow.up.right.square") }
                             .buttonStyle(.plain).font(SidraFont.ui(13, weight: .semibold)).foregroundStyle(SidraColor.muted)
                     }
                 }
-                .padding(.horizontal, 18).padding(.top, 14)
+                .padding(.horizontal, inset).padding(.top, 14)
                 if waiting, store.editing == m.id { editor(m) }
                 if let track = Substrate.track(m.deploy_stage ?? conversation?.deploy_stage) {
-                    SubstrateTrack(states: track).padding(.horizontal, 18).padding(.top, 16)
+                    SubstrateTrack(states: track).padding(.horizontal, inset).padding(.top, 16)
                 }
                 if let events = conversation?.events, !events.isEmpty {
                     SubstrateGroupLabel("Timeline").padding(.top, 10).padding(.horizontal, 4)
                     VStack(alignment: .leading, spacing: 6) {
                         ForEach(Array(events.enumerated()), id: \.offset) { _, e in SubstrateEventLine(event: e, web: m.web_url.flatMap(URL.init(string:))) }
                     }
-                    .padding(.horizontal, 18)
+                    .padding(.horizontal, inset)
                 }
             }
             .padding(.bottom, 18)
@@ -411,8 +448,30 @@ struct SubstrateSessions: View {
         return id.flatMap { id in store.sessionDetails[id] ?? sessions.first { $0.id == id } }
     }
 
+    private var narrow: Bool { width < substrateNarrow }
+
     var body: some View {
-        HStack(spacing: 0) {
+        Group {
+            if narrow {
+                if store.pickedSession != nil, let s = picked { VStack(spacing: 0) { SubstrateBack(title: "Sessions") { store.pickedSession = nil }; detail(s) } }
+                else { list }
+            } else {
+                HStack(spacing: 0) {
+                    list.frame(width: min(300, width * 0.42))   // HackerTab's index column (2026-11-20)
+                    Rectangle().fill(SidraColor.hairline).frame(width: 1)
+                    Group {
+                        if let s = picked { detail(s) } else if store.sessions != nil { SubstrateEmpty(text: "No sessions yet. Make one in the browser with New session.") }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+        }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .background { if keysOn { keys } }
+        .task(id: picked?.id) { if let id = picked?.id { await store.loadSession(id) } }
+    }
+
+    private var list: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     SubstrateGroupLabel("Sessions", count: sessions.count)
@@ -423,17 +482,7 @@ struct SubstrateSessions: View {
                 }
                 .padding(.vertical, 6)
             }
-            .frame(width: min(300, width * 0.42))   // HackerTab's index column (2026-11-20)
             .background(SubstrateStyle.side)
-            Rectangle().fill(SidraColor.hairline).frame(width: 1)
-            Group {
-                if let s = picked { detail(s) } else if store.sessions != nil { SubstrateEmpty(text: "No sessions yet. Make one in the browser with New session.") }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-        .background { if keysOn { keys } }
-        .task(id: picked?.id) { if let id = picked?.id { await store.loadSession(id) } }
     }
 
     private func row(_ s: Substrate.Session) -> some View {
@@ -465,9 +514,11 @@ struct SubstrateSessions: View {
     }
 
     private func detail(_ s: Substrate.Session) -> some View {
-        ScrollView {
+        let wrap = narrow ? AnyLayout(FlowLayout(spacing: 8)) : AnyLayout(HStackLayout(spacing: 10))
+        let inset: CGFloat = narrow ? 14 : 18
+        return ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 10) {
+                wrap {
                     SubstrateAvatar(name: s.name, url: s.avatar_url)
                     Text(s.name).font(SidraFont.ui(15, weight: .semibold)).foregroundStyle(SidraColor.text)
                     let p = s.permissions
@@ -478,23 +529,23 @@ struct SubstrateSessions: View {
                     else { SubstrateChip { Image(systemName: "checkmark.shield"); Text("approval required") } }
                     if p?.deploy_production == true { SubstrateChip(tone: .electric) { Text("deploys to production") } }
                     else if p?.deploy_test == true { SubstrateChip(tone: .electric) { Text("deploys to test") } }
-                    Spacer(minLength: 0)
+                    if !narrow { Spacer(minLength: 0) }
                     if let u = s.web_url.flatMap(URL.init(string:)) {
                         SubstrateChip { Text("Revoke and edit in the browser"); Image(systemName: "arrow.up.right.square") }
                             .onTapGesture { Platform.open(u) }.accessibilityAddTraits(.isButton)
                     }
                 }
-                .padding(.horizontal, 18).padding(.vertical, 14)
+                .padding(.horizontal, inset).padding(.vertical, 14)
                 Divider().overlay(SidraColor.hairline)
                 if let c = s.counts {
-                    HStack(spacing: 10) {
+                    wrap {
                         stat("Messages", c.messages)
                         stat("Waiting for you", c.waiting, color: SidraColor.gold)
                         stat("With the agent", c.active)
                         stat("Completed", c.completed, electric: true)
                         stat("Deployed", c.deployed)
                     }
-                    .padding(.horizontal, 18).padding(.top, 14)
+                    .padding(.horizontal, inset).padding(.top, 14)
                 }
                 if let history = s.history, !history.isEmpty {
                     SubstrateGroupLabel("History").padding(.top, 10).padding(.horizontal, 4)
@@ -511,7 +562,7 @@ struct SubstrateSessions: View {
                             ForEach(Array((h.events ?? []).prefix(3).enumerated()), id: \.offset) { _, e in SubstrateEventLine(event: e) }
                         }
                     }
-                    .padding(.horizontal, 18)
+                    .padding(.horizontal, inset)
                 }
             }
             .padding(.bottom, 18)

@@ -41,6 +41,12 @@ final class AppModel {
         workspace = WorkspaceStore(storageURL: fresh ? nil : WorkspaceStore.defaultStorageURL)
         self.hosts = hosts ?? HostStore(url: fresh ? nil : HostStore.defaultURL)
         SSHConnection.setKeyUseConfirmation { host in await KeyUsePrompter.shared.ask(host) }
+        #if DEBUG
+        // Simulator checks: -sidra.substrateOpen <message id> opens that request as a tapped notification does.
+        if let m = UserDefaults.standard.string(forKey: "sidra.substrateOpen"), !m.isEmpty, let c = SubstrateHub.shared.connections.first(where: { $0.id.uuidString.hasSuffix("05B5") }) {
+            Notifier.pending = .substrate(c.id, m)
+        }
+        #endif
     }
 
     /// The store for a UI scene. The first scene gets the primary store (workspace.json); further

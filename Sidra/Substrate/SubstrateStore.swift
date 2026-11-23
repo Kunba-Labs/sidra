@@ -77,7 +77,10 @@ final class SubstrateStore {
     var editing: String?
     var pickedSession: String?
     var section: Section = .requests
-    enum Section: String, CaseIterable { case requests = "Requests", sessions = "Sessions", machines = "Machines" }
+    enum Section: String, CaseIterable {
+        case requests = "Requests", sessions = "Sessions", machines = "Machines"
+        var icon: String { switch self { case .requests: "tray"; case .sessions: "link"; case .machines: "desktopcomputer" } }
+    }
 
     @ObservationIgnored private var liveTask: Task<Void, Never>?
     /// Requests already waiting at the last refresh; nil before the first, so launching does not notify the backlog.
