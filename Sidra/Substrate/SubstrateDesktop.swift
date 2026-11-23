@@ -1,7 +1,6 @@
 #if os(macOS)
 import AppKit
 import SwiftUI
-import LocalAuthentication
 import SidraDesign
 
 /// Substrate approvals as Sidra's own cards on the Mac desktop (Waseem, 2026-11-20): inbox2's desktop card
@@ -54,13 +53,10 @@ import SidraDesign
         cards.removeFirst(max(0, cards.count - Self.maxCards))
     }
 
-    /// Approve or Reject: Touch ID or the login password first, as the iPad's notification asks for Face ID.
+    /// Approve or Reject: straight away, no Touch ID or password (Waseem, 2026-11-23).
     func act(_ id: String, approve: Bool) {
         guard let card = cards.first(where: { $0.id == id }), let store = SubstrateHub.shared.store(card.connection) else { return dismiss(id) }
         Task {
-            let ctx = LAContext()
-            let reason = approve ? "approve \(card.message.sender?.name ?? "this")'s request" : "reject \(card.message.sender?.name ?? "this")'s request"
-            guard (try? await ctx.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason)) == true else { return }
             set(id, .working)
             do {
                 if approve { try await store.approve(id) } else { try await store.reject(id) }
