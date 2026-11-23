@@ -190,7 +190,8 @@ struct SubstrateDesktopCard: View {
             switch card.state {
             case .failed: label("Not sent", SidraColor.red)
             default:
-                if m.held { label("Held: \(m.risk ?? "risky")", SidraColor.gold) }
+                if let rules = m.riskRules { label("Held: \(rules)", SidraColor.red) }
+                else if m.newWork { label("New work", SidraColor.gold) }
                 else { Text("NEEDS APPROVAL").font(SidraFont.ui(11, weight: .bold)).tracking(0.8).foregroundStyle(SubstrateStyle.electric) }
             }
             Spacer()
@@ -208,7 +209,7 @@ struct SubstrateDesktopCard: View {
             if case .failed = card.state {
                 Text("Substrate did not take it").font(SidraFont.ui(15, weight: .semibold)).foregroundStyle(SidraColor.text)
             } else {
-                Text(m.held ? "Held: \(m.project?.name ?? "a project")" : "\(who) asks \(m.project?.name ?? "an agent")")
+                Text(m.riskRules != nil ? "Held: \(m.project?.name ?? "a project")" : "\(who) asks \(m.project?.name ?? "an agent")")
                     .font(SidraFont.ui(15, weight: .semibold)).foregroundStyle(SidraColor.text).lineLimit(1)
             }
             if newest {
@@ -218,9 +219,14 @@ struct SubstrateDesktopCard: View {
                     Text(why).font(SidraFont.ui(13)).foregroundStyle(Color(hex: 0xaab2bd)).padding(.top, 4)
                 } else {
                     Text(m.text).font(SidraFont.ui(13)).foregroundStyle(Color(hex: 0xaab2bd)).lineLimit(3).padding(.top, 4)
-                    if m.held, let risk = m.risk {
-                        SubstrateChip(tone: .warn) { Text(risk) }.padding(.top, 6)
+                    if let w = m.hold_why, !w.isEmpty {
+                        Text("Your agent sent this follow-up back: it reads as new work. \(w)").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.gold).lineLimit(3).padding(.top, 4)
                     }
+                    if let p = m.proposal { Text("Adjusted in review: \(p.text)").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.jade).lineLimit(2).padding(.top, 2) }
+                    HStack(spacing: 6) {
+                        if let rules = m.riskRules { SubstrateChip(tone: .danger) { Text(rules) } }
+                        if m.newWork { SubstrateChip(tone: .warn) { Text("new work") } }
+                    }.padding(.top, 6)
                 }
             }
         }

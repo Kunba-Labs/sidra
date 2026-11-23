@@ -219,7 +219,7 @@ final class SubstrateStore {
             }
             #endif
             let who = m.sender?.name ?? "Someone"
-            Notifier.notify(m.held ? "Held: \(m.project?.name ?? "a project")" : "\(who) asks \(m.project?.name ?? "an agent")",
+            Notifier.notify(m.riskRules != nil ? "Held: \(m.project?.name ?? "a project")" : m.newWork ? "New work: \(m.project?.name ?? "a project")" : "\(who) asks \(m.project?.name ?? "an agent")",
                             m.held ? "\(who): \(m.text)" : m.proposal.map { "Adjusted in review: \($0.text)" } ?? m.text,
                             route: .substrate(connection.id, m.id), category: Notifier.approvalCategory, id: "substrate.\(m.id)")
         }

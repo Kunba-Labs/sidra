@@ -172,7 +172,7 @@ struct SubstrateRequests: View {
         .task(id: picked?.conversation_id) { if let c = picked?.conversation_id { await store.loadConversation(c) } }
         .onChange(of: picked?.id) { _, _ in fullPrompt = false }
         .onChange(of: store.editing) { _, id in if let id, let m = store.message(id) { draft = m.proposal?.text ?? m.text; why = m.proposal?.why ?? "" } }
-        .confirmationDialog("This request is held: \(confirmHeld?.message.risk ?? "flagged as risky").",
+        .confirmationDialog(confirmHeld.flatMap { $0.message.heldConfirm(edited: $0.text != nil) } ?? "Deliver it to your agent anyway?",
                             isPresented: Binding(get: { confirmHeld != nil }, set: { if !$0 { confirmHeld = nil } }), titleVisibility: .visible) {
             Button(confirmHeld?.text == nil ? "Approve anyway" : "Approve edited message anyway") {
                 if let c = confirmHeld { act(c.message, approve: true, text: c.text ?? c.message.text, confirmed: true) }
@@ -249,7 +249,12 @@ struct SubstrateRequests: View {
                     else { Text("via " + (m.client ?? "session")).font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted).lineLimit(1) }
                     if let p = m.project { SubstrateChip { SubstrateProjectLogo(project: p, size: 16); Text(p.name) } }
                     if reviewing { SubstrateChip(tone: .electric) { Text("in review with your agent") } }
-                    else if waiting { SubstrateChip(tone: .warn) { Circle().fill(SidraColor.gold).frame(width: 7, height: 7); Text(m.held ? "held: \(m.risk ?? "")" : "waiting for you") } }
+                    else if waiting {
+                        // Risk rules are danger; the agent's "new work" fit check is a warn pill (2026-11-23).
+                        if let rules = m.riskRules { SubstrateChip(tone: .danger) { Circle().fill(SidraColor.red).frame(width: 7, height: 7); Text("held: \(rules)") } }
+                        if m.newWork { SubstrateChip(tone: .warn) { Text("new work") } }
+                        if !m.held { SubstrateChip(tone: .warn) { Circle().fill(SidraColor.gold).frame(width: 7, height: 7); Text("waiting for you") } }
+                    }
                     else { SubstrateChip { Text(Substrate.stageLabel(m)) } }
                     if let allow = m.deploy_allow, allow != "none" { SubstrateChip(tone: .electric) { Text("deploys to \(allow)") } }
                     if !narrow { Spacer(minLength: 0) }
@@ -270,6 +275,17 @@ struct SubstrateRequests: View {
                 .background(SubstrateStyle.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(SidraColor.hairline))
                 .padding(.horizontal, inset).padding(.top, 16)
+                if m.stage == "held", let w = m.hold_why, !w.isEmpty {
+                    HStack(alignment: .top, spacing: 10) {
+                        Image(systemName: "terminal").font(.system(size: 12, weight: .bold)).foregroundStyle(Color(hex: 0x111111))
+                            .frame(width: 24, height: 24).background(SidraColor.gold, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        Text("Your agent sent this follow-up back: it reads as new work. \(w)").font(SidraFont.ui(13.5)).foregroundStyle(SidraColor.text).textSelection(.enabled)
+                    }
+                    .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(SubstrateStyle.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(SidraColor.gold.opacity(0.3)))
+                    .padding(.horizontal, inset).padding(.top, 10)
+                }
                 if let p = m.proposal { proposal(p) }
                 if reviewing {
                     Text("In review with your agent. Talk it over in the agent's session. Approve it here when the agent sends it back.")
@@ -819,7 +835,7 @@ extension Substrate {
         }
         switch m.stage {
         case "pending_approval": return m.deploy_allow.map { $0 == "none" ? "waiting" : "deploys to \($0)" } ?? "waiting"
-        case "held": return "held"
+        case "held": return m.riskRules == nil && m.newWork ? "new work" : "held"
         case "reviewing": return "in review"
         case "approved", "dispatched", "accepted", "submitted": return "sent to the agent"
         case "working": return "working"
@@ -868,20 +884,21 @@ struct SubstrateGroupLabel: View {
 }
 
 struct SubstrateChip<Content: View>: View {
-    enum Tone { case plain, warn, electric }
+    enum Tone { case plain, warn, danger, electric }
     var tone: Tone = .plain
     var small = false
     @ViewBuilder let content: () -> Content
     var body: some View {
         HStack(spacing: 6) { content() }
             .font(SidraFont.ui(small ? 10.5 : 12))
-            .foregroundStyle(tone == .electric ? .white : tone == .warn ? SidraColor.gold : Color(hex: 0xaab2bd))
+            .foregroundStyle(tone == .electric ? .white : tone == .warn ? SidraColor.gold : tone == .danger ? SidraColor.red : Color(hex: 0xaab2bd))
             .padding(.horizontal, small ? 6 : 9).frame(height: small ? 18 : 24)
             .background {
                 let shape = RoundedRectangle(cornerRadius: 7, style: .continuous)
                 switch tone {
                 case .electric: shape.fill(SubstrateStyle.electric)
                 case .warn: shape.fill(Color(hex: 0x231f15)).overlay(shape.strokeBorder(SidraColor.gold.opacity(0.25)))
+                case .danger: shape.fill(Color(hex: 0x261516)).overlay(shape.strokeBorder(SidraColor.red.opacity(0.3)))
                 case .plain: shape.fill(SubstrateStyle.chip).overlay(shape.strokeBorder(SidraColor.hairline))
                 }
             }

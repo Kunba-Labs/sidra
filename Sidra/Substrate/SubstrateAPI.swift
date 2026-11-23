@@ -41,8 +41,23 @@ enum Substrate {
         var prompt: String?
         /// The request as agreed with the agent in review (`substrate propose`); approving sends this, never the original (2026-11-21).
         var proposal: Proposal?
+        /// Why the agent sent a follow-up back as new work (`substrate hold`); set only while held (2026-11-23).
+        var hold_why: String?
 
         var held: Bool { !(risk ?? "").isEmpty }
+        /// The risk rules it matched. "off-topic" is the agent's fit check, shown as new work instead.
+        var riskRules: String? {
+            let r = (risk ?? "").split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty && $0 != "off-topic" }
+            return r.isEmpty ? nil : r.joined(separator: ", ")
+        }
+        var newWork: Bool { (risk ?? "").split(separator: ",").contains { $0.trimmingCharacters(in: .whitespaces) == "off-topic" } }
+        /// The confirm before a held message goes on, as on the web (`risk_confirm`).
+        func heldConfirm(edited: Bool) -> String? {
+            let what = edited ? "the edited message" : "it"
+            if riskRules != nil { return "This message matched a risk rule. Deliver \(what) to your agent anyway?" }
+            if newWork { return "Your agent sent this back as new work. Deliver \(what) to your agent anyway?" }
+            return nil
+        }
     }
 
     struct Proposal: Codable, Hashable {
