@@ -116,6 +116,7 @@ struct HostEditor: View {
     @Environment(AppModel.self) private var app
     @State private var configNote: String?
     @State private var copiedKeyID: String?   // the key whose public half is on the clipboard
+    @State private var keySent = false   // copied or shared: the Mac steps show (Vision Pro)
     /// Host key, mosh, jump host and ssh_config sit under "More options"; open when one is in use.
     @State private var showMore = false
     private var hosts: [SSHHostProfile] { app.hosts.hosts }
@@ -188,12 +189,15 @@ struct HostEditor: View {
                     if let k = keys.first(where: { $0.id == (profile.keyID ?? keys.first?.id) }) {
                         HStack(spacing: 10) {
                             Button(copiedKeyID == "\(k.id)" ? "Copied" : "Copy public key", systemImage: copiedKeyID == "\(k.id)" ? "checkmark" : "doc.on.doc") {
-                                Platform.pasteString = k.publicKey; copiedKeyID = "\(k.id)"
+                                Platform.pasteString = k.publicKey; copiedKeyID = "\(k.id)"; keySent = true
                             }
-                            ShareLink(item: k.publicKey) { Label("Share", systemImage: "square.and.arrow.up") }
+                            // The shared text carries the steps too, so whoever gets it on the Mac knows what to do.
+                            ShareLink(item: MacSetup.message(k.publicKey)) { Label("Share", systemImage: "square.and.arrow.up") }
+                                .simultaneousGesture(TapGesture().onEnded { keySent = true })
                         }
                         Text(k.publicKey).font(SidraFont.mono(10)).foregroundStyle(SidraColor.muted)
                             .lineLimit(4).textSelection(.enabled)
+                        if keySent { MacSetup(publicKey: k.publicKey) }
                     }
                 }
                 #else
@@ -254,7 +258,12 @@ struct HostEditor: View {
         .sheet(item: Binding(get: { prompter.pending.map { PromptBox(prompt: $0) } }, set: { _ in })) { box in
             HostKeySheet(prompt: box.prompt) { prompter.decide($0) }
         }
-        .onAppear { prompter.install(); showMore = usesExtras }
+        .onAppear {
+            prompter.install(); showMore = usesExtras
+            #if DEBUG
+            if CommandLine.arguments.contains("-sidra.keySent") { keySent = true }
+            #endif
+        }
     }
 
     private struct PromptBox: Identifiable { let prompt: HostKeyPrompt; var id: String { "\(prompt.host):\(prompt.port)" } }
@@ -529,3 +538,50 @@ struct VoiceSection: View {
         }
     }
 }
+
+#if os(visionOS)
+/// After the key is copied or shared: how a Mac takes it, and what to fill in here (Waseem, 2026-11-24).
+struct MacSetup: View {
+    let publicKey: String
+    @State private var copied = false
+
+    static func command(_ key: String) -> String {
+        "mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo '\(key)' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+    }
+    static func message(_ key: String) -> String {
+        """
+        Let Sidra sign in to this Mac:
+        1. Open System Settings > General > Sharing and turn on Remote Login.
+        2. Open Terminal and run this command:
+
+        \(command(key))
+        """
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Connect to a Mac").font(SidraFont.ui(13, weight: .bold)).foregroundStyle(SidraColor.text)
+            step(1, "On the Mac, open System Settings > General > Sharing and turn on Remote Login.")
+            step(2, "Open Terminal on the Mac and run this command. It adds Sidra's key to the Mac.")
+            Text(Self.command(publicKey)).font(SidraFont.mono(10)).foregroundStyle(SidraColor.muted)
+                .lineLimit(5).textSelection(.enabled)
+                .padding(8).background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
+            Button(copied ? "Copied" : "Copy command", systemImage: copied ? "checkmark" : "doc.on.doc") {
+                Platform.pasteString = Self.command(publicKey); copied = true
+            }
+            step(3, "Here, set Host to the Mac's name. Sharing shows it under Local hostname, for example studio.local.")
+            step(4, "Set User to your Mac user name. Run whoami in Terminal if you are not sure.")
+            step(5, "Tap Test connection, then Save.")
+        }
+        .padding(12)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(SidraColor.jade.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+    }
+
+    private func step(_ n: Int, _ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text("\(n)").font(SidraFont.ui(12, weight: .bold)).foregroundStyle(SidraColor.jade)
+            Text(text).font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted).fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+#endif
