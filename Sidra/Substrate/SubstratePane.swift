@@ -147,7 +147,10 @@ struct SubstrateRequests: View {
     private var all: [Substrate.Message] { groups.flatMap(\.1) }
     private var picked: Substrate.Message? { store.pickedMessage.flatMap(store.message) ?? all.first }
 
-    private var narrow: Bool { width < substrateNarrow }
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    /// A phone is always narrow: the measured width alone can stay wide, since the two columns' content
+    /// (a long unwrapped line) holds the pane wider than the screen and the layout never flips (2026-11-24).
+    private var narrow: Bool { sizeClass == .compact || width < substrateNarrow }
 
     var body: some View {
         Group {
@@ -464,7 +467,10 @@ struct SubstrateSessions: View {
         return id.flatMap { id in store.sessionDetails[id] ?? sessions.first { $0.id == id } }
     }
 
-    private var narrow: Bool { width < substrateNarrow }
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    /// A phone is always narrow: the measured width alone can stay wide, since the two columns' content
+    /// (a long unwrapped line) holds the pane wider than the screen and the layout never flips (2026-11-24).
+    private var narrow: Bool { sizeClass == .compact || width < substrateNarrow }
 
     var body: some View {
         Group {
