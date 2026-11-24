@@ -3,6 +3,8 @@
 #
 #   tools/testflight.sh            bump build number, archive, export, upload
 #   tools/testflight.sh --no-bump  reuse the current CURRENT_PROJECT_VERSION
+#   tools/testflight.sh --vision   the Apple Vision Pro build (same target, visionOS); combine with --no-bump
+#                                  to ship the build number the iOS upload just used. Testers: internal group "Me".
 #
 # Signing is automatic with the App Store Connect API key (no Apple ID in Xcode on this Mac).
 set -euo pipefail
@@ -16,7 +18,10 @@ TEAM=${DEVELOPMENT_TEAM:-KF53B4S5HD}
 OUT=build/testflight
 mkdir -p "$OUT"
 
-if [[ "${1:-}" != "--no-bump" ]]; then
+PLATFORM=iOS; ALTOOL=ios
+for a in "$@"; do [[ $a == --vision ]] && { PLATFORM=visionOS; ALTOOL=visionos; OUT=build/testflight-vision; mkdir -p "$OUT"; }; done
+
+if [[ " $* " != *" --no-bump "* ]]; then
   # The app's line is the first; the USB driver target keeps its own.
   line=$(grep -nE '^\s*CURRENT_PROJECT_VERSION:' project.yml | head -1 | cut -d: -f1)
   current=$(sed -n "${line}p" project.yml | awk '{print $2}')
@@ -43,7 +48,7 @@ AUTH=(-allowProvisioningUpdates -authenticationKeyPath "$KEY" -authenticationKey
 
 echo "archiving…"
 xcodebuild archive -project Sidra.xcodeproj -scheme Sidra -configuration Release \
-  -destination 'generic/platform=iOS' -archivePath "$OUT/Sidra.xcarchive" \
+  -destination "generic/platform=$PLATFORM" -archivePath "$OUT/Sidra.xcarchive" \
   -skipPackagePluginValidation -skipMacroValidation "${AUTH[@]}" \
   2>&1 | grep -E 'error:|warning: .*(Sidra/|Packages/Sidra)|ARCHIVE (SUCCEEDED|FAILED)' | sort -u
 
@@ -53,5 +58,5 @@ xcodebuild -exportArchive -archivePath "$OUT/Sidra.xcarchive" -exportOptionsPlis
 
 IPA=$(ls "$OUT"/export/*.ipa | head -1)
 echo "uploading ${IPA}…"
-xcrun altool --upload-app -f "$IPA" -t ios --apiKey "$KEY_ID" --apiIssuer "$ISSUER" 2>&1 | grep -E 'UPLOAD|error|Error|successfully' | head -5
+xcrun altool --upload-app -f "$IPA" -t $ALTOOL --apple-id "${ASC_APP_ID:-6832359499}" --apiKey "$KEY_ID" --apiIssuer "$ISSUER" 2>&1 | grep -E 'UPLOAD|error|Error|successfully' | head -5
 echo "done. Build appears in App Store Connect after processing (5 to 15 minutes)."
