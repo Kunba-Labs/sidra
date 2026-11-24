@@ -13,7 +13,7 @@ struct FloatingMic: View {
     let showMic: Bool
     @State private var voice = VoiceInput.shared
     @State private var window: PlatformWindow?
-    #if os(iOS)
+    #if os(iOS) || os(visionOS)
     @State private var kb = FloatingKeyboard.shared
     /// Sidra's keyboard is open in this window: its corner mic takes over.
     private var keysOpen: Bool { kb.visible && window != nil && kb.targetWindow == window.map(ObjectIdentifier.init) }
@@ -33,7 +33,7 @@ struct FloatingMic: View {
             }
             if !keysOpen, showMic || (voice.isActive && voice.window === window) {
                 HStack(spacing: 10) {
-                    #if os(iOS)
+                    #if os(iOS) || os(visionOS)
                     if keysCollapsed {
                         Button { kb.expand() } label: {
                             Image(systemName: "keyboard").font(.system(size: 17)).foregroundStyle(SidraColor.text)

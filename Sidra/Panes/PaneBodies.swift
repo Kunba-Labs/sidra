@@ -81,7 +81,7 @@ struct PlaceholderPane: View {
 struct SelectModeButton: View {
     let paneID: UUID
     var body: some View {
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         Button {
             if let io = TerminalLink.of(paneID).session, let view = TerminalPaneView.ghostty(for: io) { view.selectMode.toggle() }
         } label: {

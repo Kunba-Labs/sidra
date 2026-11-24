@@ -46,7 +46,7 @@ public struct PaneCard<Content: View, Extra: View, Footer: View>: View {
         self.footer = footer
     }
 
-    #if os(iOS)
+    #if os(iOS) || os(visionOS)
     @Environment(\.horizontalSizeClass) private var sizeClass
     private var phone: Bool { sizeClass == .compact }
     #else

@@ -1,4 +1,4 @@
-#if os(iOS)
+#if os(iOS) || os(visionOS)
 import UIKit
 
 /// Swipe typing: turn a finger path over the letter keys into words. Candidates come from iOS's own

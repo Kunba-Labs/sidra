@@ -46,7 +46,7 @@ struct HerdrPane: View {
             // In the background the phone shows nothing: unzoom, with time granted to send it before iOS suspends Sidra.
             away = phase == .background
             guard away, let m = MuxMonitors.shared.byPane[pane.id] else { return }
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             let grant = UIApplication.shared.beginBackgroundTask()
             Task { await m.fitPhone(app, compact: false); UIApplication.shared.endBackgroundTask(grant) }
             #else

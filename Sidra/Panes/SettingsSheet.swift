@@ -50,7 +50,7 @@ struct SettingsSheet: View {
             NotificationsSection(query: query)
             #endif
             VoiceSection(query: query)
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             ScreenshotSection(query: query)
             #endif
 
@@ -350,7 +350,7 @@ struct TerminalKeysSection: View {
     private func show(_ texts: String...) -> Bool { query.isEmpty || texts.contains { $0.localizedCaseInsensitiveContains(query) } }
 
     var body: some View {
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         if show("Sidra keyboard", "keyboard", "floating", "swipe") {
             SettingRow("Sidra keyboard", detail: "A floating developer keyboard in place of Apple's, in terminals. Hides when a hardware keyboard is attached. The SwiftTerm engine keeps Apple's keyboard", isDefault: FloatingKeyboard.shared.enabled, reset: { FloatingKeyboard.shared.enabled = true }) {
                 Toggle("", isOn: Binding(get: { FloatingKeyboard.shared.enabled }, set: { FloatingKeyboard.shared.enabled = $0 }))
@@ -409,7 +409,7 @@ struct TerminalFontSection: View {
 }
 #endif
 
-#if os(iOS)
+#if os(iOS) || os(visionOS)
 /// How to send a screenshot to a session: the Shortcuts action and the Share sheet (2026-11-19).
 struct ScreenshotSection: View {
     let query: String

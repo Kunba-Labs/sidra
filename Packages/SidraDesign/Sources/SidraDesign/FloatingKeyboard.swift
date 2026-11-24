@@ -7,7 +7,7 @@ import CoreGraphics
     public static func covers(_ p: CGPoint) -> Bool { frames.values.contains { $0.contains(p) } }
 }
 
-#if os(iOS)   // touch keyboard UI: a Mac has a hardware keyboard
+#if os(iOS) || os(visionOS)   // touch keyboard UI: a Mac has a hardware keyboard
 import UIKit
 import Observation
 import GameController

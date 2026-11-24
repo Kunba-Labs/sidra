@@ -703,7 +703,7 @@ struct SubstrateSignIn: View {
                 HStack {
                     TextField("you@example.com", text: $email)
                         .plainTextEntry().autocorrectionDisabled()
-                        #if os(iOS)
+                        #if os(iOS) || os(visionOS)
                         .keyboardType(.emailAddress).textInputAutocapitalization(.never).textContentType(.emailAddress)
                         #endif
                         .focused($focus, equals: .email)
@@ -754,7 +754,7 @@ struct SubstrateSignIn: View {
         ZStack {
             TextField("", text: $code)
                 .focused($focus, equals: .code)
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .keyboardType(.numberPad).textContentType(.oneTimeCode)
                 #endif
                 .onChange(of: code) { _, v in

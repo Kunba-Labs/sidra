@@ -6,7 +6,7 @@ import PackageDescription
 // iOS and macOS (WKWebView behind PlatformViewRepresentable); its tests run in the Simulator through the Sidra scheme.
 let package = Package(
     name: "SidraHackerTab",
-    platforms: [.iOS("26.0"), .macOS("26.0")],
+    platforms: [.iOS("26.0"), .macOS("26.0"), .visionOS("26.0")],
     products: [.library(name: "SidraHackerTab", targets: ["SidraHackerTab"])],
     dependencies: [.package(path: "../SidraDesign")],
     targets: [

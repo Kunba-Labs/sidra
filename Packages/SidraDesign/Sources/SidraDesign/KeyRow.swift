@@ -1,4 +1,4 @@
-#if os(iOS)   // touch keyboard UI: a Mac has a hardware keyboard
+#if os(iOS) || os(visionOS)   // touch keyboard UI: a Mac has a hardware keyboard
 import UIKit
 import GameController
 

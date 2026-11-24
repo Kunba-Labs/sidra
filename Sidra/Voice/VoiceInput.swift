@@ -276,7 +276,7 @@ final class VoiceInput {
 
     private func startAudio() throws {
         audioStore.clear(); columns.removeAll(); fftWindow.removeAll(); partial = ""; finalText = ""
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         let s = AVAudioSession.sharedInstance()
         try s.setCategory(.record, mode: .measurement, options: [.duckOthers])
         try s.setActive(true)
@@ -305,7 +305,7 @@ final class VoiceInput {
         audio.prepare()
         do { try audio.start() } catch {
             input.removeTap(onBus: 0)
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
             #endif
             throw error
@@ -319,7 +319,7 @@ final class VoiceInput {
     private func stopAudio() {
         if audio.isRunning {
             audio.inputNode.removeTap(onBus: 0); audio.stop()
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
             #endif
         }
@@ -420,7 +420,7 @@ final class VoiceInput {
     private static var whisperBase: URL {
         let dir = (FileManager.default.sidraSupport ?? URL.temporaryDirectory).appending(path: "whisper", directoryHint: .isDirectory)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         var values = URLResourceValues(); values.isExcludedFromBackup = true
         var d = dir; try? d.setResourceValues(values)
         #endif

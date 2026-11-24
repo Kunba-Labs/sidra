@@ -131,7 +131,7 @@ final class SubstrateStore {
 
     func signOut() async {
         struct OK: Decodable { var ok: Bool? }
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         if let t = SubstratePush.token { let _: OK? = try? await client.delete("/devices/\(t)") }   // before the token stops working
         #endif
         let _: OK? = try? await client.post("/auth/logout")
@@ -150,7 +150,7 @@ final class SubstrateStore {
     /// Fetches everything and keeps /live open; reconnects after a drop, waiting longer each time (at most a minute).
     func start() {
         guard signedIn, liveTask == nil else { return }
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         SubstratePush.enable()
         if let t = SubstratePush.token { Task { await registerDevice(t) } }
         #endif
@@ -183,7 +183,7 @@ final class SubstrateStore {
             async let m: Substrate.Machines = client.get("/machines")
             dashboard = try await d
             notifyNewApprovals()
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             if !deviceRegistered, let t = SubstratePush.token { await registerDevice(t) }
             #endif
             sessions = try await s
@@ -225,7 +225,7 @@ final class SubstrateStore {
         }
     }
 
-    #if os(iOS)
+    #if os(iOS) || os(visionOS)
     /// Tells Substrate where to push this account's approvals; `client_ref` (this account's id here) comes back in each push.
     func registerDevice(_ token: String) async {
         struct OK: Decodable { var ok: Bool? }

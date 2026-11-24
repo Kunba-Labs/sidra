@@ -118,7 +118,7 @@ final class PlatformStatus {
     /// `App-prefs:` is private, which is fine for a build that never goes to the App Store. iPadOS may
     /// stop honouring it, so a refusal falls back to Sidra's own page in Settings.
     static func openSystemSettings(_ link: String) {
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         guard let u = URL(string: link) else { return openSettings() }
         UIApplication.shared.open(u) { ok in if !ok { Task { @MainActor in openSettings() } } }
         #else
@@ -127,7 +127,7 @@ final class PlatformStatus {
     }
 
     static func openSettings() {
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         if let u = URL(string: UIApplication.openSettingsURLString) { Platform.open(u) }
         #else
         // Local Network and other privacy switches live under Privacy & Security on the Mac.

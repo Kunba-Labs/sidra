@@ -5,7 +5,7 @@ import PackageDescription
 // Foundation only, so `swift test` runs it on the Mac; the views live in the app target.
 let package = Package(
     name: "SidraTheasa",
-    platforms: [.iOS("26.0"), .macOS("26.0")],
+    platforms: [.iOS("26.0"), .macOS("26.0"), .visionOS("26.0")],
     products: [.library(name: "SidraTheasa", targets: ["SidraTheasa"])],
     targets: [
         .target(name: "SidraTheasa", swiftSettings: [.swiftLanguageMode(.v5)]),

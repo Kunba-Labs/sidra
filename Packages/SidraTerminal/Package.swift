@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "SidraTerminal",
-    platforms: [.iOS("26.0"), .macOS("26.0")],
+    platforms: [.iOS("26.0"), .macOS("26.0"), .visionOS("26.0")],
     products: [.library(name: "SidraTerminal", targets: ["SidraTerminal"])],
     dependencies: [.package(url: "https://github.com/migueldeicaza/SwiftTerm", exact: "1.99.3"), .package(path: "../SidraDesign")],
     targets: [

@@ -80,7 +80,7 @@ struct WorkspaceCommands: Commands {
         // ⌘1–9, then ⌘0, ⌘- and ⌘= (shown +) for tabs 10 to 12; the Mac keeps those three for text size.
         for (i, k) in TabKeys.keys.enumerated() where !(Platform.isMac && i >= 9) {
             c.append(.init("tab.\(i + 1)", "Tab \(i + 1)", area: "Tab", key: KeyEquivalent(k), label: "⌘" + (TabKeys.label(i) ?? "")) {
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 // Over the Send screenshot card, ⌘0, ⌘- and ⌘= zoom the screenshot instead.
                 if i >= 9, ScreenshotInbox.shared.pending != nil { NotificationCenter.default.post(name: .sidraScreenshotZoom, object: String(k)); return }
                 #endif

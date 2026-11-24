@@ -6,7 +6,7 @@ import PackageDescription
 // (github.com/lichess-org/chess-openings, CC0), copied from checkerspromax.
 let package = Package(
     name: "SidraChess",
-    platforms: [.iOS("26.0"), .macOS("26.0")],
+    platforms: [.iOS("26.0"), .macOS("26.0"), .visionOS("26.0")],
     products: [.library(name: "SidraChess", targets: ["SidraChess"])],
     dependencies: [
         .package(path: "../SidraDesign"),

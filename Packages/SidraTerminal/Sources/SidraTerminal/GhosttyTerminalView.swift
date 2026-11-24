@@ -1,4 +1,4 @@
-#if os(iOS)   // macOS: MacTerminal.swift
+#if os(iOS) || os(visionOS)   // macOS: MacTerminal.swift
 import UIKit
 import CoreText
 import SidraDesign
@@ -39,11 +39,13 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     static let dumpPath: String = {
         let p = NSTemporaryDirectory() + "sidra-vt.bin"; FileManager.default.createFile(atPath: p, contents: nil); return p
     }()
+    #if !os(visionOS)   // visionOS has no input accessory or custom input views; its keyboard floats on its own
     public override var inputAccessoryView: UIView? { HardwareKeyboard.attached || FloatingKeyboard.shared.enabled ? nil : keyRow }
     /// With Sidra's floating keyboard on, an empty input view keeps typing focus (and hardware keys)
     /// without Apple's keyboard, and iOS reports no keyboard, so panes never shrink.
     private lazy var emptyInput = UIView(frame: .zero)
     public override var inputView: UIView? { FloatingKeyboard.shared.enabled ? emptyInput : nil }
+    #endif
     @objc private func keyboardChanged() { reloadInputViews() }
 
     public init(io: TerminalIO, fontSize: CGFloat = SidraFont.monoSize) {
@@ -810,7 +812,9 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     public private(set) static weak var lastFocused: GhosttyTerminalView?
 
     public override func becomeFirstResponder() -> Bool {
+        #if !os(visionOS)
         if FloatingKeyboard.shared.enabled { inputAssistantItem.leadingBarButtonGroups = []; inputAssistantItem.trailingBarButtonGroups = [] }
+        #endif
         let r = super.becomeFirstResponder()
         if r { Self.lastFocused = self; FloatingKeyboard.shared.focus(self); reportFocus(window?.windowScene?.activationState == .foregroundActive) }
         setNeedsDisplay()

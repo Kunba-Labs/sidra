@@ -1,6 +1,6 @@
 import Foundation
 import SidraDesign
-#if os(iOS)
+#if os(iOS) || os(visionOS)
 import UIKit
 typealias ThumbHost = UIView
 #else
@@ -169,7 +169,7 @@ public enum TerminalLinks {
         for (key, v) in views where !seen.contains(key) { v.removeFromSuperview(); views[key] = nil }
     }
 
-    #if os(iOS)
+    #if os(iOS) || os(visionOS)
     private func makeView(_ image: UIImage, path: String, key: String) -> ThumbHost {
         let v = UIImageView(image: image.preparingThumbnail(of: CGSize(width: 192, height: 120)) ?? image)
         v.contentMode = .scaleAspectFill

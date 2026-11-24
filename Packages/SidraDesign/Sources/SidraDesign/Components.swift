@@ -280,7 +280,7 @@ public struct IconButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         .hoverEffect(.highlight)
         #endif
         .accessibilityLabel(label)

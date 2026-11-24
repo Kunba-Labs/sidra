@@ -75,7 +75,7 @@
 		6B5024C83E45197BF4473249 /* TheasaCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A13AED1FB2E44CBBCE48E1 /* TheasaCommands.swift */; };
 		6EBC7DB38F21425DECECA632 /* SidraSSH in Frameworks */ = {isa = PBXBuildFile; productRef = E3A47C10FA0E643E3967CC53 /* SidraSSH */; };
 		70837EE4B144DA323B9753D3 /* JetBrainsMono-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9FAFFC0DA4889FFFC37607E5 /* JetBrainsMono-Variable.ttf */; };
-		72210B56A357E40E414FC6D1 /* SidraShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 24E3FBD0D184CBA1A09C2A72 /* SidraShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		72210B56A357E40E414FC6D1 /* SidraShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 24E3FBD0D184CBA1A09C2A72 /* SidraShare.appex */; platformFilters = (ios, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		72957F7C89C8286EC9B48A86 /* SidraWorkspace in Frameworks */ = {isa = PBXBuildFile; productRef = 11BEF98FA85E5B56A02A801A /* SidraWorkspace */; };
 		762694257B241A70017A3BD6 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CC77A4E8D6AA264330D64 /* SettingsSheet.swift */; };
 		76818F3F38D7C373C58D6F24 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 788A46258945131DAB264C68 /* PrivacyInfo.xcprivacy */; };
@@ -102,6 +102,7 @@
 		91BBE159888E6DC08DC564FC /* Notifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = E196B90CD3E23D5A8642B9E4 /* Notifier.swift */; };
 		922C84C12CD28FA61CD8E670 /* ScreenshotSendSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC216BD8EB62660E922097D2 /* ScreenshotSendSheet.swift */; };
 		938965E6743C19E879D07BAA /* FloatingKeyboardPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCFB137D3245A2A62F70ECB5 /* FloatingKeyboardPanel.swift */; };
+		974DA872BD35B5B1CF13277F /* VisionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F54155A3925C7B0DA184A90 /* VisionApp.swift */; };
 		9BFF73B4CD41730D8F97000C /* PipelinesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDFE12FF0FEBA7EB10B55328 /* PipelinesTests.swift */; };
 		9C09EC179AB3EC8359CA186F /* SSHKeysTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16A78597AF77F3BBAB81F25F /* SSHKeysTests.swift */; };
 		9DB7AF6DB496C9ECAECF3C76 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 680898FB51F66C3B3F13859C /* Inter-Regular.ttf */; };
@@ -112,6 +113,7 @@
 		A0D9EDEC398C69C5867E4301 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B1F4667A0E51BA7C24D920DD /* Assets.xcassets */; };
 		A623DEEE53B4ACFE19518F59 /* HerdrPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4477F8E3EBA916104FCB99C5 /* HerdrPane.swift */; };
 		A660E1D5A45121EC37490B83 /* MicInputs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2D83C2FE1831D1C584C9D1 /* MicInputs.swift */; };
+		A8B89EF8C91E647D1D02ACE5 /* VisionApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F54155A3925C7B0DA184A90 /* VisionApp.swift */; };
 		A906DDC53DF8C889CAA7BBC7 /* SubstrateMarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10E835F25969CA3EBC4B34A /* SubstrateMarks.swift */; };
 		AA68CCB35DF9EB7A9A8186B4 /* TheasaMarkdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DCC141B15F493AF564C38B /* TheasaMarkdown.swift */; };
 		ADCABBA0CE88A581FEF55939 /* TheasaAgents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FA4FA59DD2513883467739 /* TheasaAgents.swift */; };
@@ -232,6 +234,7 @@
 		5878234E78CAE96CF386F927 /* HackerTabUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HackerTabUITests.swift; sourceTree = "<group>"; };
 		5A2D83C2FE1831D1C584C9D1 /* MicInputs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicInputs.swift; sourceTree = "<group>"; };
 		5B41E3C7C2BA941E511861CB /* TheasaConnectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaConnectSheet.swift; sourceTree = "<group>"; };
+		5F54155A3925C7B0DA184A90 /* VisionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionApp.swift; sourceTree = "<group>"; };
 		600EBD10A930EB3B4F2C55DB /* SSHConnectionLiveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHConnectionLiveTests.swift; sourceTree = "<group>"; };
 		61631DB9FAA738AF8DC58B30 /* SidraAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidraAlert.swift; sourceTree = "<group>"; };
 		61DF9B0DE46B31B9EBB3C0BA /* BusyPanes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BusyPanes.swift; sourceTree = "<group>"; };
@@ -554,6 +557,7 @@
 				EF4101D8B8817370EE559987 /* SidraApp.swift */,
 				834E2A056986234964AF6506 /* SidraMac.entitlements */,
 				9558625C18D327C68E8E8B55 /* TabActivity.swift */,
+				5F54155A3925C7B0DA184A90 /* VisionApp.swift */,
 				6920F420AC13A7F3AAB8D97C /* Demo */,
 				238A5B24F91C7173D17732AB /* Keyboard */,
 				12DAAE7720D4E51D308B813B /* Panes */,
@@ -886,6 +890,7 @@
 				F32455CD57664A9B89A9D52B /* TheasaSearch.swift in Sources */,
 				8C757D4D63D9B6A172165FE2 /* TheasaStore.swift in Sources */,
 				4CA48703B87A8CEA83D0A3E5 /* TheasaTurn.swift in Sources */,
+				974DA872BD35B5B1CF13277F /* VisionApp.swift in Sources */,
 				2553C3C8A4C8DBF875700ABD /* VoiceInput.swift in Sources */,
 				B9C64D70522BB51AFC8349D1 /* WordModel.swift in Sources */,
 			);
@@ -943,6 +948,7 @@
 				3F1527F314D94801B159B51C /* TheasaSearch.swift in Sources */,
 				D329A6E8E848BD422D1D1A71 /* TheasaStore.swift in Sources */,
 				CD424996DA892604811FC96E /* TheasaTurn.swift in Sources */,
+				A8B89EF8C91E647D1D02ACE5 /* VisionApp.swift in Sources */,
 				80C7DE4FD589E3B35B8C54A2 /* VoiceInput.swift in Sources */,
 				F63F05793C4504E801BC019E /* WordModel.swift in Sources */,
 			);
@@ -971,6 +977,9 @@
 /* Begin PBXTargetDependency section */
 		5BA65178EA2F7289A10D97E5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilters = (
+				ios,
+			);
 			target = 76079287FA6E4841539D6DB0 /* SidraShare */;
 			targetProxy = 2F3BFB2B5FC79DAF5EBD5157 /* PBXContainerItemProxy */;
 		};
@@ -1048,6 +1057,7 @@
 				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Release;
 		};
@@ -1105,7 +1115,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = nl.sadiq.sidra;
 				PRODUCT_NAME = Sidra;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Release;
 		};
@@ -1190,7 +1202,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = nl.sadiq.sidra;
 				PRODUCT_NAME = Sidra;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator xros xrsimulator";
+				TARGETED_DEVICE_FAMILY = "1,2,7";
+				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Debug;
 		};
@@ -1323,6 +1337,7 @@
 				SWIFT_STRICT_CONCURRENCY = minimal;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+				XROS_DEPLOYMENT_TARGET = 26.0;
 			};
 			name = Debug;
 		};

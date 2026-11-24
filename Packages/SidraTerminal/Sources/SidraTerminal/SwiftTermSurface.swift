@@ -1,4 +1,4 @@
-#if os(iOS)   // macOS: MacTerminal.swift
+#if os(iOS) || os(visionOS)   // macOS: MacTerminal.swift
 import UIKit
 import SwiftTerm
 

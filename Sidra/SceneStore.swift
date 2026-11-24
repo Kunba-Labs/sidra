@@ -23,7 +23,7 @@ struct SceneRoot: View {
                 .onChange(of: scenePhase) { _, phase in 
                     if phase == .active {
                         app.workspace = store; DataLayout.apply(); BusyPanes.shared.endGrace()
-                        #if os(iOS)
+                        #if os(iOS) || os(visionOS)
                         ScreenshotInbox.shared.collect()   // a screenshot the share extension left, if it could not open Sidra
                         #endif
                     }
@@ -32,11 +32,11 @@ struct SceneRoot: View {
                 .onReceive(NotificationCenter.default.publisher(for: .sidraNotificationRoute)) { _ in consumeRoute() }
                 .task {
                     consumeRoute()
-                    #if os(iOS)
+                    #if os(iOS) || os(visionOS)
                     ScreenshotInbox.shared.collect()   // a cold start: scenePhase reports no change to active
                     #endif
                 }
-                #if os(iOS)
+                #if os(iOS) || os(visionOS)
                 .onOpenURL { url in if url.scheme == "sidra", url.host == "screenshot" { ScreenshotInbox.shared.collect() } }
                 #endif
         } else {

@@ -25,12 +25,12 @@ struct RootView: View {
         }
         // A floating or undocked keyboard sits over the panes; only a docked one makes room.
         .ignoresSafeArea(.keyboard, edges: keyboard.floating ? .all : [])   // a floating keyboard dragged near the top must not push from above either
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         .background { KeyboardGuideProbe(dock: keyboard).ignoresSafeArea().allowsHitTesting(false) }
         #endif
         .overlay(alignment: .top) { PlatformBanners() }
         // The floating green mic: hold to talk into the focused terminal (iPad and Mac).
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         .overlay { FloatingKeyboardLayer() }   // under the mic, so dictation's card draws over the keys
         #endif
         .overlay(alignment: .bottomTrailing) { FloatingMic(showMic: focusedIsTerminal) }
@@ -49,7 +49,7 @@ struct RootView: View {
         }
         .animation(.easeOut(duration: 0.2), value: app.toastMessage)
         .sidraAlert($app.alert)
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         // A screenshot arriving closes whatever sheet is up: the Send screenshot card covers the window.
         .onChange(of: ScreenshotInbox.shared.pending, initial: true) { _, image in if image != nil { app.sheet = nil } }
         // Only the window in front shows it (every window presented it, and a background window's copy being
@@ -89,7 +89,7 @@ struct RootView: View {
             store.attention = { [app] in MuxMonitors.shared.count(.blocked, live: Set(app.allWorkspaces.flatMap { $0.tabs.flatMap { $0.panes.map(\.id) } })) }
             PipelinesHub.shared.start()
             // Your words for swipe and voice: each line sent with Sidra's keys, and your Theasa prompts once a day.
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             FloatingKeyboard.shared.onLine = { WordModel.shared.learn($0) }
             #endif
             Task { await WordModel.shared.refreshFromTheasa() }
@@ -154,7 +154,7 @@ final class KeyboardDock {
     fileprivate(set) var floating = false
 }
 
-#if os(iOS)
+#if os(iOS) || os(visionOS)
 /// Full-window view whose hidden marker spans from the keyboard layout guide's top to the window bottom;
 /// it also reads the keyboard notifications in its own window's coordinates.
 private struct KeyboardGuideProbe: UIViewRepresentable {
@@ -190,7 +190,12 @@ private struct KeyboardGuideProbe: UIViewRepresentable {
 
         @objc private func frameChanged(_ note: Notification) {
             guard let window, let end = note.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+            #if os(visionOS)
+            let kb = CGRect.zero   // visionOS's keyboard floats apart from the window
+            _ = end
+            #else
             let kb = window.convert(end, from: window.screen.coordinateSpace)
+            #endif
             let w = window.bounds
             // An empty, narrow or raised frame floats outright; a full-width one is checked against the guide.
             reported = kb.isEmpty || kb.width < w.width * 0.9 || kb.maxY < w.maxY - 1 ? .infinity : max(0, w.maxY - kb.minY)

@@ -1,4 +1,4 @@
-#if os(iOS)   // the compact iPhone layout
+#if os(iOS) || os(visionOS)   // the compact iPhone layout
 import SwiftUI
 import SidraDesign
 

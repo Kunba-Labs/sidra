@@ -63,7 +63,7 @@ struct WebPane: PlatformViewRepresentable {
         return c
     }
 
-    #if os(iOS)
+    #if os(iOS) || os(visionOS)
     func makeUIView(context: Context) -> UIView { makeBox(context) }
     func updateUIView(_ box: UIView, context: Context) { updateBox(context) }
     #else
@@ -78,7 +78,7 @@ struct WebPane: PlatformViewRepresentable {
         c.box = box
         for w in [c.page, c.reader] {
             w.navigationDelegate = c
-            #if os(iOS)
+            #if os(iOS) || os(visionOS)
             w.isOpaque = false
             w.backgroundColor = UIColor(T.article)
             w.scrollView.backgroundColor = UIColor(T.article)

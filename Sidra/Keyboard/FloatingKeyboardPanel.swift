@@ -1,4 +1,4 @@
-#if os(iOS)   // touch keyboard: a Mac has a hardware keyboard
+#if os(iOS) || os(visionOS)   // touch keyboard: a Mac has a hardware keyboard
 import SwiftUI
 import SidraDesign
 
@@ -47,8 +47,12 @@ struct FloatingKeyboardLayer: View {
 
 /// A light tap under the finger on each key press, like Apple's keyboard with Keyboard Feedback on. iPhone only: an iPad has no Taptic Engine.
 @MainActor enum KeyHaptic {
+    #if os(visionOS)
+    static func tap() {}   // no Taptic Engine
+    #else
     private static let generator = UIImpactFeedbackGenerator(style: .light)
     static func tap() { generator.impactOccurred(intensity: 0.6) }
+    #endif
 }
 
 struct KeyboardCap {

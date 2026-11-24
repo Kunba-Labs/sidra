@@ -19,6 +19,8 @@ final class AppModel {
     /// The key window's workspace: menu commands, openTab and splits target it. Each scene owns a
     /// store (see SceneRoot); the first scene takes this initial one, which holds workspace.json.
     var workspace: WorkspaceStore
+    /// The store that holds workspace.json; `workspace` moves to whichever window is in front.
+    let primaryWorkspace: WorkspaceStore
     private var primaryWorkspaceClaimed = false
     private var sceneWorkspaces: [String: WorkspaceStore] = [:]
     let hosts: HostStore
@@ -38,7 +40,9 @@ final class AppModel {
             if let url = WorkspaceStore.defaultStorageURL { try? FileManager.default.removeItem(at: url) }
         }
         let fresh = CommandLine.arguments.contains("-sidra.freshWorkspace")
-        workspace = WorkspaceStore(storageURL: fresh ? nil : WorkspaceStore.defaultStorageURL)
+        let primary = WorkspaceStore(storageURL: fresh ? nil : WorkspaceStore.defaultStorageURL)
+        workspace = primary
+        primaryWorkspace = primary
         self.hosts = hosts ?? HostStore(url: fresh ? nil : HostStore.defaultURL)
         SSHConnection.setKeyUseConfirmation { host in await KeyUsePrompter.shared.ask(host) }
         #if DEBUG
@@ -62,7 +66,7 @@ final class AppModel {
         let store: WorkspaceStore
         if !primaryWorkspaceClaimed {
             primaryWorkspaceClaimed = true
-            store = workspace
+            store = primaryWorkspace
         } else {
             let fresh = CommandLine.arguments.contains("-sidra.freshWorkspace")
             store = WorkspaceStore(storageURL: fresh ? nil : WorkspaceStore.storageURL(forScene: id))
@@ -70,6 +74,13 @@ final class AppModel {
         }
         sceneWorkspaces[id] = store
         return store
+    }
+
+    /// A window that brings its own store (a Vision Pro space window: one herdr pane, never saved), so its
+    /// panes count as open; nil drops it when the window closes.
+    func setStore(_ store: WorkspaceStore?, scene id: String) {
+        sceneWorkspaces[id] = store
+        if store == nil, workspace !== primaryWorkspace, !sceneWorkspaces.values.contains(where: { $0 === workspace }) { workspace = primaryWorkspace }
     }
 
     /// A tapped notification: selects the tab holding the pane, in whichever window has it.
@@ -97,7 +108,7 @@ final class AppModel {
 
     private func activateWindow(of store: WorkspaceStore) {
         guard let id = sceneWorkspaces.first(where: { $0.value === store })?.key else { return }
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         guard let session = UIApplication.shared.openSessions.first(where: { $0.persistentIdentifier == id }) else { return }
         UIApplication.shared.activateSceneSession(for: UISceneSessionActivationRequest(session: session))
         #else

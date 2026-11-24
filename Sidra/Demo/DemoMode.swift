@@ -1,6 +1,6 @@
 #if DEBUG
 import Foundation
-#if os(iOS)
+#if os(iOS) || os(visionOS)
 import UIKit
 #endif
 import SidraSSH
@@ -42,7 +42,7 @@ enum DemoMode {
         guard isOn else { return }
         if app.hosts.host(hostID) == nil { app.hosts.upsert(host) }
         // -sidra.demoScreenshot: the Send screenshot card opens on one of the site's screenshots (UI tests).
-        #if os(iOS)
+        #if os(iOS) || os(visionOS)
         if CommandLine.arguments.contains("-sidra.demoScreenshot"),
            let data = try? Data(contentsOf: repo.appendingPathComponent("docs/media/ipad-01-herdr.png")) {
             ScreenshotInbox.shared.pending = UIImage(data: data)

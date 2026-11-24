@@ -5,6 +5,7 @@ options:
   deploymentTarget:
     iOS: "26.0"
     macOS: "26.0"
+    visionOS: "26.0"
   xcodeVersion: "27.0"
   createIntermediateGroups: true
   generateEmptyDirectories: true
@@ -68,6 +69,7 @@ targets:
       - package: Argmax
         product: WhisperKit
       - target: SidraShare
+        destinationFilters: [iOS]   # Vision Pro builds skip the share extension
     info:
       path: Sidra/Info.plist
       properties:
@@ -113,6 +115,10 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: nl.sadiq.sidra
         PRODUCT_NAME: Sidra
+        # Apple Vision Pro added 2026-11-24 (Waseem): the same target, a session list plus one window per herdr space (VisionApp.swift).
+        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator xros xrsimulator"
+        TARGETED_DEVICE_FAMILY: "1,2,7"
+        XROS_DEPLOYMENT_TARGET: "26.0"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_UIUserInterfaceStyle: Dark
         OTHER_LDFLAGS: ["-ObjC"]
