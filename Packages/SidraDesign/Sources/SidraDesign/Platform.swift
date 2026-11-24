@@ -27,8 +27,14 @@ public typealias PlatformViewRepresentable = NSViewRepresentable
         false
         #endif
     }
-    /// "iPad", "iPhone" or "Mac", for copy that names the device.
-    public static var deviceName: String { isMac ? "Mac" : isPhone ? "iPhone" : "iPad" }
+    /// "iPad", "iPhone", "Vision Pro" or "Mac", for copy that names the device.
+    public static var deviceName: String {
+        #if os(visionOS)
+        "Vision Pro"
+        #else
+        isMac ? "Mac" : isPhone ? "iPhone" : "iPad"
+        #endif
+    }
 
     /// The general pasteboard's text.
     public static var pasteString: String? {

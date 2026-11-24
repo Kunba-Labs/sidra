@@ -85,6 +85,7 @@ struct VisionSessions: View {
         #if DEBUG
         .task {
             DemoMode.install(app)
+            if CommandLine.arguments.contains("-sidra.visionConnect") { connect() }   // screenshots of the connect sheet
             // -sidra.visionOpen w1,w2 (screenshots): opens those demo spaces' windows.
             for id in (UserDefaults.standard.string(forKey: "sidra.visionOpen") ?? "").split(separator: ",") {
                 openWindow(id: "space", value: VisionSpace(host: DemoMode.hostID, session: nil, space: String(id), label: String(id)))

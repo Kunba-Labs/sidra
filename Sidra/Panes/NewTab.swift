@@ -92,8 +92,7 @@ struct NewTabSheet: View {
         }
         .padding(24)
         .frame(maxWidth: 640)
-        .background(SidraColor.panel)
-        .presentationBackground(SidraColor.panel)
+        .sidraSheetBackground()
         .sheet(item: $editing) { h in
             HostEditor(profile: h, password: $password) { saved, pw in
                 app.hosts.upsert(saved, password: pw.isEmpty ? nil : pw)

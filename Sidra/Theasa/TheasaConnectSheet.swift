@@ -63,8 +63,7 @@ struct TheasaConnectSheet: View {
         .frame(maxWidth: 600)
         .frame(maxHeight: 700)
         .fixedSize(horizontal: false, vertical: true)
-        .background(SidraColor.panel)
-        .presentationBackground(SidraColor.panel)
+        .sidraSheetBackground()
         .onChange(of: url) { health = nil; testError = nil }
     }
 

@@ -385,8 +385,7 @@ struct SupersedeSheet: View {
         }
         .padding(24)
         .frame(maxWidth: 520)
-        .background(SidraColor.panel)
-        .presentationBackground(SidraColor.panel)
+        .sidraSheetBackground()
         .task {
             let d = try? await live.client.get("/api/projects/\(projectID)?range=all", as: ProjectDetail.self)
             others = (d?.decisions ?? []).filter { $0.status == "active" && $0.id != decision.id }

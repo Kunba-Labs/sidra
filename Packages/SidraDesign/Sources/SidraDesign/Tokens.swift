@@ -105,12 +105,18 @@ public enum SidraFont {
     public static let uiFamily = "Inter"
     public static let monoFamily = "JetBrains Mono"
 
+    /// Vision Pro windows sit a metre or more away: sizes tuned for an iPad on a desk read too small there.
+    #if os(visionOS)
+    public static let scale: CGFloat = 1.3
+    #else
+    public static let scale: CGFloat = 1
+    #endif
     public static func ui(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
-        .custom(weight == .regular ? "Inter-Regular" : "Inter-Bold", size: size)
+        .custom(weight == .regular ? "Inter-Regular" : "Inter-Bold", size: size * scale)
             .weight(weight)
     }
     public static func mono(_ size: CGFloat = 13, weight: Font.Weight = .regular) -> Font {
-        .custom("JetBrainsMono-Regular", fixedSize: size).weight(weight)   // code does not follow Dynamic Type (spec); Inter above does
+        .custom("JetBrainsMono-Regular", fixedSize: size * scale).weight(weight)   // code does not follow Dynamic Type (spec); Inter above does
     }
     public static let monoSize: CGFloat = 13
     public static let monoLineHeight: CGFloat = 20

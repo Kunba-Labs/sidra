@@ -92,8 +92,7 @@ struct SettingsSheet: View {
         .padding(24)
         }
         .frame(maxWidth: 720, maxHeight: 680)
-        .background(SidraColor.panel)
-        .presentationBackground(SidraColor.panel)
+        .sidraSheetBackground()
         .sheet(item: $editing) { h in HostEditor(profile: h, password: $password) { saved, pw in
             app.hosts.upsert(saved, password: pw.isEmpty ? nil : pw)
             editing = nil
@@ -179,6 +178,25 @@ struct HostEditor: View {
                     .textFieldStyle(.plain).font(SidraFont.mono(13)).foregroundStyle(SidraColor.text)
                     .padding(8).background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
             } else {
+                #if os(visionOS)
+                // The menu picker is a tall glass pill here; the key gets its own rows, with Share for AirDrop or
+                // Mail and the key itself selectable, so it reaches the machine's authorized_keys somehow.
+                VStack(alignment: .leading, spacing: 10) {
+                    Picker("Key", selection: Binding(get: { profile.keyID ?? keys.first?.id }, set: { profile.keyID = $0 })) {
+                        ForEach(keys) { k in Text(k.name).tag(Optional(k.id)) }
+                    }.pickerStyle(.menu)
+                    if let k = keys.first(where: { $0.id == (profile.keyID ?? keys.first?.id) }) {
+                        HStack(spacing: 10) {
+                            Button(copiedKeyID == "\(k.id)" ? "Copied" : "Copy public key", systemImage: copiedKeyID == "\(k.id)" ? "checkmark" : "doc.on.doc") {
+                                Platform.pasteString = k.publicKey; copiedKeyID = "\(k.id)"
+                            }
+                            ShareLink(item: k.publicKey) { Label("Share", systemImage: "square.and.arrow.up") }
+                        }
+                        Text(k.publicKey).font(SidraFont.mono(10)).foregroundStyle(SidraColor.muted)
+                            .lineLimit(4).textSelection(.enabled)
+                    }
+                }
+                #else
                 HStack {
                     Picker("Key", selection: Binding(get: { profile.keyID ?? keys.first?.id }, set: { profile.keyID = $0 })) {
                         ForEach(keys) { k in Text("\(k.name)  \(k.fingerprint.prefix(19))…").tag(Optional(k.id)) }
@@ -191,6 +209,7 @@ struct HostEditor: View {
                         }.buttonStyle(.sidraSecondary)
                     }
                 }
+                #endif
             }
             field("Run on connect (e.g. tmux new -A -s sidra)", $profile.startupCommand)
             Button { withAnimation(.easeOut(duration: 0.15)) { showMore.toggle() } } label: {
@@ -230,8 +249,7 @@ struct HostEditor: View {
         }
         .frame(maxWidth: 520)
         .frame(maxHeight: 680)
-        .background(SidraColor.panel)
-        .presentationBackground(SidraColor.panel)
+        .sidraSheetBackground()
         .sidraAlert($alert)
         .sheet(item: Binding(get: { prompter.pending.map { PromptBox(prompt: $0) } }, set: { _ in })) { box in
             HostKeySheet(prompt: box.prompt) { prompter.decide($0) }

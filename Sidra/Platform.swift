@@ -210,3 +210,15 @@ enum LogExport {
         return url
     }
 }
+
+extension View {
+    /// Sidra's dark panel behind a sheet. On Apple Vision Pro only as the sheet's own background: a panel-sized
+    /// slab inside the glass sheet left glass edges around it, and plain glass washes out Sidra's greys (2026-11-24).
+    func sidraSheetBackground() -> some View {
+        #if os(visionOS)
+        presentationBackground(SidraColor.panel)
+        #else
+        background(SidraColor.panel).presentationBackground(SidraColor.panel)
+        #endif
+    }
+}

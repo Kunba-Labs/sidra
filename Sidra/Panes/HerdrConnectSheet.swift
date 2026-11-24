@@ -29,7 +29,7 @@ struct HerdrConnectSheet: View {
                 ProcessIcon(.herdr, size: 30)
                 Text("Connect to herdr").font(SidraFont.ui(19, weight: .bold)).foregroundStyle(SidraColor.text)
             }
-            Text("Sidra signs in over SSH, finds herdr on that machine and shows its spaces. Your agents keep running there when the iPad sleeps.")
+            Text("Sidra signs in over SSH, finds herdr on that machine and shows its spaces. Your agents keep running there when the \(Platform.deviceName) sleeps.")
                 .font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted).padding(.top, 6)
             SectionLabel("Machine").padding(.top, 16)
             VStack(spacing: 8) {
@@ -68,10 +68,14 @@ struct HerdrConnectSheet: View {
         .frame(maxWidth: 640)
         .frame(maxHeight: 680)
         .fixedSize(horizontal: false, vertical: true)
-        .background(SidraColor.panel)
-        .presentationBackground(SidraColor.panel)
+        .sidraSheetBackground()
         .task(id: target) { await runProbe() }
-        .onAppear { if !picked, let first = app.hosts.hosts.first { target = .ssh(hostID: first.id) } }
+        .onAppear {
+            if !picked, let first = app.hosts.hosts.first { target = .ssh(hostID: first.id) }
+            #if DEBUG
+            if CommandLine.arguments.contains("-sidra.addMachine") { adding = SSHHostProfile(alias: "", host: "", user: "", auth: .key, startupCommand: "", trustOnFirstUse: false) }
+            #endif
+        }
         .sidraAlert($alert)
         .sheet(item: $adding) { h in HostEditor(profile: h, password: $password) { saved, pw in
             app.hosts.upsert(saved, password: pw.isEmpty ? nil : pw)

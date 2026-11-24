@@ -129,7 +129,7 @@ struct ImportKeySheet: View {
                 }.buttonStyle(.sidraPrimary).disabled(text.isEmpty)
             }
         }
-        .padding(24).frame(maxWidth: 560).background(SidraColor.panel).presentationBackground(SidraColor.panel)
+        .padding(24).frame(maxWidth: 560).sidraSheetBackground()
         .sidraAlert($alert)
     }
 }
@@ -173,7 +173,7 @@ struct HostKeySheet: View {
                 .padding(10).frame(maxWidth: .infinity, alignment: .leading).background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
             HStack { Spacer(); Button("Refuse") { decide(false) }.buttonStyle(.sidraSecondary); Button("Trust this host") { decide(true) }.buttonStyle(.sidraPrimary) }
         }
-        .padding(22).frame(maxWidth: 480).background(SidraColor.panel).presentationBackground(SidraColor.panel)
+        .padding(22).frame(maxWidth: 480).sidraSheetBackground()
         .interactiveDismissDisabled()
     }
 }
