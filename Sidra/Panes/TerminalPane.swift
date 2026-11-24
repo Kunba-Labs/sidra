@@ -89,6 +89,8 @@ struct TerminalPane: View {
         .onChange(of: link.session != nil && !link.ended, initial: true) { _, live in BusyPanes.shared.set(pane.id, busy: live) }
         .onDisappear { if !paneExists { TerminalLink.close(pane.id); BusyPanes.shared.set(pane.id, busy: false) } }
         .onChange(of: scenePhase) { _, phase in
+            // Back in front with the connection lost: try at once, skipping any countdown.
+            if phase == .active, retryDelay != nil { link.retries = 0; reconnect(); return }
             guard let mosh = link.session as? MoshPTY else { return }
             if phase == .background { mosh.suspend() } else if phase == .active { mosh.resume() }
         }
@@ -172,8 +174,9 @@ struct TerminalPane: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Waits before each automatic reconnect: 3 s, then longer after every failure, at most a minute.
-    static let retryWaits = [3, 5, 10, 20, 30, 60]
+    /// Waits before each automatic reconnect: none the first time (Waseem, 2026-11-24: faster than 3 s),
+    /// then longer after every failure, at most a minute.
+    static let retryWaits = [0, 2, 5, 10, 20, 30, 60]
 
     /// The wait before the next automatic reconnect, or nil when there is none: the shell exited, or
     /// opening failed for a reason trying again cannot fix (sign-in, host key), or Stop was pressed.
