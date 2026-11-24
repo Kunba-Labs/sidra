@@ -1302,6 +1302,8 @@ struct QuickPromptsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("sidra.quickPrompts") private var stored = ""
     @State private var adding = false
+    /// Edit mode: each prompt is a field with a delete button (Waseem, 2026-11-24).
+    @State private var editing = false
     @State private var draft = ""
     @FocusState private var draftFocused: Bool
 
@@ -1316,10 +1318,14 @@ struct QuickPromptsSheet: View {
             HStack {
                 Text("Quick prompt").font(SidraFont.ui(17, weight: .bold)).foregroundStyle(SidraColor.text)
                 Spacer()
-                Button { adding = true; draft = ""; draftFocused = true } label: { Image(systemName: "plus") }
+                if !prompts.isEmpty || editing {
+                    Button(editing ? "Done" : "Edit") { if editing { finishEditing() } else { adding = false; editing = true } }
+                        .buttonStyle(.sidraSecondary).accessibilityIdentifier("quick-prompt-edit")
+                }
+                Button { editing = false; adding = true; draft = ""; draftFocused = true } label: { Image(systemName: "plus") }
                     .buttonStyle(.sidraSecondary).accessibilityLabel("Add a prompt").accessibilityIdentifier("quick-prompt-add")
             }
-            Text("Tap one to type it into this pane and press Return. Hold one to remove it.")
+            Text(editing ? "Change a prompt, or delete it." : "Tap one to type it into this pane and press Return.")
                 .font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted)
             if adding {
                 HStack(spacing: 8) {
@@ -1338,6 +1344,20 @@ struct QuickPromptsSheet: View {
                 LazyVStack(alignment: .leading, spacing: 6) {
                     if prompts.isEmpty { Text("No prompts yet. Add one with +.").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted).padding(10) }
                     ForEach(Array(prompts.enumerated()), id: \.offset) { i, p in
+                        if editing {
+                            HStack(spacing: 8) {
+                                TextField("Prompt", text: Binding(get: { prompts.indices.contains(i) ? prompts[i] : "" },
+                                                                  set: { var l = prompts; if l.indices.contains(i) { l[i] = $0; save(l) } }))
+                                    .plainTextEntry().autocorrectionDisabled()
+                                    .font(SidraFont.mono(14)).padding(.horizontal, 10).frame(height: 40)
+                                    .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline2))
+                                    .accessibilityIdentifier("quick-prompt-field-\(i)")
+                                Button { var l = prompts; l.remove(at: i); save(l) } label: { Image(systemName: "trash") }
+                                    .buttonStyle(.sidraSecondary).foregroundStyle(SidraColor.red)
+                                    .accessibilityLabel("Delete \(p)").accessibilityIdentifier("quick-prompt-delete-\(i)")
+                            }
+                        } else {
                         Button { send(p) } label: {
                             HStack(spacing: 10) {
                                 Text(p).font(SidraFont.mono(14)).foregroundStyle(SidraColor.text).lineLimit(2).multilineTextAlignment(.leading)
@@ -1351,9 +1371,11 @@ struct QuickPromptsSheet: View {
                         }
                         .buttonStyle(.plain)
                         .contextMenu {
-                            Button(role: .destructive) { var l = prompts; l.remove(at: i); save(l) } label: { Label("Remove", systemImage: "trash") }
+                            Button { adding = false; editing = true } label: { Label("Edit", systemImage: "pencil") }
+                            Button(role: .destructive) { var l = prompts; l.remove(at: i); save(l) } label: { Label("Delete", systemImage: "trash") }
                         }
                         .accessibilityIdentifier("quick-prompt-\(i)")
+                        }
                     }
                 }
             }
@@ -1363,6 +1385,13 @@ struct QuickPromptsSheet: View {
         .padding(20)
         .frame(maxWidth: 520)
         .background(SidraColor.popup)
+        .onDisappear { if editing { finishEditing() } }
+    }
+
+    /// Done: blank prompts go, the rest are trimmed.
+    private func finishEditing() {
+        save(prompts.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty })
+        editing = false
     }
 
     private func add() {
