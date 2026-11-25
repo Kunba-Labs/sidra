@@ -250,6 +250,18 @@ final class SubstrateStore {
 
     // MARK: Acting
 
+    /// PATCH /sessions/{id}: `permissions` holds only what the developer changed (each is set in every project of the
+    /// session); `projects`, when given, is the full list the session should reach. Throws the server's error text.
+    func editSession(_ id: String, permissions: [String: Bool], projects: [String]?) async throws {
+        var body: [String: Any] = [:]
+        if !permissions.isEmpty { body["permissions"] = permissions }
+        if let projects { body["projects"] = projects }
+        guard !body.isEmpty else { return }
+        let s: Substrate.Session = try await client.patch("/sessions/\(id)", body)
+        sessionDetails[id] = s
+        await refresh()
+    }
+
     /// `text`: the developer's edit of the tester's message; the agent gets it in place of the original (2026-11-20).
     /// No text approves the proposal when there is one. `why` reaches the tester with an edit (2026-11-21).
     func approve(_ id: String, text: String? = nil, why: String? = nil) async throws {

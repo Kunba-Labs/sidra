@@ -247,7 +247,14 @@ public struct SidraButtonStyle: ButtonStyle {
                 }
             }
             .opacity(configuration.isPressed ? 0.7 : 1)
+            .modifier(DimWhenDisabled())
     }
+}
+
+/// A disabled Sidra button looked as tappable as an enabled one (found 2026-11-25 on Substrate's Save).
+private struct DimWhenDisabled: ViewModifier {
+    @Environment(\.isEnabled) private var enabled
+    func body(content: Content) -> some View { content.opacity(enabled ? 1 : 0.4) }
 }
 
 public extension ButtonStyle where Self == SidraButtonStyle {

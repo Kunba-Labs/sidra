@@ -12,6 +12,9 @@ import UserNotifications
     /// Asks for permission (once; iPadOS remembers the answer) and registers with APNs. Also on every
     /// launch, as Apple asks: the token can change.
     static func enable() {
+        #if DEBUG
+        if CommandLine.arguments.contains("-sidra.substrateEditorDemo") { return }   // a screenshot without the permission prompt over it
+        #endif
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { ok, _ in
             guard ok else { return }
             DispatchQueue.main.async { UIApplication.shared.registerForRemoteNotifications() }

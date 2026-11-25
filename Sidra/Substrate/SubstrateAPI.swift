@@ -14,6 +14,8 @@ enum Substrate {
         var agent: String?
         var state: String?
         var icon_url: String?
+        /// In a session's `projects`: this project's own no_approval, deploy_test and deploy_production (2026-11-25).
+        var permissions: Permissions?
     }
 
     struct Person: Codable, Hashable {
@@ -139,6 +141,16 @@ enum Substrate {
         /// Only in GET /sessions/{id}.
         var counts: SessionCounts?
         var history: [HistoryItem]?
+        /// Only in GET /sessions/{id}: every project of the developer, for the edit sheet's picker.
+        var available_projects: [Project]?
+
+        /// A per-project permission: true or false when every project agrees, nil when they differ. The top-level
+        /// value is true when ANY project has it, so a mixed one must not read as plain on.
+        func uniform(_ key: KeyPath<Permissions, Bool?>) -> Bool? {
+            let values = Set((projects ?? []).compactMap { $0.permissions?[keyPath: key] })
+            if values.count > 1 { return nil }
+            return values.first ?? permissions?[keyPath: key] ?? false
+        }
     }
 
     struct Sessions: Codable {
@@ -267,7 +279,9 @@ struct SubstrateClient: Sendable {
 
     func delete<T: Decodable>(_ path: String) async throws -> T { try await call("DELETE", path, nil) }
 
-    private func call<T: Decodable>(_ method: String, _ path: String, _ body: [String: String]?) async throws -> T {
+    func patch<T: Decodable>(_ path: String, _ body: [String: Any]) async throws -> T { try await call("PATCH", path, body) }
+
+    private func call<T: Decodable>(_ method: String, _ path: String, _ body: [String: Any]?) async throws -> T {
         guard let url = URL(string: base + path) else { throw Substrate.Failure(status: 0, text: "Bad address: \(base + path)") }
         var req = URLRequest(url: url, timeoutInterval: 20)
         req.httpMethod = method

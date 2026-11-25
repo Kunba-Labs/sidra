@@ -461,6 +461,8 @@ struct SubstrateSessions: View {
     @Bindable var store: SubstrateStore
     let keysOn: Bool
     @State private var width: CGFloat = 900
+    /// The session whose projects and permissions are being changed (2026-11-25).
+    @State private var editing: Substrate.Session?
     private var sessions: [Substrate.Session] { store.sessions?.sessions ?? [] }
     private var picked: Substrate.Session? {
         let id = store.pickedSession ?? sessions.first?.id
@@ -491,6 +493,7 @@ struct SubstrateSessions: View {
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .background { if keysOn { keys } }
         .task(id: picked?.id) { if let id = picked?.id { await store.loadSession(id) } }
+        .sheet(item: $editing) { s in SubstrateSessionEditor(store: store, session: s) }
     }
 
     private var list: some View {
@@ -547,13 +550,31 @@ struct SubstrateSessions: View {
                     if p?.replies == true { SubstrateChip { Text("replies") } }
                     if p?.deploys == true { SubstrateChip { Text("deploys") } }
                     if p?.files == true { SubstrateChip { Text("files") } }
-                    if p?.no_approval == true { SubstrateChip(tone: .warn) { Image(systemName: "bolt.fill"); Text("auto relay") } }
-                    else { SubstrateChip { Image(systemName: "checkmark.shield"); Text("approval required") } }
-                    if p?.deploy_production == true { SubstrateChip(tone: .electric) { Text("deploys to production") } }
-                    else if p?.deploy_test == true { SubstrateChip(tone: .electric) { Text("deploys to test") } }
+                    // Per-project permissions: where the projects differ, say so rather than show plain on.
+                    switch s.uniform(\.no_approval) {
+                    case true?: SubstrateChip(tone: .warn) { Image(systemName: "bolt.fill"); Text("auto relay") }
+                    case nil: SubstrateChip(tone: .warn) { Image(systemName: "bolt.fill"); Text("auto relay in some projects") }
+                    case false?: SubstrateChip { Image(systemName: "checkmark.shield"); Text("approval required") }
+                    }
+                    switch (s.uniform(\.deploy_production), s.uniform(\.deploy_test)) {
+                    case (true?, _): SubstrateChip(tone: .electric) { Text("deploys to production") }
+                    case (nil, _): SubstrateChip(tone: .electric) { Text("deploys to production in some projects") }
+                    case (_, true?): SubstrateChip(tone: .electric) { Text("deploys to test") }
+                    case (_, nil): SubstrateChip(tone: .electric) { Text("deploys to test in some projects") }
+                    default: EmptyView()
+                    }
+                    if s.active != false {
+                        SubstrateChip { Image(systemName: "slider.horizontal.3"); Text("Edit") }
+                            .onTapGesture {
+                                // The list entry has no available_projects: the editor needs the detail, so fetch it first if missing.
+                                if s.available_projects != nil { editing = s; return }
+                                Task { await store.loadSession(s.id); editing = store.sessionDetails[s.id] ?? s }
+                            }
+                            .accessibilityAddTraits(.isButton)
+                    }
                     if !narrow { Spacer(minLength: 0) }
                     if let u = s.web_url.flatMap(URL.init(string:)) {
-                        SubstrateChip { Text("Revoke and edit in the browser"); Image(systemName: "arrow.up.right.square") }
+                        SubstrateChip { Text("Revoke in the browser"); Image(systemName: "arrow.up.right.square") }
                             .onTapGesture { Platform.open(u) }.accessibilityAddTraits(.isButton)
                     }
                 }
@@ -616,6 +637,131 @@ struct SubstrateSessions: View {
         guard !sessions.isEmpty else { return }
         let i = sessions.firstIndex { $0.id == picked?.id } ?? -d
         store.pickedSession = sessions[max(0, min(sessions.count - 1, i + d))].id
+    }
+}
+
+// MARK: - Editing a session
+
+/// A session's projects and permissions, as on the web's "Change projects and permissions" (2026-11-25).
+/// Save sends only what changed: a permission left alone keeps each project's own value on the server.
+struct SubstrateSessionEditor: View {
+    let store: SubstrateStore
+    let session: Substrate.Session
+    @Environment(\.dismiss) private var dismiss
+    @State private var projects: Set<String>
+    @State private var values: [String: Bool?]
+    @State private var saving = false
+    @State private var error: String?
+
+    /// key, label, and the per-project key path for the three that differ by project.
+    private static let rows: [(key: String, label: String, path: KeyPath<Substrate.Permissions, Bool?>, perProject: Bool)] = [
+        ("replies", "Read the agent's replies and questions", \.replies, false),
+        ("deploys", "See CI and deploy progress and retest links", \.deploys, false),
+        ("files", "Attach files and download the agent's files", \.files, false),
+        ("no_approval", "Skip my approval (flagged messages still wait)", \.no_approval, true),
+        ("deploy_test", "Ask the agent to deploy to test", \.deploy_test, true),
+        ("deploy_production", "Ask the agent to deploy to production", \.deploy_production, true),
+    ]
+
+    init(store: SubstrateStore, session: Substrate.Session) {
+        self.store = store
+        self.session = session
+        _projects = State(initialValue: Set((session.projects ?? []).map(\.id)))
+        _values = State(initialValue: Dictionary(uniqueKeysWithValues: Self.rows.map { r in
+            (r.key, r.perProject ? session.uniform(r.path) : (session.permissions?[keyPath: r.path] ?? false))
+        }))
+    }
+
+    private func initial(_ r: (key: String, label: String, path: KeyPath<Substrate.Permissions, Bool?>, perProject: Bool)) -> Bool? {
+        r.perProject ? session.uniform(r.path) : (session.permissions?[keyPath: r.path] ?? false)
+    }
+    private var available: [Substrate.Project] {
+        var list = session.available_projects ?? []
+        for p in session.projects ?? [] where !list.contains(where: { $0.id == p.id }) { list.append(p) }
+        return list
+    }
+    private var changedPermissions: [String: Bool] {
+        var out: [String: Bool] = [:]
+        for r in Self.rows { if let v = values[r.key] ?? nil, v != initial(r) { out[r.key] = v } }
+        return out
+    }
+    private var projectsChanged: Bool { projects != Set((session.projects ?? []).map(\.id)) }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Change projects and permissions").font(SidraFont.ui(19, weight: .bold)).foregroundStyle(SidraColor.text)
+                Text("For \(session.name). A permission you change is set in every project of this session.")
+                    .font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted)
+                SectionLabel("Projects")
+                VStack(spacing: 8) {
+                    ForEach(available) { p in
+                        Toggle(isOn: Binding(get: { projects.contains(p.id) }, set: { on in if on { projects.insert(p.id) } else { projects.remove(p.id) } })) {
+                            HStack(spacing: 8) {
+                                SubstrateProjectLogo(project: p, size: 20)
+                                Text(p.name).font(SidraFont.ui(13.5)).foregroundStyle(SidraColor.text)
+                            }
+                        }
+                        .toggleStyle(GradientToggleStyle())
+                    }
+                }
+                if projects.isEmpty {
+                    Text("Keep at least one project, or revoke the session in the browser.").font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.yellow)
+                }
+                SectionLabel("Permissions").padding(.top, 4)
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(Self.rows, id: \.key) { r in permissionRow(r) }
+                }
+                if let error { Text(error).font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.yellow) }
+                HStack(spacing: 10) {
+                    Spacer()
+                    Button("Cancel") { dismiss() }.buttonStyle(.sidraSecondary)
+                    Button(saving ? "Saving…" : "Save") { Task { await save() } }
+                        .buttonStyle(.sidraPrimary)
+                        .disabled(saving || projects.isEmpty || (changedPermissions.isEmpty && !projectsChanged))
+                }
+                .padding(.top, 4)
+            }
+            .padding(24)
+        }
+        .frame(maxWidth: 560)
+        .sidraSheetBackground()
+    }
+
+    @ViewBuilder private func permissionRow(_ r: (key: String, label: String, path: KeyPath<Substrate.Permissions, Bool?>, perProject: Bool)) -> some View {
+        if initial(r) == nil {
+            // Differs between projects: on everywhere, off everywhere, or each project keeps its own.
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Text(r.label).font(SidraFont.ui(13.5)).foregroundStyle(SidraColor.text)
+                    SubstrateChip(tone: .warn, small: true) { Text("some projects") }
+                }
+                Picker(r.label, selection: Binding(get: { values[r.key] ?? nil }, set: { values[r.key] = $0 })) {
+                    Text("Leave as is").tag(Bool?.none)
+                    Text("On everywhere").tag(Bool?.some(true))
+                    Text("Off everywhere").tag(Bool?.some(false))
+                }
+                .pickerStyle(.segmented).labelsHidden()
+            }
+        } else {
+            Toggle(isOn: Binding(get: { (values[r.key] ?? nil) ?? false }, set: { values[r.key] = $0 })) {
+                Text(r.label).font(SidraFont.ui(13.5)).foregroundStyle(SidraColor.text)
+            }
+            .toggleStyle(GradientToggleStyle())
+        }
+    }
+
+    private func save() async {
+        saving = true; error = nil
+        defer { saving = false }
+        do {
+            // Keep the session's own order, new projects after.
+            let order = available.map(\.id).filter { projects.contains($0) }
+            try await store.editSession(session.id, permissions: changedPermissions, projects: projectsChanged ? order : nil)
+            dismiss()
+        } catch {
+            self.error = (error as? Substrate.Failure)?.text ?? error.localizedDescription
+        }
     }
 }
 
@@ -1052,3 +1198,21 @@ struct SubstrateEmpty: View {
         .padding(24).frame(maxWidth: .infinity)
     }
 }
+
+#if DEBUG
+/// -sidra.substrateEditorDemo: the session editor on a made-up session (two projects that differ on auto relay).
+struct SubstrateEditorDemo: ViewModifier {
+    @State private var show = CommandLine.arguments.contains("-sidra.substrateEditorDemo")
+    func body(content: Content) -> some View {
+        content.sheet(isPresented: $show) {
+            let on = Substrate.Permissions(no_approval: true, deploy_test: true, deploy_production: false)
+            let off = Substrate.Permissions(no_approval: false, deploy_test: true, deploy_production: false)
+            let a = Substrate.Project(id: "p1", name: "Tuli", permissions: on), b = Substrate.Project(id: "p2", name: "Servaid", permissions: off)
+            let session = Substrate.Session(id: "s1", name: "Rizwan", projects: [a, b],
+                permissions: .init(replies: true, deploys: true, files: false, no_approval: true, deploy_test: true, deploy_production: false),
+                available_projects: [a, b, Substrate.Project(id: "p3", name: "Lalaaji")])
+            SubstrateSessionEditor(store: SubstrateStore(connection: SubstrateConnection()), session: session)
+        }
+    }
+}
+#endif

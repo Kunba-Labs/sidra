@@ -49,6 +49,9 @@ struct RootView: View {
         }
         .animation(.easeOut(duration: 0.2), value: app.toastMessage)
         .sidraAlert($app.alert)
+        #if DEBUG
+        .modifier(SubstrateEditorDemo())
+        #endif
         #if os(iOS) || os(visionOS)
         // A screenshot arriving closes whatever sheet is up: the Send screenshot card covers the window.
         .onChange(of: ScreenshotInbox.shared.pending, initial: true) { _, image in if image != nil { app.sheet = nil } }
