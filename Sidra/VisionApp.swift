@@ -2,11 +2,13 @@
 import SwiftUI
 import SidraDesign
 import SidraWorkspace
+import SidraTerminal
+import SidraSSH
 
-/// Apple Vision Pro (Waseem, 2026-11-24): the first window lists the herdr spaces running on every
-/// machine Sidra knows. A space opens in a window of its own, so several sit side by side in the room.
-/// Each window runs its own herdr client: herdr lets every client show a different space, and a window
-/// moves its client there with herdr's own goto keys (a `workspace focus` command would move every client).
+/// Apple Vision Pro (Waseem, 2026-11-24): the first window lists the herdr panes running on every machine
+/// Sidra knows, by space. A pane opens in a window of its own, so several sit side by side in the room.
+/// Each window streams that one pane over its own SSH channel with `herdr terminal session control`
+/// (2026-11-25): no herdr client and no shared focus, so windows never move each other.
 /// The full Sidra workspace (tabs, settings, connect a machine) stays one window away.
 struct VisionScenes: Scene {
     let app: AppModel
@@ -17,10 +19,10 @@ struct VisionScenes: Scene {
         }
         .defaultSize(width: 560, height: 720)
 
-        WindowGroup(id: "space", for: VisionSpace.self) { $space in
-            if let space { VisionSpaceWindow(space: space).environment(app) }
+        WindowGroup(id: "pane", for: VisionPane.self) { $pane in
+            if let pane { VisionPaneWindow(pane: pane).environment(app) }
         }
-        .defaultSize(width: 1100, height: 720)
+        .defaultSize(width: 1000, height: 680)
 
         WindowGroup(id: "workspace") {
             SceneRoot().environment(app)
@@ -30,10 +32,12 @@ struct VisionScenes: Scene {
     }
 }
 
-/// One herdr space on one machine: what a space window shows.
-struct VisionSpace: Codable, Hashable {
+/// One herdr pane on one machine: what a pane window streams.
+struct VisionPane: Codable, Hashable {
     var host: UUID
     var session: String?
+    var pane: String
+    var terminal: String
     var space: String
     var label: String
     var target: TerminalTarget { .ssh(hostID: host) }
@@ -41,8 +45,8 @@ struct VisionSpace: Codable, Hashable {
 
 // MARK: - The list
 
-/// Every herdr space Sidra can reach, by machine, with its agents' state. Machines come from the herdr
-/// tabs in the saved workspace; connecting one adds such a tab.
+/// Every herdr pane Sidra can reach, by machine and space, with its agent's state. Machines come from
+/// the herdr tabs in the saved workspace; connecting one adds such a tab.
 struct VisionSessions: View {
     @Environment(AppModel.self) private var app
     @Environment(\.openWindow) private var openWindow
@@ -64,7 +68,7 @@ struct VisionSessions: View {
                     ContentUnavailableView {
                         Label("No herdr machines", systemImage: "rectangle.stack")
                     } description: {
-                        Text("Connect a machine that runs herdr. Its spaces show here, and each one opens in a window of its own.")
+                        Text("Connect a machine that runs herdr. Its panes show here, and each one opens in a window of its own.")
                     } actions: {
                         Button("Connect a machine") { connect() }
                     }
@@ -86,9 +90,16 @@ struct VisionSessions: View {
         .task {
             DemoMode.install(app)
             if CommandLine.arguments.contains("-sidra.visionConnect") { connect() }   // screenshots of the connect sheet
-            // -sidra.visionOpen w1,w2 (screenshots): opens those demo spaces' windows.
-            for id in (UserDefaults.standard.string(forKey: "sidra.visionOpen") ?? "").split(separator: ",") {
-                openWindow(id: "space", value: VisionSpace(host: DemoMode.hostID, session: nil, space: String(id), label: String(id)))
+            // -sidra.visionStream <host>,<user>,<session>,<terminal_id>: a real machine, trusted on first use, and one
+            // pane window streaming that terminal (simulator checks against a scratch herdr session).
+            if let a = UserDefaults.standard.string(forKey: "sidra.visionStream")?.split(separator: ",").map(String.init), a.count == 4 {
+                let id = UUID(uuidString: "00000000-0000-0000-0000-00000000c0de")!
+                app.hosts.upsert(SSHHostProfile(id: id, alias: "check", host: a[0], user: a[1], auth: .key, startupCommand: "", trustOnFirstUse: true))
+                openWindow(id: "pane", value: VisionPane(host: id, session: a[2], pane: "", terminal: a[3], space: "", label: "check, " + a[3]))
+            }
+            // -sidra.visionOpen w1,w2 (screenshots): opens those demo spaces' first panes.
+            for id in (UserDefaults.standard.string(forKey: "sidra.visionOpen") ?? "").split(separator: ",").map(String.init) {
+                openWindow(id: "pane", value: VisionPane(host: DemoMode.hostID, session: nil, pane: id + ":p1", terminal: "term_" + id, space: id, label: id))
             }
         }
         #endif
@@ -111,135 +122,251 @@ private struct VisionMachineSection: View {
     var body: some View {
         let m = MuxMonitors.shared.monitor(for: pane, app: app)
         Section {
-            if let s = m?.snapshot {
-                ForEach(s.workspaces) { ws in row(ws, s, m!) }
+            if let m, let s = m.snapshot {
+                ForEach(s.workspaces) { ws in space(ws, s, m) }
             } else if let e = m?.error {
                 Label(e, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary)
             } else {
                 ProgressView().frame(maxWidth: .infinity)
             }
         } header: {
-            Text(app.herdrMachineName(target) + (session.map { " · " + $0 } ?? ""))
+            Text(app.herdrMachineName(target) + (session.map { ", " + $0 } ?? ""))
         }
     }
 
-    private func row(_ ws: MuxSnapshot.Workspace, _ s: MuxSnapshot, _ m: MuxMonitor) -> some View {
+    /// A space's name, then one row per pane in it.
+    @ViewBuilder private func space(_ ws: MuxSnapshot.Workspace, _ s: MuxSnapshot, _ m: MuxMonitor) -> some View {
         let folder = s.folder(of: ws.id)
-        let agents = s.agents(in: ws.id)
+        HStack(spacing: 12) {
+            HerdrLogoView(name: ws.label, image: folder.flatMap { m.logos[$0] }, size: 30)
+            Text(ws.label).font(.headline)
+            Spacer()
+            if ws.agent_status != .unknown { Text(HerdrStatusIcon.label(ws.agent_status)).font(.caption).foregroundStyle(.secondary) }
+        }
+        ForEach(s.panes.filter { $0.workspace_id == ws.id }) { p in paneRow(p, ws, s) }
+    }
+
+    private func paneRow(_ p: MuxSnapshot.PaneInfo, _ ws: MuxSnapshot.Workspace, _ s: MuxSnapshot) -> some View {
+        let agent = s.agents.first { $0.pane_id == p.pane_id }
+        let tab = s.tabs(in: ws.id).first { $0.tab_id == p.tab_id }
+        let title = agent?.agent ?? (p.terminal_title_stripped.flatMap { $0.isEmpty ? nil : $0 } ?? "Shell")
+        let detail = [tab.map { "tab " + $0.name(in: ws.label) }, agent?.terminal_title_stripped].compactMap { $0 }.joined(separator: ", ")
         return Button {
-            guard case .ssh(let host) = target else { return }
-            openWindow(id: "space", value: VisionSpace(host: host, session: session, space: ws.id, label: ws.label))
+            guard case .ssh(let host) = target, let term = p.terminal_id else { return }
+            openWindow(id: "pane", value: VisionPane(host: host, session: session, pane: p.pane_id, terminal: term, space: ws.id, label: "\(ws.label), \(title)"))
         } label: {
-            HStack(spacing: 14) {
-                HerdrLogoView(name: ws.label, image: folder.flatMap { m.logos[$0] }, size: 36)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(ws.label).font(.headline)
-                    if agents.isEmpty {
-                        Text(folder.map(Self.short) ?? "No agents").font(.caption).foregroundStyle(.secondary)
-                    } else {
-                        HStack(spacing: 10) {
-                            ForEach(agents) { a in
-                                HStack(spacing: 5) {
-                                    HerdrStatusIcon(status: a.agent_status, size: 9)
-                                    Text(a.agent).font(.caption)
-                                }
-                            }
-                        }
-                        .foregroundStyle(.secondary)
-                    }
+            HStack(spacing: 12) {
+                if let a = agent { HerdrStatusIcon(status: a.agent_status, size: 10).frame(width: 30) } else { Image(systemName: "terminal").frame(width: 30) }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                    if !detail.isEmpty { Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
                 }
                 Spacer()
-                if ws.agent_status != .unknown {
-                    Text(HerdrStatusIcon.label(ws.agent_status)).font(.caption).foregroundStyle(.secondary)
-                }
                 Image(systemName: "macwindow.badge.plus").foregroundStyle(.secondary)
             }
-            .padding(.vertical, 4)
         }
-    }
-
-    static func short(_ path: String) -> String {
-        path.replacingOccurrences(of: #"^/(Users|home)/[^/]+"#, with: "~", options: .regularExpression)
+        .disabled(p.terminal_id == nil)   // herdr before terminal IDs: nothing to stream
     }
 }
 
-// MARK: - One space
+// MARK: - One pane
 
-/// A window holding one herdr client, moved to its space once attached. Its pane lives in a store of
-/// its own that is never saved: closing the window ends the client, the space keeps running.
-struct VisionSpaceWindow: View {
-    let space: VisionSpace
+/// A window streaming one herdr pane. It holds the pane with `--takeover` (herdr allows one writer per pane)
+/// and gives it this window's size; closing the window releases it, and the pane keeps running.
+struct VisionPaneWindow: View {
+    let pane: VisionPane
     @Environment(AppModel.self) private var app
-    @State private var store: WorkspaceStore
-    private let pane: Pane
+    @State private var stream: (any TerminalIO)?
+    @State private var ended: String?
+    @State private var attempt = 0
+    @State private var focus = 0
+    @State private var monitor: MuxMonitor
+    @State private var prompter = HostKeyPrompter.shared
+    /// Only a window that is connecting asks to trust a host key, so open windows do not all show the same prompt.
+    @State private var connecting = false
 
-    init(space: VisionSpace) {
-        self.space = space
-        let pane = Pane(kind: .herdr(target: space.target, session: space.session), title: space.label)
+    init(pane: VisionPane) {
         self.pane = pane
-        _store = State(initialValue: WorkspaceStore(
-            state: WorkspaceState(tabs: [WorkspaceTab(title: space.label, icon: .herdr, root: .leaf(pane))]), storageURL: nil))
+        _monitor = State(initialValue: MuxMonitor(target: pane.target, session: pane.session))
     }
 
-    private var link: TerminalLink { TerminalLink.of(pane.id) }
-
     var body: some View {
-        let adapter = HerdrAdapter()
-        TerminalPane(pane: pane, target: space.target, command: adapter.attachCommand(session: space.session),
-                     prepare: adapter.prepareCommand().map { cmd in { [app, target = space.target] in try await app.herdrPrepare(target, cmd) } })
-            .environment(store)
-            .background(Color(red: 0x12 / 255, green: 0x15 / 255, blue: 0x1a / 255))
-            // The keys go to the window last looked at and tapped.
-            .simultaneousGesture(TapGesture().onEnded { app.workspace = store })
-            .ornament(attachmentAnchor: .scene(.top), contentAlignment: .bottom) { header.padding(.bottom, 8) }
-            .onAppear {
-                app.setStore(store, scene: "vision-space-\(pane.id)")
-                app.workspace = store
+        ZStack {
+            Color(red: 0x12 / 255, green: 0x15 / 255, blue: 0x1a / 255)
+            if let stream {
+                TerminalPaneView(io: stream, engine: app.terminalEngine, focusToken: focus, onOpenLink: { app.openLink($0) })
+                    .id("\(attempt)-\(app.terminalEngine.rawValue)")   // a new surface when the engine setting changes
+                    .padding(10)
+                    .simultaneousGesture(TapGesture().onEnded { focus += 1 })
+            } else if let ended {
+                VStack(spacing: 14) {
+                    Text(ended).font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted).multilineTextAlignment(.center)
+                    Button("Reconnect") { attempt += 1 }.buttonStyle(.sidraPrimary)
+                }
+                .padding(30)
+            } else {
+                ProgressView()
             }
-            .onDisappear {
-                TerminalLink.close(pane.id)
-                MuxMonitors.shared.remove(pane.id)
-                app.setStore(nil, scene: "vision-space-\(pane.id)")
-            }
-            // Every (re)connect starts a fresh client on herdr's shared focus: move it to this space again.
-            .task(id: link.attempt) { await goToSpace() }
+        }
+        .ornament(attachmentAnchor: .scene(.top), contentAlignment: .bottom) { header.padding(.bottom, 8) }
+        .keyUseConfirmation()   // a key marked confirm-on-use asks here, or a reconnect would wait unseen
+        // A first or changed host key asks here too, as the connect sheet does.
+        .sheet(item: Binding(get: { connecting ? prompter.pending.map { HostKeyBox(prompt: $0) } : nil }, set: { _ in })) { box in
+            HostKeySheet(prompt: box.prompt) { prompter.decide($0) }
+        }
+        .onAppear { prompter.install() }
+        .task(id: attempt) { await connect() }
+        // ponytail: one snapshot poll per window for the header's agent state; share the list's monitor if many windows load the machine
+        .task { await monitor.watch(app) }
+        .onDisappear { drop() }
     }
 
     private var header: some View {
-        let s = MuxMonitors.shared.monitor(for: pane, app: app)?.snapshot
-        let agents = s?.agents(in: space.space) ?? []
-        return HStack(spacing: 12) {
-            HerdrStatusIcon(status: MuxStatus.worst(agents.map(\.agent_status)), size: 10)
-            Text(s?.workspaces.first { $0.id == space.space }?.label ?? space.label).font(.headline)
-            ForEach(agents) { a in
-                HStack(spacing: 5) {
-                    HerdrStatusIcon(status: a.agent_status, size: 8)
-                    Text(a.agent).font(.caption)
-                }
-                .foregroundStyle(.secondary)
-            }
-            Button("Show this space again", systemImage: "scope") { Task { await sendGoto() } }
-                .labelStyle(.iconOnly)
+        let agent = monitor.snapshot?.agents.first { $0.pane_id == pane.pane }
+        return HStack(spacing: 10) {
+            if let agent { HerdrStatusIcon(status: agent.agent_status, size: 10) }
+            Text(pane.label).font(.headline)
+            if let t = agent?.terminal_title_stripped, !t.isEmpty { Text(t).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
         }
         .padding(.horizontal, 18).padding(.vertical, 10)
         .glassBackgroundEffect()
     }
 
-    private func goToSpace() async {
-        for _ in 0..<150 where link.session == nil { try? await Task.sleep(for: .milliseconds(200)) }
-        // ponytail: a fixed wait for herdr's client to draw its first frame; watch its output instead if keys arrive too early
-        try? await Task.sleep(for: .seconds(1.5))
-        await sendGoto()
+    /// Releases the pane and lets go of the terminal surface built for this stream (TerminalPaneView keeps one per IO).
+    private func drop() {
+        if let s = stream { TerminalPaneView.forget(s); s.close() }
+        stream = nil
     }
 
-    /// herdr's goto picker (prefix g), filtered by the space's name, opens it in this client only.
-    private func sendGoto() async {
-        guard let io = link.session else { return }
-        let label = MuxMonitors.shared.byPane[pane.id]?.snapshot?.workspaces.first { $0.id == space.space }?.label ?? space.label
-        for step in ["\u{02}", "g", "/", label, "\r"] {
-            io.write(Data(step.utf8))
-            try? await Task.sleep(for: .milliseconds(300))
+    private func connect() async {
+        drop(); ended = nil
+        #if DEBUG
+        if DemoMode.isOn, pane.host == DemoMode.hostID { stream = DemoMode.session(herdr: false); return }
+        #endif
+        guard let profile = app.hosts.host(pane.host) else { ended = "This machine is no longer in Sidra."; return }
+        connecting = true
+        defer { connecting = false }
+        do {
+            // --takeover: a window reopened after a dropped network would otherwise find its own old stream still holding the pane.
+            let cmd = Herdr.path + "herdr" + Herdr.sessionArg(pane.session) + " terminal session control " + Herdr.shellQuote(pane.terminal) + " --takeover --cols 100 --rows 32"
+            let channel = try await app.connection(for: profile).openShell(cols: 0, rows: 0, command: cmd, exec: true)
+            // The window closed (or reconnected) while the channel opened: hand the pane straight back.
+            guard !Task.isCancelled else { HerdrPaneStream(channel).close(); return }
+            let s = HerdrPaneStream(channel)
+            stream = s
+            s.onEnd { [weak s] reason in Task { @MainActor in
+                guard let s, let current = stream as? HerdrPaneStream, current === s else { return }
+                drop()
+                ended = reason
+            } }
+            focus += 1
+        } catch {
+            ended = describeError(error)
         }
+    }
+}
+
+private struct HostKeyBox: Identifiable { let prompt: HostKeyPrompt; var id: String { "\(prompt.host):\(prompt.port)" } }
+
+/// One herdr pane as a terminal: `terminal session control` on a plain SSH channel. Its stdout is
+/// newline-delimited JSON (`terminal.frame` with base64 ANSI that herdr redraws from its own screen,
+/// `terminal.closed` with a reason); stdin takes `terminal.input`, `terminal.resize` and `terminal.release`.
+final class HerdrPaneStream: TerminalIO, @unchecked Sendable {
+    let output: AsyncStream<Data>
+    private let continuation: AsyncStream<Data>.Continuation
+    private let channel: PTYSession
+    private let lock = NSLock()
+    private var size: (Int, Int)?
+    private var reason: String?
+    /// The last line that was not herdr's JSON: the remote shell's own error ("herdr: command not found").
+    private var diagnostic: String?
+    private var endHandler: ((String) -> Void)?
+    private var finalReason: String?
+
+    /// Called once with why the stream ended (herdr's reason, or what the channel said); right away when it
+    /// already has, so a channel that fails before the window registers still shows its error and Reconnect.
+    func onEnd(_ handler: @escaping (String) -> Void) {
+        let done: String? = lock.withLock {
+            if let r = finalReason { return r }
+            endHandler = handler; return nil
+        }
+        if let done { handler(done) }
+    }
+
+    init(_ channel: PTYSession) {
+        self.channel = channel
+        var c: AsyncStream<Data>.Continuation!
+        output = AsyncStream(bufferingPolicy: .unbounded) { c = $0 }
+        continuation = c
+        Task { [weak self] in
+            var buffer = Data()
+            for await chunk in channel.output {
+                buffer.append(chunk)
+                while let nl = buffer.firstIndex(of: 10) {
+                    let line = buffer[buffer.startIndex..<nl]
+                    buffer.removeSubrange(buffer.startIndex...nl)
+                    self?.handle(line)
+                }
+            }
+            guard let self else { return }
+            self.continuation.finish()
+            let text = String(decoding: buffer, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            let (said, diag) = self.lock.withLock { (self.reason, self.diagnostic) }
+            let message = Self.describe(said) ?? (!text.isEmpty ? text : diag ?? channel.endReason ?? "The pane's stream ended.")
+            let end = self.lock.withLock { () -> ((String) -> Void)? in
+                self.finalReason = message
+                let cb = self.endHandler; self.endHandler = nil; return cb
+            }
+            end?(message)
+        }
+    }
+
+    private func handle(_ line: Data) {
+        guard let rec = try? JSONSerialization.jsonObject(with: line) as? [String: Any], let type = rec["type"] as? String else {
+            let text = String(decoding: line, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            if !text.isEmpty { lock.withLock { diagnostic = text } }
+            return
+        }
+        switch type {
+        case "terminal.frame":
+            if let b = rec["bytes"] as? String, let d = Data(base64Encoded: b) { continuation.yield(d) }
+        case "terminal.closed":
+            lock.withLock { reason = rec["reason"] as? String ?? "closed" }
+        default: break
+        }
+    }
+
+    /// herdr's close reasons in words.
+    static func describe(_ reason: String?) -> String? {
+        guard let reason else { return nil }
+        if reason == "terminal attach taken over" { return "Another window or client took this pane." }
+        if reason == "detached" { return "Disconnected from the pane. It is still running." }
+        if reason.contains("unknown") || reason.contains("not found") { return "The pane is gone. It was closed on the machine." }
+        return reason
+    }
+
+    func write(_ data: Data) { send(["type": "terminal.input", "bytes": data.base64EncodedString()]) }
+
+    func resize(cols: Int, rows: Int) {
+        guard cols > 0, rows > 0 else { return }
+        let changed: Bool = lock.withLock {
+            if let s = size, s == (cols, rows) { return false }
+            size = (cols, rows); return true
+        }
+        if changed { send(["type": "terminal.resize", "cols": cols, "rows": rows]) }
+    }
+
+    /// Hands the pane back (its size returns to herdr's own clients), then closes the channel.
+    func close() {
+        send(["type": "terminal.release"])
+        let channel = channel
+        Task { try? await Task.sleep(for: .milliseconds(300)); channel.close() }
+    }
+
+    private func send(_ object: [String: Any]) {
+        guard var d = try? JSONSerialization.data(withJSONObject: object) else { return }
+        d.append(10)
+        channel.write(d)
     }
 }
 #endif

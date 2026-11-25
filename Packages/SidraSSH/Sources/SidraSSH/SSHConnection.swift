@@ -380,9 +380,11 @@ public actor SSHConnection {
     }
 
     /// Opens an interactive shell with a PTY. The returned session streams output until closed.
-    public func openShell(cols: Int, rows: Int, command: String? = nil) async throws -> PTYSession {
+    /// `exec`: runs `command` on a plain channel instead, with no PTY: bytes pass unchanged both ways (no echo,
+    /// no line discipline), for a program that speaks its own protocol on stdin and stdout. A resize does nothing.
+    public func openShell(cols: Int, rows: Int, command: String? = nil, exec: Bool = false) async throws -> PTYSession {
         #if os(macOS)
-        if profile.isThisMac {
+        if profile.isThisMac, !exec {
             try await connect()
             let startup = command ?? (profile.startupCommand.isEmpty ? nil : profile.startupCommand)
             return LocalShell.open(cols: cols, rows: rows, startup: startup)
@@ -401,9 +403,9 @@ public actor SSHConnection {
         let host = profile.host
         Task.detached { [weak self] in
             do {
-                try await client.withPTY(request) { inbound, outbound in
+                let body: (TTYOutput, TTYStdinWriter) async throws -> Void = { inbound, outbound in
                     // The startup command joins the same ordered queue, ahead of anything typed since.
-                    if let startup { session.prependStartup(Data((startup + "\n").utf8)) }
+                    if let startup, !exec { session.prependStartup(Data((startup + "\n").utf8)) }
                     session.attach(outbound)
                     let reader = Task {
                         do {
@@ -421,6 +423,7 @@ public actor SSHConnection {
                     await session.waitUntilClosed()
                     reader.cancel()
                 }
+                if exec, let command { try await client.withExec(command, perform: body) } else { try await client.withPTY(request, perform: body) }
                 // The channel ended. That is a normal exit unless the connection went with it.
                 try? await Task.sleep(for: .milliseconds(200))
                 if client.isConnected || session.closedLocally { session.finish(exitCode: 0); return }

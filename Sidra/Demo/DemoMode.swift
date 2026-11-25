@@ -90,7 +90,7 @@ enum DemoMode {
                     ("w3", 1, "Dark mode", "working"), ("w3", 2, "Release notes", "idle"), ("w4", 1, "API guide", "done")].map { ws, n, label, status in
             #"{"tab_id":"\#(ws):t\#(n)","workspace_id":"\#(ws)","label":"\#(label)","number":\#(n),"focused":\#(n == 1),"agent_status":"\#(status)"}"#
         }
-        let panes = ["w1", "w2", "w3", "w4"].map { #"{"pane_id":"\#($0):p1","workspace_id":"\#($0)","cwd":"/home/dev/\#(["w1": "webapp", "w2": "api", "w3": "mobile", "w4": "docs"][$0]!)"}"# }
+        let panes = ["w1", "w2", "w3", "w4"].map { #"{"pane_id":"\#($0):p1","terminal_id":"term_\#($0)","tab_id":"\#($0):t1","workspace_id":"\#($0)","cwd":"/home/dev/\#(["w1": "webapp", "w2": "api", "w3": "mobile", "w4": "docs"][$0]!)"}"# }
         return #"{"id":"cli:api:snapshot","result":{"snapshot":{"version":"0.9.1","protocol":22,"focused_workspace_id":"\#(focused)","focused_pane_id":"\#(focused):p1","focused_tab_id":"\#(focused):t1","workspaces":[\#(spaces.joined(separator: ","))],"agents":[\#(agents.joined(separator: ","))],"panes":[\#(panes.joined(separator: ","))],"tabs":[\#(tabs.joined(separator: ","))],"layouts":[]}}}"#
     }
 

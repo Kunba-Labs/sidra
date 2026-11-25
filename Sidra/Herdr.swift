@@ -181,10 +181,15 @@ struct MuxSnapshot: Decodable, Sendable {
         let terminal_title_stripped: String?
         var id: String { pane_id }
     }
-    struct PaneInfo: Decodable, Sendable {
+    struct PaneInfo: Decodable, Sendable, Identifiable {
         let pane_id: String
         let workspace_id: String
         let cwd: String?
+        /// What `terminal session control` attaches to (Vision Pro's pane windows). Optional for older herdr.
+        let terminal_id: String?
+        let tab_id: String?
+        let terminal_title_stripped: String?
+        var id: String { pane_id }
     }
     struct Tab: Decodable, Sendable, Identifiable {
         let tab_id: String

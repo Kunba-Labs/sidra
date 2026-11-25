@@ -76,13 +76,6 @@ final class AppModel {
         return store
     }
 
-    /// A window that brings its own store (a Vision Pro space window: one herdr pane, never saved), so its
-    /// panes count as open; nil drops it when the window closes.
-    func setStore(_ store: WorkspaceStore?, scene id: String) {
-        sceneWorkspaces[id] = store
-        if store == nil, workspace !== primaryWorkspace, !sceneWorkspaces.values.contains(where: { $0 === workspace }) { workspace = primaryWorkspace }
-    }
-
     /// A tapped notification: selects the tab holding the pane, in whichever window has it.
     func open(_ route: Notifier.Route) {
         switch route {
