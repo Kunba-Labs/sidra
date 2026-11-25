@@ -18,6 +18,10 @@ struct SidraApp: App {
         DemoMode.registerProtocol()
         #endif
         DataLayout.apply()
+        // A Pipelines tab shows its provider's logo, GitLab's or GitHub's (2026-11-26).
+        PaneKind.pipelinesIcon = { id in
+            MainActor.assumeIsolated { PipelinesHub.shared.connection(id).map { $0.provider == .github ? .github : .gitlab } ?? .pipelines }
+        }
         #if os(macOS)
         _ = AppUpdater.controller   // starts the scheduled update checks
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { SubstrateDesktop.shared.demoIfAsked() }

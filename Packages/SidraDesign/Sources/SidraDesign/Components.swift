@@ -6,6 +6,8 @@ import SwiftUI
 public struct ProcessIcon: View {
     public enum Kind: String, Codable, Sendable, CaseIterable {
         case code, cargo, serial, ssh, mosh, agent, git, herdr, theasa, hackertab, pipelines, chess, claude, vnc, substrate
+        /// A Pipelines tab on GitLab or GitHub: the provider's own logo (2026-11-26).
+        case gitlab, github
 
         public var fill: Color {
             switch self {
@@ -23,6 +25,7 @@ public struct ProcessIcon: View {
             case .claude: Color(hex: 0xf0eee6)   // Claude's cream, under its spark
             case .vnc: SidraColor.Process.mosh
             case .substrate: .black
+            case .gitlab, .github: .white   // the black GitHub mark needs a light tile on the dark bar
             }
         }
         public var symbol: String {
@@ -41,6 +44,7 @@ public struct ProcessIcon: View {
             case .vnc: "display"
             case .chess: "crown.fill"   // SF Symbols has no knight; the tile draws ♞ instead, menus use this
             case .substrate: "circle.fill"   // menus; the tile draws Substrate's orb
+            case .gitlab, .github: "point.3.connected.trianglepath.dotted"   // menus; the tile draws the logo
             }
         }
     }
@@ -74,6 +78,9 @@ public struct ProcessIcon: View {
                     Text("Y").font(.custom("Verdana-Bold", size: size * 0.68)).foregroundStyle(.white)
                 } else if kind == .claude {
                     ClaudeSpark().fill(Color(hex: 0xd97757)).padding(size * 0.16)   // Claude's mark (2026-11-15)
+                } else if kind == .gitlab || kind == .github {
+                    // GitLab's and GitHub's own marks (app-target assets, as in the Pipelines pane).
+                    Image(kind == .gitlab ? "brand-gitlab" : "brand-github").resizable().scaledToFit().padding(size * (kind == .gitlab ? 0.08 : 0.14))
                 } else if kind == .chess {
                     Text("\u{265E}\u{FE0E}").font(.system(size: size * 0.72)).foregroundStyle(SidraColor.Process.glyph)
                 } else {

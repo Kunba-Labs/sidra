@@ -79,7 +79,7 @@ struct TitleBar<Trailing: View>: View {
                 HStack(spacing: 4) {
                     ForEach(Array(store.visibleTabs.enumerated()), id: \.element.id) { i, tab in
                         // A subtitle that repeats the title (a Theasa connection named Theasa) says nothing.
-                        PillTab(icon: tab.icon, title: tab.title, subtitle: tab.subtitle == tab.title ? nil : tab.subtitle,
+                        PillTab(icon: tab.shownIcon, title: tab.title, subtitle: tab.subtitle == tab.title ? nil : tab.subtitle,
                                 active: tab.id == store.activeTabID, dot: store.tabDot?(tab) == true, accessory: store.tabAccessory?(tab) ?? nil,
                                 action: { store.select(tab: tab.id) },
                                 close: { store.requestCloseTab(tab.id) })

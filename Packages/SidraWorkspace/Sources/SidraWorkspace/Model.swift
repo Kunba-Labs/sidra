@@ -19,13 +19,16 @@ public enum PaneKind: Codable, Hashable, Sendable {
     /// Substrate (substrate.gliph.sh): testers' requests to approve, sessions and machines, by saved account.
     case substrate(connection: UUID)
 
+    /// A Pipelines pane's icon, by connection: the app answers with its provider's logo (set at launch).
+    nonisolated(unsafe) public static var pipelinesIcon: (UUID?) -> ProcessIcon.Kind = { _ in .pipelines }
+
     public var icon: ProcessIcon.Kind {
         switch self {
         case .terminal(let t): t.icon
         case .herdr: .herdr
         case .theasa: .theasa
         case .hackertab: .hackertab
-        case .pipelines: .pipelines
+        case .pipelines(let id): Self.pipelinesIcon(id)
         case .chess: .chess
         case .substrate: .substrate
         }
@@ -145,6 +148,11 @@ public struct WorkspaceTab: Identifiable, Codable, Hashable, Sendable {
     }
 
     public var panes: [Pane] { root?.panes ?? [] }
+    /// What the tab bar draws: a Pipelines tab shows its pane's provider logo, also for tabs saved before it had one.
+    public var shownIcon: ProcessIcon.Kind {
+        guard icon == .pipelines, let p = panes.first(where: { if case .pipelines = $0.kind { true } else { false } }) else { return icon }
+        return p.kind.icon
+    }
     public var focusedPane: Pane? { focusedPaneID.flatMap { root?.pane($0) } }
 }
 

@@ -80,7 +80,7 @@ struct PhoneWorkspace: View {
         let shape = RoundedRectangle(cornerRadius: SidraRadius.pill, style: .continuous)
         return Button { store.select(tab: tab.id) } label: {
             HStack(spacing: 8) {
-                ProcessIcon(tab.icon, size: 24)
+                ProcessIcon(tab.shownIcon, size: 24)
                 if on { Text(tab.title).font(SidraFont.ui(14, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1) }
                 if store.tabDot?(tab) == true { Circle().fill(SidraColor.blue).frame(width: 7, height: 7) }
             }
@@ -113,7 +113,7 @@ struct TabDetails: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
-                ProcessIcon(tab.icon, size: 30)
+                ProcessIcon(tab.shownIcon, size: 30)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(tab.title).font(SidraFont.ui(16, weight: .bold)).foregroundStyle(SidraColor.text)
                     if let s = tab.subtitle { Text(s).font(SidraFont.ui(12.5)).foregroundStyle(SidraColor.muted) }

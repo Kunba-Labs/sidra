@@ -59,7 +59,7 @@ struct FloatingOrb<Pills: View>: View {
         return ZStack(alignment: .topTrailing) {
             shape.fill(SidraColor.raised)
                 .overlay(shape.strokeBorder(SidraGradient.horizontal, lineWidth: 1.2))
-                .overlay { ProcessIcon(store.activeTab?.icon ?? .code, size: 28) }
+                .overlay { ProcessIcon(store.activeTab?.shownIcon ?? .code, size: 28) }
                 .frame(width: orbSize, height: orbSize)
                 .shadow(color: .black.opacity(0.55), radius: 14, y: 8)
             if let n = store.attention?(), n > 0 {
@@ -91,7 +91,7 @@ struct FloatingOrb<Pills: View>: View {
                 VStack(spacing: 4) {
                     shape.fill(on ? SidraColor.tabActive : SidraColor.raised)
                         .overlay { if on { shape.strokeBorder(SidraGradient.horizontal, lineWidth: 1.2) } else { shape.strokeBorder(SidraColor.hairline2) } }
-                        .overlay { ProcessIcon(tab.icon, size: 26) }
+                        .overlay { ProcessIcon(tab.shownIcon, size: 26) }
                         .frame(width: 46, height: 46)
                         .scaleEffect(tab.id == over ? 1.15 : 1)
                     Text(tab.title).font(SidraFont.ui(11, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
@@ -119,7 +119,7 @@ struct FloatingOrb<Pills: View>: View {
                 let on = tab.id == store.activeTabID
                 Button { store.select(tab: tab.id); open = false } label: {
                     HStack(spacing: 10) {
-                        ProcessIcon(tab.icon, size: 22)
+                        ProcessIcon(tab.shownIcon, size: 22)
                         Text(tab.title).font(SidraFont.ui(13.5, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
                         if let s = tab.subtitle, s != tab.title { Text(s).font(SidraFont.ui(13)).foregroundStyle(SidraColor.muted).lineLimit(1) }
                         Spacer(minLength: 6)
