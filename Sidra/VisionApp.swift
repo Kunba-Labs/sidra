@@ -90,12 +90,14 @@ struct VisionSessions: View {
         .task {
             DemoMode.install(app)
             if CommandLine.arguments.contains("-sidra.visionConnect") { connect() }   // screenshots of the connect sheet
-            // -sidra.visionStream <host>,<user>,<session>,<terminal_id>: a real machine, trusted on first use, and one
+            // -sidra.visionStream <host>,<user>,<session>,<terminal_id>[;<terminal_id>…]: a real machine, trusted on first use, and one
             // pane window streaming that terminal (simulator checks against a scratch herdr session).
             if let a = UserDefaults.standard.string(forKey: "sidra.visionStream")?.split(separator: ",").map(String.init), a.count == 4 {
                 let id = UUID(uuidString: "00000000-0000-0000-0000-00000000c0de")!
                 app.hosts.upsert(SSHHostProfile(id: id, alias: "check", host: a[0], user: a[1], auth: .key, startupCommand: "", trustOnFirstUse: true))
-                openWindow(id: "pane", value: VisionPane(host: id, session: a[2], pane: "", terminal: a[3], space: "", label: "check, " + a[3]))
+                for t in a[3].split(separator: ";").map(String.init) {   // several terminal IDs: several windows
+                    openWindow(id: "pane", value: VisionPane(host: id, session: a[2], pane: "", terminal: t, space: "", label: "check, " + t))
+                }
             }
             // -sidra.visionOpen w1,w2 (screenshots): opens those demo spaces' first panes.
             for id in (UserDefaults.standard.string(forKey: "sidra.visionOpen") ?? "").split(separator: ",").map(String.init) {
@@ -180,15 +182,15 @@ struct VisionPaneWindow: View {
     @State private var ended: String?
     @State private var attempt = 0
     @State private var focus = 0
-    @State private var monitor: MuxMonitor
     @State private var prompter = HostKeyPrompter.shared
     /// Only a window that is connecting asks to trust a host key, so open windows do not all show the same prompt.
     @State private var connecting = false
 
-    init(pane: VisionPane) {
-        self.pane = pane
-        _monitor = State(initialValue: MuxMonitor(target: pane.target, session: pane.session))
-    }
+    /// This window's own SSH connection. OpenSSH serves 10 channels per connection (MaxSessions), and Sidra
+    /// shares one per machine, so the 11th pane window on a shared one was refused (found 2026-11-25).
+    @State private var connection: SSHConnection?
+    @State private var windowOpen = false
+    private var monitor: MuxMonitor { VisionMonitors.shared.monitor(pane) }
 
     var body: some View {
         ZStack {
@@ -216,9 +218,14 @@ struct VisionPaneWindow: View {
         }
         .onAppear { prompter.install() }
         .task(id: attempt) { await connect() }
-        // ponytail: one snapshot poll per window for the header's agent state; share the list's monitor if many windows load the machine
-        .task { await monitor.watch(app) }
-        .onDisappear { drop() }
+        .task { await VisionMonitors.shared.watch(pane, app) }   // the header's agent state, one poll per machine
+        .onAppear { windowOpen = true }
+        .onDisappear {
+            windowOpen = false
+            drop()
+            let c = connection; connection = nil
+            Task { try? await Task.sleep(for: .milliseconds(600)); await c?.disconnect() }   // after the release went out
+        }
     }
 
     private var header: some View {
@@ -249,9 +256,22 @@ struct VisionPaneWindow: View {
         do {
             // --takeover: a window reopened after a dropped network would otherwise find its own old stream still holding the pane.
             let cmd = Herdr.path + "herdr" + Herdr.sessionArg(pane.session) + " terminal session control " + Herdr.shellQuote(pane.terminal) + " --takeover --cols 100 --rows 32"
-            let channel = try await app.connection(for: profile).openShell(cols: 0, rows: 0, command: cmd, exec: true)
-            // The window closed (or reconnected) while the channel opened: hand the pane straight back.
-            guard !Task.isCancelled else { HerdrPaneStream(channel).close(); return }
+            // A profile edited since (user, port, key, jump host) needs a new connection; the old one keeps its own copy.
+            if let c = connection, c.profile != profile { let old = c; connection = nil; Task { await old.disconnect() } }
+            let conn = connection ?? SSHConnection(profile: profile, jump: profile.jumpHostID.flatMap { app.hosts.host($0) })
+            connection = conn
+            let channel: PTYSession
+            do { channel = try await conn.openShell(cols: 0, rows: 0, command: cmd, exec: true) } catch {
+                if Task.isCancelled { await conn.disconnect() }   // closed mid-handshake: nothing else would end it
+                throw error
+            }
+            // The window closed (or reconnected) while the channel opened: hand the pane straight back, and if the
+            // window is gone, its connection too (onDisappear may have run before the connection existed).
+            guard !Task.isCancelled else {
+                HerdrPaneStream(channel).close()
+                if connection !== conn || !windowOpen { Task { try? await Task.sleep(for: .milliseconds(600)); await conn.disconnect() } }
+                return
+            }
             let s = HerdrPaneStream(channel)
             stream = s
             s.onEnd { [weak s] reason in Task { @MainActor in
@@ -263,6 +283,33 @@ struct VisionPaneWindow: View {
         } catch {
             ended = describeError(error)
         }
+    }
+}
+
+/// One snapshot poll per machine for every open pane window's header, running while any window needs it.
+@MainActor final class VisionMonitors {
+    static let shared = VisionMonitors()
+    private var monitors: [String: MuxMonitor] = [:]
+    private var users: [String: Int] = [:]
+    private var tasks: [String: Task<Void, Never>] = [:]
+
+    private func key(_ p: VisionPane) -> String { "\(p.host)|\(p.session ?? "default")" }
+
+    func monitor(_ p: VisionPane) -> MuxMonitor {
+        if let m = monitors[key(p)] { return m }
+        let m = MuxMonitor(target: p.target, session: p.session)
+        monitors[key(p)] = m
+        return m
+    }
+
+    /// Polls while the calling view's task lives; the last window to go stops it.
+    func watch(_ p: VisionPane, _ app: AppModel) async {
+        let k = key(p), m = monitor(p)
+        users[k, default: 0] += 1
+        if tasks[k] == nil { tasks[k] = Task { await m.watch(app) } }
+        while !Task.isCancelled { try? await Task.sleep(for: .seconds(3600)) }   // sleep wakes when the view's task is cancelled
+        users[k, default: 1] -= 1
+        if users[k] == 0 { tasks.removeValue(forKey: k)?.cancel(); monitors[k] = nil; users[k] = nil }
     }
 }
 
@@ -310,7 +357,8 @@ final class HerdrPaneStream: TerminalIO, @unchecked Sendable {
             }
             guard let self else { return }
             self.continuation.finish()
-            let text = String(decoding: buffer, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+            let text = String(decoding: buffer, as: UTF8.self).replacingOccurrences(of: #"\x{1b}\[[0-9;]*[A-Za-z]"#, with: "", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
             let (said, diag) = self.lock.withLock { (self.reason, self.diagnostic) }
             let message = Self.describe(said) ?? (!text.isEmpty ? text : diag ?? channel.endReason ?? "The pane's stream ended.")
             let end = self.lock.withLock { () -> ((String) -> Void)? in
@@ -324,7 +372,8 @@ final class HerdrPaneStream: TerminalIO, @unchecked Sendable {
     private func handle(_ line: Data) {
         guard let rec = try? JSONSerialization.jsonObject(with: line) as? [String: Any], let type = rec["type"] as? String else {
             let text = String(decoding: line, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-            if !text.isEmpty { lock.withLock { diagnostic = text } }
+            let plain = text.replacingOccurrences(of: #"\x{1b}\[[0-9;]*[A-Za-z]"#, with: "", options: .regularExpression)
+            if !plain.isEmpty { lock.withLock { diagnostic = plain } }
             return
         }
         switch type {
