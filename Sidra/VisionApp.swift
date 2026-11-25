@@ -159,40 +159,27 @@ private struct VisionMachineSection: View {
         }
     }
 
-    /// A space's name, then one row per pane in it.
-    @ViewBuilder private func space(_ ws: MuxSnapshot.Workspace, _ s: MuxSnapshot, _ m: MuxMonitor) -> some View {
+    /// One row per space (Waseem, 2026-11-26: the agents under it were noise). Tapping it opens the pane
+    /// the space shows: its focused tab's focused pane, or its first pane that can stream.
+    private func space(_ ws: MuxSnapshot.Workspace, _ s: MuxSnapshot, _ m: MuxMonitor) -> some View {
         let folder = s.folder(of: ws.id)
-        HStack(spacing: 12) {
-            HerdrLogoView(name: ws.label, image: folder.flatMap { m.logos[$0] }, size: 30)
-            Text(ws.label).font(.headline)
-            Spacer()
-            if ws.agent_status != .unknown { Text(HerdrStatusIcon.label(ws.agent_status)).font(.caption).foregroundStyle(.secondary) }
-        }
-        ForEach(s.panes.filter { $0.workspace_id == ws.id }) { p in paneRow(p, ws, s) }
-    }
-
-    private func paneRow(_ p: MuxSnapshot.PaneInfo, _ ws: MuxSnapshot.Workspace, _ s: MuxSnapshot) -> some View {
-        let agent = s.agents.first { $0.pane_id == p.pane_id }
-        let tab = s.tabs(in: ws.id).first { $0.tab_id == p.tab_id }
-        let title = agent?.agent ?? (p.terminal_title_stripped.flatMap { $0.isEmpty ? nil : $0 } ?? "Shell")
-        let detail = [tab.map { "tab " + $0.name(in: ws.label) }, agent?.terminal_title_stripped].compactMap { $0 }.joined(separator: ", ")
+        let tab = s.tabs(in: ws.id).first { $0.focused } ?? s.tabs(in: ws.id).first
+        let focused = tab.flatMap { t in s.layouts?.first { $0.tab_id == t.tab_id }?.focused_pane_id }
+        let panes = s.panes.filter { $0.workspace_id == ws.id && $0.terminal_id != nil }
+        let pane = panes.first { $0.pane_id == focused } ?? panes.first
         return Button {
-            guard case .ssh(let host) = target, let term = p.terminal_id else { return }
-            openWindow(id: "pane", value: VisionPane(host: host, session: session, pane: p.pane_id, terminal: term, space: ws.id, label: "\(ws.label), \(title)"))
+            guard case .ssh(let host) = target, let p = pane, let term = p.terminal_id else { return }
+            openWindow(id: "pane", value: VisionPane(host: host, session: session, pane: p.pane_id, terminal: term, space: ws.id, label: ws.label))
         } label: {
             HStack(spacing: 12) {
-                if let a = agent { HerdrStatusIcon(status: a.agent_status, size: 10).frame(width: 30) } else { Image(systemName: "terminal").frame(width: 30) }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
-                    if !detail.isEmpty { Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
-                    // A greyed row said nothing (2026-11-26): name the reason.
-                    if p.terminal_id == nil { Text("herdr \(s.version ?? "on this machine") sends no terminal ID, so this pane cannot open. Update herdr there.").font(.caption).foregroundStyle(.orange) }
-                }
+                HerdrLogoView(name: ws.label, image: folder.flatMap { m.logos[$0] }, size: 30)
+                Text(ws.label).font(.headline)
                 Spacer()
+                if ws.agent_status != .unknown { Text(HerdrStatusIcon.label(ws.agent_status)).font(.caption).foregroundStyle(.secondary) }
                 Image(systemName: "macwindow.badge.plus").foregroundStyle(.secondary)
             }
         }
-        .disabled(p.terminal_id == nil)   // herdr before terminal IDs: nothing to stream
+        .disabled(pane == nil)   // herdr before terminal IDs: nothing to stream
     }
 }
 
