@@ -81,6 +81,8 @@ struct TitleBar<Trailing: View>: View {
                         // A subtitle that repeats the title (a Theasa connection named Theasa) says nothing.
                         PillTab(icon: tab.shownIcon, title: tab.title, subtitle: tab.subtitle == tab.title ? nil : tab.subtitle,
                                 active: tab.id == store.activeTabID, dot: store.tabDot?(tab) == true, accessory: store.tabAccessory?(tab) ?? nil,
+                                // A Pipelines tab: the provider's logo plus a pipeline symbol say it; the word took width (2026-11-26).
+                                titleSymbol: [.gitlab, .github].contains(tab.shownIcon) ? "point.3.connected.trianglepath.dotted" : nil,
                                 action: { store.select(tab: tab.id) },
                                 close: { store.requestCloseTab(tab.id) })
                             .overlay(alignment: .topLeading) {

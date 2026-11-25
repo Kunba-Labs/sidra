@@ -145,13 +145,16 @@ public struct PillTab: View {
     let active: Bool
     let dot: Bool
     let accessory: AnyView?
+    /// An SF Symbol drawn in place of the title word, to save width; the title stays the spoken label.
+    let titleSymbol: String?
     let action: () -> Void
     let close: (() -> Void)?
 
     /// `dot`: a small blue dot after the title, for a tab with something new in it. `accessory`: a mark or
     /// count after it (Substrate's waiting count, its mark on a herdr tab).
     public init(icon: ProcessIcon.Kind, title: String, subtitle: String? = nil, active: Bool, dot: Bool = false, accessory: AnyView? = nil,
-                action: @escaping () -> Void, close: (() -> Void)? = nil) {
+                titleSymbol: String? = nil, action: @escaping () -> Void, close: (() -> Void)? = nil) {
+        self.titleSymbol = titleSymbol
         self.dot = dot
         self.accessory = accessory
         self.icon = icon
@@ -166,10 +169,12 @@ public struct PillTab: View {
         Button(action: action) {
             HStack(spacing: 9) {
                 ProcessIcon(icon, size: 24)
-                Text(title)
-                    .font(SidraFont.ui(13.5, weight: active ? .bold : .regular))
-                    .foregroundStyle(active ? SidraColor.text : SidraColor.muted)
-                    .lineLimit(1)
+                Group {
+                    if let titleSymbol { Image(systemName: titleSymbol).accessibilityLabel(title) } else { Text(title) }
+                }
+                .font(SidraFont.ui(13.5, weight: active ? .bold : .regular))
+                .foregroundStyle(active ? SidraColor.text : SidraColor.muted)
+                .lineLimit(1)
                 if let subtitle {
                     Text(subtitle)
                         .font(SidraFont.ui(13.5))
