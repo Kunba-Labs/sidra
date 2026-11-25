@@ -211,6 +211,8 @@ struct VisionPaneWindow: View {
             }
         }
         .ornament(attachmentAnchor: .scene(.top), contentAlignment: .bottom) { header.padding(.bottom, 8) }
+        // The project's logo on the window's corner, standing off the glass, so a glance across the room says which app it is.
+        .ornament(attachmentAnchor: .scene(.topLeading), contentAlignment: .center) { badge }
         .keyUseConfirmation()   // a key marked confirm-on-use asks here, or a reconnect would wait unseen
         // A first or changed host key asks here too, as the connect sheet does.
         .sheet(item: Binding(get: { connecting ? prompter.pending.map { HostKeyBox(prompt: $0) } : nil }, set: { _ in })) { box in
@@ -226,6 +228,17 @@ struct VisionPaneWindow: View {
             let c = connection; connection = nil
             Task { try? await Task.sleep(for: .milliseconds(600)); await c?.disconnect() }   // after the release went out
         }
+    }
+
+    private var badge: some View {
+        let s = monitor.snapshot
+        let ws = s?.workspaces.first { $0.id == pane.space }
+        let name = ws?.label ?? pane.label.components(separatedBy: ", ").first ?? pane.label
+        let image = ws.flatMap { monitor.logo(for: $0) }
+        return HerdrLogoView(name: name, image: image, size: 76)
+            .shadow(color: .black.opacity(0.35), radius: 12, y: 6)
+            .offset(z: 24)
+            .accessibilityLabel(name)
     }
 
     private var header: some View {
