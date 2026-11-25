@@ -185,6 +185,8 @@ private struct VisionMachineSection: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                     if !detail.isEmpty { Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
+                    // A greyed row said nothing (2026-11-26): name the reason.
+                    if p.terminal_id == nil { Text("herdr \(s.version ?? "on this machine") sends no terminal ID, so this pane cannot open. Update herdr there.").font(.caption).foregroundStyle(.orange) }
                 }
                 Spacer()
                 Image(systemName: "macwindow.badge.plus").foregroundStyle(.secondary)
