@@ -14,7 +14,9 @@ struct VisionScenes: Scene {
     let app: AppModel
 
     var body: some Scene {
-        WindowGroup(id: "main") {
+        // Single windows (2026-11-26): every pane and workspace window has a Sessions button, and opening
+        // a single window brings back the one that was closed instead of stacking a second.
+        Window("Sessions", id: "main") {
             VisionSessions().environment(app)
         }
         .defaultSize(width: 560, height: 720)
@@ -24,8 +26,9 @@ struct VisionScenes: Scene {
         }
         .defaultSize(width: 1000, height: 680)
 
-        WindowGroup(id: "workspace") {
+        Window("Sidra", id: "workspace") {
             SceneRoot().environment(app)
+                .ornament(attachmentAnchor: .scene(.bottom), contentAlignment: .top) { SessionsButton().padding(.top, 8) }
         }
         .defaultSize(width: 1376, height: 1032)
         .commands { WorkspaceCommands(app: app) }
@@ -76,6 +79,20 @@ struct VisionSessions: View {
                 ForEach(machines) { pane in
                     if let mux = pane.kind.multiplexer { VisionMachineSection(pane: pane, target: mux.target, session: mux.session) }
                 }
+                // The workspace's other tabs (2026-11-26): each opens, or comes to the front, in the workspace window.
+                Section("Apps") {
+                    ForEach(NewTabKind.allCases.filter { $0 != .herdr && $0 != .ssh }) { kind in
+                        Button { openApp(kind) } label: {
+                            HStack(spacing: 12) {
+                                ProcessIcon(kind.icon, size: 30)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(kind.title)
+                                    Text(kind.detail).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                }
+                            }
+                        }
+                    }
+                }
             }
             .navigationTitle("Sessions")
             .toolbar {
@@ -105,6 +122,12 @@ struct VisionSessions: View {
             }
         }
         #endif
+    }
+
+    private func openApp(_ kind: NewTabKind) {
+        app.workspace = app.primaryWorkspace
+        app.startTab(kind)
+        openWindow(id: "workspace")
     }
 
     /// The connect sheet adds its herdr tab to `app.workspace`: point that at the saved workspace first.
@@ -171,6 +194,16 @@ private struct VisionMachineSection: View {
     }
 }
 
+/// Brings back the Sessions window, or to the front when it is open.
+private struct SessionsButton: View {
+    @Environment(\.openWindow) private var openWindow
+    var body: some View {
+        Button("Sessions", systemImage: "list.bullet") { openWindow(id: "main") }
+            .padding(6)
+            .glassBackgroundEffect()
+    }
+}
+
 // MARK: - One pane
 
 /// A window streaming one herdr pane. It holds the pane with `--takeover` (herdr allows one writer per pane)
@@ -183,6 +216,8 @@ struct VisionPaneWindow: View {
     @State private var attempt = 0
     @State private var focus = 0
     @State private var prompter = HostKeyPrompter.shared
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.scenePhase) private var scenePhase
     /// Only a window that is connecting asks to trust a host key, so open windows do not all show the same prompt.
     @State private var connecting = false
 
@@ -220,6 +255,9 @@ struct VisionPaneWindow: View {
         }
         .onAppear { prompter.install() }
         .task(id: attempt) { await connect() }
+        // Back from the background (headset off, app left): the SSH stream may have died without a word,
+        // leaving a frozen screen that takes no input. Take the pane again.
+        .onChange(of: scenePhase) { old, new in if old == .background, new == .active { attempt += 1 } }
         .task { await VisionMonitors.shared.watch(pane, app) }   // the header's agent state, one poll per machine
         .onAppear { windowOpen = true }
         .onDisappear {
@@ -247,7 +285,9 @@ struct VisionPaneWindow: View {
             if let agent { HerdrStatusIcon(status: agent.agent_status, size: 10) }
             Text(pane.label).font(.headline)
             if let t = agent?.terminal_title_stripped, !t.isEmpty { Text(t).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
+            Button("Sessions", systemImage: "list.bullet") { openWindow(id: "main") }.labelStyle(.iconOnly)
         }
+        .fixedSize()   // the ornament proposes little width: keep the title whole
         .padding(.horizontal, 18).padding(.vertical, 10)
         .glassBackgroundEffect()
     }
