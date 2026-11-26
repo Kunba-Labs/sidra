@@ -16,10 +16,9 @@ struct RootView: View {
         // Each slot carries the environment itself: on a Mac (Designed for iPad) menu contents are built for the
         // menu bar outside this view tree, and the project menu crashed at launch without AppModel.
         WorkspaceView(store: store, provider: provider, newTabMenu: slot(newTabButton), emptyHero: slot(NewTabCards()),
-                      compactTrailing: slot(HStack(spacing: 6) { TheasaPill(compact: true); HerdrTitleCounts(); commandMenu }),
+                      compactTrailing: slot(HStack(spacing: 6) { SubstratePill(compact: true); HerdrTitleCounts(); commandMenu }),
                       // Title bar design B (design/html/13-title-bar.html): what needs you as labelled pills.
                       machine: slot(HStack(spacing: 2) { commandMenu })) {
-            TheasaPill()
             SubstratePill()
             HerdrTitleCounts()
         }
@@ -82,7 +81,7 @@ struct RootView: View {
         .onAppear {
             app.openNewWindow = { [openWindow] in openWindow(id: "main") }
             store.isBusy = { BusyPanes.shared.isBusy($0) }
-            store.isHiddenTab = TheasaStore.isTheasaTab   // the Theasa tab's only handle is its pill
+            store.isHiddenTab = TheasaStore.isTheasaTab   // the Substrate tab's only handle is its pill
             #if DEBUG
             DemoMode.install(app)
             #endif

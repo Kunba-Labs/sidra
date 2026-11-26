@@ -80,7 +80,6 @@
 		762694257B241A70017A3BD6 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CC77A4E8D6AA264330D64 /* SettingsSheet.swift */; };
 		76818F3F38D7C373C58D6F24 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 788A46258945131DAB264C68 /* PrivacyInfo.xcprivacy */; };
 		77B73B65F1AF1BF0C75C805A /* Herdr.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19FFF77CC7CB50FA454494F7 /* Herdr.swift */; };
-		79E841603FE7F855A5C953C4 /* TheasaPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4250DDEA0881DA0432782662 /* TheasaPill.swift */; };
 		7D141BB2839FA65336CB735B /* SubstrateDesktop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B2A9EA1F5F133DFEE656CAB /* SubstrateDesktop.swift */; };
 		7D35112A9FD505497C6BEB56 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 4E668645064E13D2A7D90C58 /* Sparkle */; };
 		7F8A385915BB93D324C7331C /* SceneStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F90D9F3ACAEC2FB0ADCA51 /* SceneStore.swift */; };
@@ -138,7 +137,6 @@
 		CD066056B57531B33D96532D /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 026DB1F4BFD86A94EE83C678 /* AppModel.swift */; };
 		CD424996DA892604811FC96E /* TheasaTurn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9151B661C8A5150FD6B3DD /* TheasaTurn.swift */; };
 		D248D34F66A28A227C81D1EA /* PipelinesPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0D67B8A7040FD87F2598823 /* PipelinesPane.swift */; };
-		D26241FEED7A824A5894C385 /* TheasaPill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4250DDEA0881DA0432782662 /* TheasaPill.swift */; };
 		D329A6E8E848BD422D1D1A71 /* TheasaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E386D698B0C73B5EFADB7F13 /* TheasaStore.swift */; };
 		DBD541799BC95824D31E2B39 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A1CC77A4E8D6AA264330D64 /* SettingsSheet.swift */; };
 		DC868DBE1BEA62F52598D3CC /* FloatingOrbUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA664C38BC9D52E3E799088 /* FloatingOrbUITests.swift */; };
@@ -222,7 +220,6 @@
 		2A5640D612B671DEF0516D7B /* SSHMoshUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHMoshUITests.swift; sourceTree = "<group>"; };
 		3A958E2D546170231CBA9D2C /* LifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifecycleTests.swift; sourceTree = "<group>"; };
 		3EE6DFA8F7CAB8895B0EC7A3 /* SidraSSHTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidraSSHTests.swift; sourceTree = "<group>"; };
-		4250DDEA0881DA0432782662 /* TheasaPill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaPill.swift; sourceTree = "<group>"; };
 		42A069A363B9F7AB51553030 /* TheasaProject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaProject.swift; sourceTree = "<group>"; };
 		431F62683B346773FF43404D /* SidraMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SidraMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		444C16EC11530D11005BDA70 /* TheasaSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaSearch.swift; sourceTree = "<group>"; };
@@ -462,7 +459,6 @@
 				5B41E3C7C2BA941E511861CB /* TheasaConnectSheet.swift */,
 				24DCC141B15F493AF564C38B /* TheasaMarkdown.swift */,
 				E370EAEEFC681DB92CFBC0EF /* TheasaPane.swift */,
-				4250DDEA0881DA0432782662 /* TheasaPill.swift */,
 				42A069A363B9F7AB51553030 /* TheasaProject.swift */,
 				1480327CDF081DB259C98E5F /* TheasaPulse.swift */,
 				444C16EC11530D11005BDA70 /* TheasaSearch.swift */,
@@ -884,7 +880,6 @@
 				63C9254D1FA7DADE246DF8B3 /* TheasaConnectSheet.swift in Sources */,
 				564B4EB9D00A64F43511CF4C /* TheasaMarkdown.swift in Sources */,
 				3EF686081D0628FEFF15C573 /* TheasaPane.swift in Sources */,
-				D26241FEED7A824A5894C385 /* TheasaPill.swift in Sources */,
 				EE3FCFD9FCFB9F202F7D1D68 /* TheasaProject.swift in Sources */,
 				2BB41AB19B88C4CDF73575A9 /* TheasaPulse.swift in Sources */,
 				F32455CD57664A9B89A9D52B /* TheasaSearch.swift in Sources */,
@@ -942,7 +937,6 @@
 				5D3ADBE6C24C53DECD6EC630 /* TheasaConnectSheet.swift in Sources */,
 				AA68CCB35DF9EB7A9A8186B4 /* TheasaMarkdown.swift in Sources */,
 				9FC7413353CFA15E48C49964 /* TheasaPane.swift in Sources */,
-				79E841603FE7F855A5C953C4 /* TheasaPill.swift in Sources */,
 				8D567A6A0AEAC60638766CBE /* TheasaProject.swift in Sources */,
 				6A074F3A40762F3A0A95AC0E /* TheasaPulse.swift in Sources */,
 				3F1527F314D94801B159B51C /* TheasaSearch.swift in Sources */,

@@ -34,11 +34,42 @@ struct SubstratePane: View {
                 case .requests: SubstrateRequests(store: store, keysOn: app.workspace.focusedPane?.id == pane.id)
                 case .sessions: SubstrateSessions(store: store, keysOn: app.workspace.focusedPane?.id == pane.id)
                 case .machines: SubstrateMachines(store: store)
+                case .pulse, .agents: SubstrateLog(store: store, pane: pane)
                 }
             }
         }
         .background(SubstrateStyle.main)
         .task { store.start() }
+    }
+}
+
+/// Pulse and Agents (Theasa's screens): one screen stack per pane, its root following the section.
+/// ponytail: still read from the saved Theasa server until Substrate's log API is live; then TheasaLive's client swaps.
+struct SubstrateLog: View {
+    @Bindable var store: SubstrateStore
+    let pane: Pane
+    @State private var theasa = TheasaStore.shared
+    @Environment(WorkspaceStore.self) private var workspace
+    @Environment(AppModel.self) private var app
+
+    var body: some View {
+        if let live = theasa.activeLive {
+            let nav = theasa.nav(pane.id)
+            let root: TheasaNav.Root = store.section == .agents ? .agents : .pulse
+            TheasaKeyHosted(nav: nav, paneFocused: workspace.focusedPane?.id == pane.id, typing: nav.typing) {
+                TheasaRootView(live: live, nav: nav).environment(workspace)
+            }
+            .task(id: pane.id) { nav.hostPane = pane.id }
+            .onAppear { if nav.root != root { nav.show(root) } }
+            .onChange(of: root) { _, r in if nav.root != r { nav.show(r) } }
+            .onChange(of: nav.root) { _, r in store.section = r == .agents ? .agents : .pulse }   // ⌥⌘A, next agent, herdr's Open
+        } else {
+            VStack(spacing: 12) {
+                SubstrateEmpty(text: "Pulse and Agents read from your Theasa server until Substrate serves them.")
+                Button("Connect Theasa") { app.sheet = .theasa }.buttonStyle(.sidraSecondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
     }
 }
 
@@ -101,7 +132,13 @@ struct SubstrateFooter: View {
             FooterItem("\(c?.active ?? 0) active")
             if let agents = c?.agents { FooterItem("\(agents) agents" + (store.machines.count == 1 ? " on \(store.machines[0].name)" : "")) }
             Spacer()
-            FooterItem(store.section == .sessions ? "↑↓ session  ⌘N new session in the browser" : "↑↓ request  ⌘↩ approve  ⌘⌫ reject  ⌘O open in browser")
+            let keys: String = switch store.section {
+                case .sessions: "↑↓ session  ⌘N new session in the browser"
+                case .pulse, .agents: "⌘F search  ⌥⌘N next agent that needs you  esc back"
+                case .machines: ""
+                case .requests: "↑↓ request  ⌘↩ approve  ⌘⌫ reject  ⌘O open in browser"
+            }
+            FooterItem(keys)
         } else {
             FooterItem(store?.connection.host ?? "substrate.gliph.sh")
             Spacer()

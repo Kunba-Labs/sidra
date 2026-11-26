@@ -226,7 +226,7 @@ struct TurnRow: View {
                 AgentTag(agent: t.agent)
             }
             .frame(width: 64, alignment: .trailing)
-            Circle().strokeBorder(color, lineWidth: 2).background(Circle().fill(t.isPending ? SidraColor.pane : color))
+            Circle().strokeBorder(color, lineWidth: 2).background(Circle().fill(t.isPending ? SubstrateStyle.main : color))
                 .frame(width: 10, height: 10).padding(.top, 6).frame(width: 34)
             Button { open(.turn(t.id)) } label: { inner(t).contentShape(Rectangle()) }
                 .buttonStyle(.plain)

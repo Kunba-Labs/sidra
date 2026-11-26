@@ -33,20 +33,26 @@ final class TheasaStore {
     var popoverNav: TheasaNav { nav(in: app) }
     /// Each window's Theasa pane keeps its own screens and keyboard state; no Theasa pane yet: the shared fallback.
     func nav(in app: AppModel?) -> TheasaNav {
-        let pane = app?.workspace.tabs.first(where: Self.isTheasaTab)?.panes.first { if case .theasa = $0.kind { true } else { false } }
+        let pane = app?.workspace.tabs.first(where: Self.isTheasaTab)?.panes.first { if case .substrate = $0.kind { true } else { false } }
         return nav(pane?.id ?? Self.popoverPane)
     }
 
     /// Theasa is a tab whose only handle is the title-bar pill (2026-11-14: "the pill is a tab,
     /// so clicking on it opens the same tab as before but theasa pill acts as its tab"). The tab strip,
     /// dock and orb hide it through `WorkspaceStore.isHiddenTab`.
-    static func isTheasaTab(_ t: WorkspaceTab) -> Bool { t.panes.contains { if case .theasa = $0.kind { true } else { false } } }
+    /// Since 2026-11-26 that is the Substrate tab: Theasa's screens are its Pulse and Agents sections, and the
+    /// Substrate pill is its handle.
+    static func isTheasaTab(_ t: WorkspaceTab) -> Bool { t.panes.contains { if case .substrate = $0.kind { true } else { false } } }
 
     /// The app, for the tab and the connections sheet (set at launch).
     @ObservationIgnored weak var app: AppModel?
 
     /// The Theasa tab is the active tab of the key window.
-    var presented: Bool { app?.workspace.activeTab.map(Self.isTheasaTab) ?? false }
+    /// The Substrate tab is in front on Pulse or Agents (⌘F, ⌘. and ⌘↩ go to Theasa's screens then).
+    var presented: Bool {
+        guard let t = app?.workspace.activeTab, Self.isTheasaTab(t) else { return false }
+        return t.panes.contains { if case .substrate(let id) = $0.kind, let s = SubstrateHub.shared.store(id) { [.pulse, .agents].contains(s.section) } else { false } }
+    }
 
     /// Esc and ⌘.: a typing field gives the keyboard up, else one screen back.
     func escape() { popoverNav.escape() }
@@ -56,18 +62,15 @@ final class TheasaStore {
     /// Selects the Theasa tab (made on first use), on a root screen if given; without a connection, the connect sheet.
     func open(_ app: AppModel, root: TheasaNav.Root? = nil) {
         self.app = app
-        guard let c = active else { app.sheet = .theasa; return }
-        let ws = app.workspace
-        if let t = ws.tabs.first(where: Self.isTheasaTab) {
-            // The pane follows the active connection.
-            if let p = t.panes.first(where: { if case .theasa(let id) = $0.kind { id != c.id } else { false } }) {
-                var q = p; q.kind = .theasa(connection: c.id); ws.update(pane: q, inTab: t.id)
-            }
-            ws.select(tab: t.id)
-        } else {
-            let pane = app.newPane(kind: .theasa(connection: c.id))
-            ws.addTab(WorkspaceTab(title: "Theasa", subtitle: pane.project, icon: .theasa, root: .leaf(pane)))
+        guard active != nil else { app.sheet = .theasa; return }
+        // The Substrate tab on its Pulse or Agents section (2026-11-26).
+        let hub = SubstrateHub.shared
+        let c = hub.connections.first ?? hub.add()
+        if let s = hub.store(c.id) {
+            if let root { s.section = root == .agents ? .agents : .pulse }
+            else if ![.pulse, .agents].contains(s.section) { s.section = .pulse }
         }
+        app.startTab(.substrate)
         if let root { popoverNav.show(root) }
         if let a = pendingAgent { pendingAgent = nil; popoverNav.show(.agents); popoverNav.highlightAgent = a }
     }
@@ -83,15 +86,14 @@ final class TheasaStore {
         open(app, root: .agents)
     }
 
-    /// Saved workspaces: Theasa panes come back as the one hidden Theasa tab; duplicates merge into the first.
+    /// Saved workspaces: Theasa tabs close, their screens live in the Substrate tab now (2026-11-26).
     func mergeTheasaTabs(_ app: AppModel) {
         for ws in app.allWorkspaces {
-            var kept = false
             for tab in ws.tabs {
                 for p in tab.panes {
                     guard case .theasa(let c) = p.kind else { continue }
                     if activeID == nil || connection(activeID!) == nil { activeID = c }
-                    if kept || tab.panes.count > 1 { ws.close(pane: p.id, inTab: tab.id) } else { kept = true }
+                    ws.close(pane: p.id, inTab: tab.id)
                 }
             }
         }

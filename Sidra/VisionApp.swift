@@ -81,7 +81,7 @@ struct VisionSessions: View {
                 }
                 // The workspace's other tabs (2026-11-26): each opens, or comes to the front, in the workspace window.
                 Section("Apps") {
-                    ForEach(NewTabKind.allCases.filter { $0 != .herdr && $0 != .ssh }) { kind in
+                    ForEach(NewTabKind.allCases.filter { ![.herdr, .ssh, .theasa].contains($0) }) { kind in
                         Button { openApp(kind) } label: {
                             HStack(spacing: 12) {
                                 ProcessIcon(kind.icon, size: 30)

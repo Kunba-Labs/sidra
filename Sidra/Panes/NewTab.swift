@@ -7,6 +7,8 @@ import SidraSSH
 enum NewTabKind: String, CaseIterable, Identifiable {
     case herdr, ssh, theasa, pipelines, substrate, hackertab, chess
     var id: String { rawValue }
+    /// The New tab picker. Substrate (with Theasa's screens) has a fixed place: its title-bar pill (2026-11-26).
+    static var picker: [NewTabKind] { allCases.filter { $0 != .theasa && $0 != .substrate } }
 
     var icon: ProcessIcon.Kind {
         switch self {
@@ -157,7 +159,7 @@ struct NewTabCards: View {
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), spacing: SidraSpace.gap)], spacing: SidraSpace.gap) {
-            ForEach(NewTabKind.allCases) { k in
+            ForEach(NewTabKind.picker) { k in
                 Button { if let onPick { onPick(k) } else if k == .ssh { app.sheet = .newTab } else { app.startTab(k) } } label: {
                     HStack(alignment: .top, spacing: 12) {
                         ProcessIcon(k.icon, size: 30)

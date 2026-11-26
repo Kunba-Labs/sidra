@@ -78,8 +78,11 @@ final class SubstrateStore {
     var pickedSession: String?
     var section: Section = .requests
     enum Section: String, CaseIterable {
-        case requests = "Requests", sessions = "Sessions", machines = "Machines"
-        var icon: String { switch self { case .requests: "tray"; case .sessions: "link"; case .machines: "desktopcomputer" } }
+        // Pulse and Agents: Theasa's screens, moved into Substrate (2026-11-26).
+        case requests = "Requests", sessions = "Sessions", pulse = "Pulse", agents = "Agents", machines = "Machines"
+        var icon: String {
+            switch self { case .requests: "tray"; case .sessions: "link"; case .pulse: "waveform.path.ecg"; case .agents: "person.2"; case .machines: "desktopcomputer" }
+        }
     }
 
     @ObservationIgnored private var liveTask: Task<Void, Never>?

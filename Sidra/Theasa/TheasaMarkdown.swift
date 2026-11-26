@@ -54,7 +54,7 @@ struct MarkdownView: View {
                                     .foregroundStyle(ri == 0 ? SidraColor.text : Color(hex: 0xC4C4CA))
                                     .padding(.horizontal, 10).padding(.vertical, 5)
                                     .frame(maxWidth: 360, alignment: .leading)
-                                    .background(ri == 0 ? SidraColor.panel : .clear)
+                                    .background(ri == 0 ? SubstrateStyle.chip : .clear)
                                     .border(SidraColor.hairline2, width: 0.5)
                             }
                         }

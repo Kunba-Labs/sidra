@@ -213,7 +213,7 @@ struct AgentCard: View {
                         }
                         .font(SidraFont.ui(12.5, weight: i == cur ? .bold : .regular))
                         .padding(.horizontal, 10).frame(height: 30)
-                        .background(i == cur ? SidraColor.tabActive : SidraColor.panel, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .background(i == cur ? SidraColor.tabActive : SubstrateStyle.chip, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                         .overlay {
                             RoundedRectangle(cornerRadius: 8, style: .continuous)
                                 .strokeBorder(i == cur ? AnyShapeStyle(SidraGradient.horizontal) : AnyShapeStyle(SidraColor.hairline2), lineWidth: i == cur ? 1.5 : 1)
@@ -299,7 +299,7 @@ struct AgentCard: View {
                     MarkdownView(text: q, compact: true)
                         .padding(.horizontal, 12).padding(.vertical, 10)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(SidraColor.panel, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .background(SubstrateStyle.chip, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                         .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline2))
                 }
             }
@@ -371,7 +371,7 @@ struct OptionButton: View {
             .padding(.horizontal, 12).padding(.vertical, 8)
             .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
             // Picked: an active tab's fill and the selection gradient, as Sidra marks every selection.
-            .background(on ? SidraColor.tabActive : SidraColor.panel, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(on ? SidraColor.tabActive : SubstrateStyle.chip, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .gradientBorder(radius: 8, active: on, inactive: SidraColor.hairline2)
             .contentShape(Rectangle())
         }
@@ -463,7 +463,7 @@ struct TheasaChipRow: View {
                             .underline(it.link != nil).lineLimit(1).truncationMode(.middle)
                     }
                     .padding(.horizontal, 8).padding(.vertical, 4)
-                    .background(SidraColor.panel, in: RoundedRectangle(cornerRadius: 6))
+                    .background(SubstrateStyle.chip, in: RoundedRectangle(cornerRadius: 6))
                     .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(SidraColor.hairline2))
                 }
                 .buttonStyle(.plain).disabled(it.link == nil)

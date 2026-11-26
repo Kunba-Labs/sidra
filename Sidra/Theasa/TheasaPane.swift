@@ -89,11 +89,11 @@ struct TheasaRootView: View {
                             }
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(SidraColor.pane)
+                        .background(SubstrateStyle.main)
                         .hiddenNavigationBar()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(SidraColor.pane)
+                    .background(SubstrateStyle.main)
                     .hiddenNavigationBar()
             }
             .environment(\.theasaOpen) { path.append($0) }
@@ -105,7 +105,7 @@ struct TheasaRootView: View {
         // Tabs stay built when hidden (Views.swift), so a tab switch, not onDisappear, takes the keyboard back.
         .onChange(of: workspace.activeTabID) { _, _ in nav.resign += 1 }
         .onDisappear { nav.resign += 1; nav.typing = false }
-        .background(SidraColor.pane)
+        .background(SubstrateStyle.main)
         .overlay(alignment: .bottom) {
             if let t = live.toast {
                 Text(t).font(SidraFont.ui(13)).foregroundStyle(SidraColor.text)
@@ -127,8 +127,7 @@ struct TheasaRootView: View {
             if !path.isEmpty {
                 IconButton("chevron.left", label: "Back", size: 30) { path.removeLast() }
             }
-            navPill("Pulse", on: nav.root == .pulse) { nav.show(.pulse) }
-            navPill("Agents", on: nav.root == .agents) { nav.show(.agents) }
+            // Pulse and Agents are sections in the Substrate header now (2026-11-26).
             if !compactWidth { searchField }
             Spacer(minLength: 8)
             // The range lives here on Pulse, so the screen saves a row.
@@ -177,18 +176,6 @@ struct TheasaRootView: View {
             .padding(.horizontal, 10).frame(height: 30).frame(maxWidth: compactWidth ? .infinity : 340)
             .background(SidraColor.raised, in: RoundedRectangle(cornerRadius: SidraRadius.pill, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: SidraRadius.pill, style: .continuous).strokeBorder(SidraColor.hairline))
-    }
-
-    private func navPill(_ title: String, on: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title).font(SidraFont.ui(13, weight: on ? .bold : .regular)).fixedSize()
-                .foregroundStyle(on ? SidraColor.text : SidraColor.muted)
-                .padding(.horizontal, 12).frame(height: 30)
-                .background(on ? SidraColor.tabActive : .clear, in: RoundedRectangle(cornerRadius: SidraRadius.pill, style: .continuous))
-                .gradientBorder(radius: SidraRadius.pill, active: on, inactive: .clear)
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(on ? .isSelected : [])
     }
 }
 
@@ -391,12 +378,10 @@ private struct TheasaCardStyle: ViewModifier {
     let radius: CGFloat
     @Environment(\.theasaPlainCards) private var plain
     func body(content: Content) -> some View {
+        // Substrate's look since Theasa moved into the Substrate tab (2026-11-26): its card fill and a hairline;
+        // Sidra's gradient stays on the chrome.
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        if plain {
-            content.background(fill, in: shape).overlay(shape.strokeBorder(SidraColor.hairline))
-        } else {
-            content.background(fill, in: shape).gradientBorder(radius: radius, active: true)
-        }
+        content.background(fill == SidraColor.raised ? SubstrateStyle.card : fill, in: shape).overlay(shape.strokeBorder(SidraColor.hairline))
     }
 }
 

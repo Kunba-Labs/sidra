@@ -383,7 +383,7 @@ struct AttachmentStrip: View {
                             Button { viewer = i } label: {
                                 TheasaImage(src: a.src ?? "", id: a.id, fit: false)
                                     .frame(width: 180, height: 120).clipped()
-                                    .background(SidraColor.panel)
+                                    .background(SubstrateStyle.chip)
                                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                                     .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(SidraColor.hairline2))
                             }
