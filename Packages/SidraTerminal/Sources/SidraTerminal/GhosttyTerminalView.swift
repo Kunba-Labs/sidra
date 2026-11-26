@@ -40,12 +40,15 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
         let p = NSTemporaryDirectory() + "sidra-vt.bin"; FileManager.default.createFile(atPath: p, contents: nil); return p
     }()
     #if !os(visionOS)   // visionOS has no input accessory or custom input views; its keyboard floats on its own
-    public override var inputAccessoryView: UIView? { HardwareKeyboard.attached || FloatingKeyboard.shared.enabled ? nil : keyRow }
+    public override var inputAccessoryView: UIView? { HardwareKeyboard.attached || FloatingKeyboard.shared.enabled || Self.composer != nil ? nil : keyRow }
     /// With Sidra's floating keyboard on, an empty input view keeps typing focus (and hardware keys)
     /// without Apple's keyboard, and iOS reports no keyboard, so panes never shrink.
     private lazy var emptyInput = UIView(frame: .zero)
-    public override var inputView: UIView? { FloatingKeyboard.shared.enabled ? emptyInput : nil }
+    public override var inputView: UIView? { FloatingKeyboard.shared.enabled || Self.composer != nil ? emptyInput : nil }
     #endif
+    /// iPhone (2026-11-26): typing goes through a compose bar over Apple's keyboard (the app's Compose); a tap
+    /// on the terminal opens it. The terminal still takes focus (copy, hardware keys) but shows no keyboard.
+    nonisolated(unsafe) public static var composer: ((GhosttyTerminalView) -> Void)?
     @objc private func keyboardChanged() { reloadInputViews() }
 
     public init(io: TerminalIO, fontSize: CGFloat = SidraFont.monoSize) {
@@ -177,6 +180,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
             _ = report(.press, .left, at: p); _ = report(.release, .left, at: p)
         }
         becomeFirstResponder()  // an explicit tap always focuses; only launch-time auto-focus honours -sidra.noAutoFocus
+        Self.composer?(self)
     }
 
     @objc private func handleDoubleTap(_ g: UITapGestureRecognizer) {

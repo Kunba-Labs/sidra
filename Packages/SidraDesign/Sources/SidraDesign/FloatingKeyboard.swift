@@ -89,7 +89,8 @@ public final class FloatingKeyboard {
 
     private init() {
         // bool(forKey:) also reads a launch argument (`-sidra.floatingKeyboard NO`), which arrives as a string.
-        enabled = UserDefaults.standard.object(forKey: "sidra.floatingKeyboard") == nil ? true : UserDefaults.standard.bool(forKey: "sidra.floatingKeyboard")
+        // iPhone (2026-11-26): Apple's keyboard and the compose bar, never these keys.
+        enabled = Platform.isPhone ? false : UserDefaults.standard.object(forKey: "sidra.floatingKeyboard") == nil ? true : UserDefaults.standard.bool(forKey: "sidra.floatingKeyboard")
         // Stored before arguments were dropped: cut every entry to its stem, merge the counts, rewrite.
         let stored = UserDefaults.standard.dictionary(forKey: "sidra.learnedCommands") as? [String: Int] ?? [:]
         var stems: [String: Int] = [:]

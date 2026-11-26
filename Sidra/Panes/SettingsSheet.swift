@@ -378,7 +378,7 @@ struct TerminalKeysSection: View {
 
     var body: some View {
         #if os(iOS) || os(visionOS)
-        if show("Sidra keyboard", "keyboard", "floating", "swipe") {
+        if !Platform.isPhone, show("Sidra keyboard", "keyboard", "floating", "swipe") {   // iPhone: Apple's keyboard and the compose bar
             SettingRow("Sidra keyboard", detail: "A floating developer keyboard in place of Apple's, in terminals. Hides when a hardware keyboard is attached. The SwiftTerm engine keeps Apple's keyboard", isDefault: FloatingKeyboard.shared.enabled, reset: { FloatingKeyboard.shared.enabled = true }) {
                 Toggle("", isOn: Binding(get: { FloatingKeyboard.shared.enabled }, set: { FloatingKeyboard.shared.enabled = $0 }))
                     .toggleStyle(GradientToggleStyle()).labelsHidden().fixedSize()

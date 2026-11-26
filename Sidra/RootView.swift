@@ -33,6 +33,11 @@ struct RootView: View {
         .overlay { FloatingKeyboardLayer() }   // under the mic, so dictation's card draws over the keys
         #endif
         .overlay(alignment: .bottomTrailing) { FloatingMic(showMic: focusedIsTerminal) }
+        #if os(iOS)
+        // iPhone: the compose bar over Apple's keyboard (ComposeBar.swift).
+        .safeAreaInset(edge: .bottom, spacing: 0) { if Compose.enabled && Compose.shared.open { ComposeBar() } }
+        .onChange(of: Compose.shared.open, initial: true) { _, open in store.dockHidden = open }
+        #endif
         .overlay(alignment: .bottom) {
             if let msg = app.toastMessage {
                 Text(msg)
@@ -81,6 +86,10 @@ struct RootView: View {
         .onAppear {
             app.openNewWindow = { [openWindow] in openWindow(id: "main") }
             store.isBusy = { BusyPanes.shared.isBusy($0) }
+            #if os(iOS)
+            Compose.install()
+            SidraToast.show = { [app] in app.toast($0) }
+            #endif
             store.isHiddenTab = TheasaStore.isTheasaTab   // the Substrate tab's only handle is its pill
             #if DEBUG
             DemoMode.install(app)

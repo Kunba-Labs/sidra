@@ -20,6 +20,7 @@
 		0D6E679C1BEBF058AA5C70D0 /* MicInputs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2D83C2FE1831D1C584C9D1 /* MicInputs.swift */; };
 		0F781B2E06D7BF291D71494C /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = B037505C87287B42AE7A192B /* WhisperKit */; };
 		10A62F11BFDFD7A86CAC198D /* DemoMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D40EFDF6FF49F49A56FDCE /* DemoMode.swift */; };
+		1546FE0AE6796D499C3AAAA6 /* ComposeBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8601BCC791A4A353290FF9FD /* ComposeBar.swift */; };
 		16D1038431AD1E8CCBBDF296 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 680898FB51F66C3B3F13859C /* Inter-Regular.ttf */; };
 		18712C6EFB1451F3D0F8FB01 /* HerdrTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C8C6F728A42C21EF094989 /* HerdrTests.swift */; };
 		1C52926532F4A9D6B7659B52 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F083441085B2B800071D6F /* RootView.swift */; };
@@ -148,6 +149,7 @@
 		E5795E4C4649FF14ADF7A896 /* PaneBodies.swift in Sources */ = {isa = PBXBuildFile; fileRef = A08F9C6E2FAA342E35589D7C /* PaneBodies.swift */; };
 		EBCCC0B6610AE719433183FF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 788A46258945131DAB264C68 /* PrivacyInfo.xcprivacy */; };
 		EE3FCFD9FCFB9F202F7D1D68 /* TheasaProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A069A363B9F7AB51553030 /* TheasaProject.swift */; };
+		F00EE8DC00FFBB6B96C09945 /* ComposeBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8601BCC791A4A353290FF9FD /* ComposeBar.swift */; };
 		F087FA61D38E17BABB730417 /* TabKeysUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D5909535627F01D7DA7FB8 /* TabKeysUITests.swift */; };
 		F2428B17E85D7E918697B913 /* ScreenshotCutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2815686B9356871CDDC40E19 /* ScreenshotCutTests.swift */; };
 		F32455CD57664A9B89A9D52B /* TheasaSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444C16EC11530D11005BDA70 /* TheasaSearch.swift */; };
@@ -248,6 +250,7 @@
 		7D6450EDD9602176E4E800B6 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
 		834E2A056986234964AF6506 /* SidraMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SidraMac.entitlements; sourceTree = "<group>"; };
 		835D989F13A564BB23920914 /* NewTabUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabUITests.swift; sourceTree = "<group>"; };
+		8601BCC791A4A353290FF9FD /* ComposeBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposeBar.swift; sourceTree = "<group>"; };
 		867174C3E73F59B207A9FDB0 /* TheasaUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaUITests.swift; sourceTree = "<group>"; };
 		86C0FAC71E767169A8F6AC6F /* TheasaKeyboardUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaKeyboardUITests.swift; sourceTree = "<group>"; };
 		898FEE6677F04B352643E7AB /* Platform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Platform.swift; sourceTree = "<group>"; };
@@ -378,6 +381,7 @@
 		238A5B24F91C7173D17732AB /* Keyboard */ = {
 			isa = PBXGroup;
 			children = (
+				8601BCC791A4A353290FF9FD /* ComposeBar.swift */,
 				CCFB137D3245A2A62F70ECB5 /* FloatingKeyboardPanel.swift */,
 				2323BA0EF5F04A337E394E14 /* SwipeTyping.swift */,
 				1B8474AFC839AAA5FC0D6CBF /* WordModel.swift */,
@@ -844,6 +848,7 @@
 				E1BC1D846F9F58B39C0B64CA /* CI.swift in Sources */,
 				CB07DE434A51D772F1A93C88 /* CommandRegistry.swift in Sources */,
 				3497C9708B593A0F652DB6AE /* Commands.swift in Sources */,
+				F00EE8DC00FFBB6B96C09945 /* ComposeBar.swift in Sources */,
 				1E629D46258DDE0C0CDD5750 /* DemoMode.swift in Sources */,
 				C5BC5FC24F82F516BF0FE409 /* FloatingKeyboardPanel.swift in Sources */,
 				89EE6431B83ABF55E9BB00B9 /* FloatingMic.swift in Sources */,
@@ -901,6 +906,7 @@
 				F402F5555A9BCAFABE9759C4 /* CI.swift in Sources */,
 				F9857DFFC09F44DEC6F754E1 /* CommandRegistry.swift in Sources */,
 				672B64903CA115909DE2DD11 /* Commands.swift in Sources */,
+				1546FE0AE6796D499C3AAAA6 /* ComposeBar.swift in Sources */,
 				10A62F11BFDFD7A86CAC198D /* DemoMode.swift in Sources */,
 				938965E6743C19E879D07BAA /* FloatingKeyboardPanel.swift in Sources */,
 				C2B75528C9937F7F75887D3E /* FloatingMic.swift in Sources */,

@@ -61,6 +61,8 @@ public final class WorkspaceStore {
     /// Set by the app: a tab with its own handle elsewhere (Theasa's title-bar pill). It never shows in
     /// the tab strip, the iPhone dock or the orb, and tab cycling skips it.
     public var isHiddenTab: ((WorkspaceTab) -> Bool)?
+    /// iPhone: the dock steps aside while the compose bar is up, so the terminal keeps its room.
+    public var dockHidden = false
     public var visibleTabs: [WorkspaceTab] { state.tabs.filter { isHiddenTab?($0) != true } }
 
     public func selectTab(offset: Int) {

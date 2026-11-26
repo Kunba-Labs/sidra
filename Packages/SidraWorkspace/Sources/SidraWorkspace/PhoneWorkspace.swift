@@ -53,7 +53,7 @@ struct PhoneWorkspace: View {
             }
             .padding(.horizontal, 8)
 
-            dock
+            if !store.dockHidden { dock }
         }
         .background(SidraColor.ground.ignoresSafeArea())
         .preferredColorScheme(.dark)
