@@ -109,12 +109,8 @@ struct ComposeBar: View {
                     .frame(minHeight: 40)
                     .background(SidraColor.ground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(SidraColor.hairline2))
-                Button { c.send() } label: {
-                    Group { if c.sending { ProgressView() } else { Image(systemName: "arrow.up").font(.system(size: 16, weight: .bold)) } }
-                        .foregroundStyle(SidraColor.ground).frame(width: 40, height: 40)
-                        .background(SidraColor.jade, in: Circle())
-                }
-                .buttonStyle(.plain).accessibilityLabel("Send")
+                // The keyboard's return sends, so this place is the mic's (2026-11-26): hold to talk, the words land in the draft.
+                if c.sending { ProgressView().frame(width: 48, height: 48) } else { MicKey(voice: VoiceInput.shared, window: nil) }
             }
             .padding(.horizontal, 10)
         }

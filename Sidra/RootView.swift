@@ -11,6 +11,15 @@ struct RootView: View {
 
     @State private var keyboard = KeyboardDock()   // per window: each window has its own keyboard geometry
 
+    /// iPhone's compose bar is up: its own mic stands in for the floating one.
+    private var composing: Bool {
+        #if os(iOS)
+        Compose.enabled && Compose.shared.open
+        #else
+        false
+        #endif
+    }
+
     var body: some View {
         @Bindable var app = app
         // Each slot carries the environment itself: on a Mac (Designed for iPad) menu contents are built for the
@@ -32,7 +41,7 @@ struct RootView: View {
         #if os(iOS) || os(visionOS)
         .overlay { FloatingKeyboardLayer() }   // under the mic, so dictation's card draws over the keys
         #endif
-        .overlay(alignment: .bottomTrailing) { FloatingMic(showMic: focusedIsTerminal) }
+        .overlay(alignment: .bottomTrailing) { FloatingMic(showMic: focusedIsTerminal && !composing) }
         #if os(iOS)
         // iPhone: the compose bar over Apple's keyboard (ComposeBar.swift).
         .safeAreaInset(edge: .bottom, spacing: 0) { if Compose.enabled && Compose.shared.open { ComposeBar() } }

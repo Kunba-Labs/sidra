@@ -241,6 +241,14 @@ final class VoiceInput {
             NSSound.beep()   // ponytail: no toast service on the Mac yet; the card said where it would go
         }
         #else
+        #if os(iOS)
+        // iPhone's compose bar is up: the words join the draft, sent with the rest.
+        if Compose.enabled, Compose.shared.open {
+            let c = Compose.shared
+            c.text += (c.text.isEmpty || c.text.hasSuffix(" ") ? "" : " ") + text
+            return
+        }
+        #endif
         if let t = dest, t.window != nil, !t.isHidden, !t.lost {
             t.pasteText(text)
             t.offerSend()   // dictated text waits for a Send tap, as on the keyboard's mic
