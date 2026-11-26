@@ -23,12 +23,31 @@ public enum TheasaError: LocalizedError, Sendable, Equatable {
 public struct TheasaClient: Sendable {
     public let base: URL
     public let token: String?
+    /// Substrate's app API (`…/api/v1`, 2026-11-26): the same screens, Theasa's paths mapped by `url(_:)`.
+    public let substrate: Bool
     let session: URLSession
 
-    public init(base: URL, token: String?, session: URLSession = TheasaClient.defaultSession) {
+    public init(base: URL, token: String?, substrate: Bool = false, session: URLSession = TheasaClient.defaultSession) {
         self.base = base
         self.token = token?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty
+        self.substrate = substrate
         self.session = session
+    }
+
+    /// Theasa's `/api/…` paths on Substrate's app API (docs/app-api.md in the substrate repo): the work log under
+    /// `/log`, repos for projects, `/agents`, and `/live` for the change stream. Ranges are today|week|month|all
+    /// and days are the reader's, so `tz` (minutes east of UTC) goes along.
+    static func substratePath(_ path: String) -> String {
+        let map = [("/api/pulse", "/log/pulse"), ("/api/projects", "/log/repos"), ("/api/turns", "/log/turns"), ("/api/search", "/log/search"),
+                   ("/api/watch", "/log/watch"), ("/api/decisions", "/log/decisions"), ("/api/jobs", "/log/jobs"),
+                   ("/api/agents", "/agents"), ("/api/events", "/live")]
+        guard let (from, to) = map.first(where: { path == $0.0 || path.hasPrefix($0.0 + "/") || path.hasPrefix($0.0 + "?") }) else { return path }
+        var p = to + path.dropFirst(from.count)
+        p = p.replacingOccurrences(of: "range=30d", with: "range=month").replacingOccurrences(of: "&agent=all", with: "")
+        if p.hasPrefix("/log/pulse") || p.hasPrefix("/log/repos") {
+            p += (p.contains("?") ? "&" : "?") + "tz=\(TimeZone.current.secondsFromGMT() / 60)"
+        }
+        return p
     }
 
     /// Debug demo mode only: URL protocols that answer before the network (set before the first request).
@@ -54,6 +73,7 @@ public struct TheasaClient: Sendable {
     /// A server path (`/api/...`, or a relative `icon_url` / `src`) as an absolute URL.
     public func url(_ path: String) -> URL? {
         if path.hasPrefix("http://") || path.hasPrefix("https://") { return URL(string: path) }
+        let path = substrate ? Self.substratePath(path) : path
         var b = base.absoluteString
         while b.hasSuffix("/") { b.removeLast() }
         return URL(string: b + (path.hasPrefix("/") ? path : "/" + path))
@@ -75,7 +95,8 @@ public struct TheasaClient: Sendable {
         if ours, let token { r.setValue("Bearer " + token, forHTTPHeaderField: "Authorization") }
         if let body {
             guard ours, let token else { throw TheasaError.noToken }
-            r.httpMethod = "POST"
+            // Substrate edits a repo with PATCH /log/repos/{id}; Theasa took a POST.
+            r.httpMethod = substrate && u.path.range(of: #"/log/repos/\d+$"#, options: .regularExpression) != nil ? "PATCH" : "POST"
             r.setValue("application/json", forHTTPHeaderField: "Content-Type")
             r.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
             r.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -121,7 +142,7 @@ public struct TheasaClient: Sendable {
     /// POST /api/projects/:id/icon: multipart form field `icon`, an image under 1 MB. It locks the icon.
     public func iconRequest(project: Int, image: Data, mime: String) throws -> URLRequest {
         guard let token else { throw TheasaError.noToken }
-        guard let u = url("/api/projects/\(project)/icon") else { throw TheasaError.badURL }
+        guard let u = url("/api/projects/\(project)/icon") else { throw TheasaError.badURL }   // mapped on Substrate
         let boundary = "sidra-\(UUID().uuidString)"
         var body = Data("--\(boundary)\r\nContent-Disposition: form-data; name=\"icon\"; filename=\"icon\"\r\nContent-Type: \(mime)\r\n\r\n".utf8)
         body += image
@@ -140,13 +161,17 @@ public struct TheasaClient: Sendable {
 
     // MARK: Requests the UI sends
 
-    public static func promptPath(pane: String) -> String { "/api/agents/\(encodeSegment(pane))/prompt" }
-    public static func keysPath(pane: String) -> String { "/api/agents/\(encodeSegment(pane))/keys" }
+    /// Substrate's agent paths carry the machine too: two Macs can both have a pane `w1:p1`.
+    static func agentPath(_ a: LiveAgent) -> String {
+        "/api/agents/" + (a.machine_id.map { encodeSegment($0) + "/" } ?? "") + encodeSegment(a.pane_id)
+    }
+    public static func promptPath(_ a: LiveAgent) -> String { agentPath(a) + "/prompt" }
+    public static func keysPath(_ a: LiveAgent) -> String { agentPath(a) + "/keys" }
 
     /// Sends text to an agent pane. When the agent is blocked on an `ask`, the server presses Esc
     /// first; a 409 means the dialog did not close and nothing was sent.
-    public func prompt(pane: String, text: String) async throws { try await post(Self.promptPath(pane: pane), ["text": text]) }
-    public func keys(pane: String, keys: [String]) async throws { try await post(Self.keysPath(pane: pane), ["keys": keys]) }
+    public func prompt(_ a: LiveAgent, text: String) async throws { try await post(Self.promptPath(a), ["text": text]) }
+    public func keys(_ a: LiveAgent, keys: [String]) async throws { try await post(Self.keysPath(a), ["keys": keys]) }
 
     // MARK: Live events
 
@@ -162,6 +187,7 @@ public struct TheasaClient: Sendable {
                     r.setValue("text/event-stream", forHTTPHeaderField: "Accept")
                     let (bytes, resp) = try await session.bytes(for: r)
                     guard (resp as? HTTPURLResponse)?.statusCode == 200 else { throw TheasaError.http((resp as? HTTPURLResponse)?.statusCode ?? 0, "") }
+                    // Substrate keeps the stream open with comments and says `data: changed`; either way, refetch.
                     for try await line in bytes.lines where line.hasPrefix("data:") {
                         cont.yield(line.dropFirst(5).trimmingCharacters(in: .whitespaces))
                     }

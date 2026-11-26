@@ -229,11 +229,17 @@ public struct TurnDetail: Codable, Sendable {
     public let decisions: [Decision]
     public let watch: [WatchItem]
     public let job: Job?
-    public let job_count: Int
+    /// Theasa only; Substrate sends no count.
+    public let job_count: Int?
     public let session: Session
     public let prev: Int?
     public let next: Int?
     public let resume: String
+    /// Substrate: what only the recording Mac holds (the tool log; diffs are merged into `turn.diffs`), or
+    /// nil with `local_error` saying why (that Mac is offline, or its relay is too old).
+    public struct Local: Codable, Sendable { public let log: String? }
+    public let local: Local?
+    public let local_error: String?
 }
 
 public struct SearchHit: Codable, Sendable, Identifiable {
@@ -258,7 +264,17 @@ public struct AgentsResponse: Codable, Sendable {
 }
 
 public struct LiveAgent: Codable, Sendable, Identifiable {
-    public struct ProjectRef: Codable, Sendable { public let id: Int?; public let name: String?; public let icon_url: String?; public let initial: String? }
+    public struct ProjectRef: Codable, Sendable {
+        public let id: Int?; public let name: String?; public let icon_url: String?; public let initial: String?
+        /// Substrate's `project` is its own (a herdr pane, string id); the work-log repo is `repo`. Ids that are not numbers read as nil.
+        public init(from d: Decoder) throws {
+            let c = try d.container(keyedBy: CodingKeys.self)
+            id = try? c.decodeIfPresent(Int.self, forKey: .id)
+            name = try? c.decodeIfPresent(String.self, forKey: .name)
+            icon_url = try? c.decodeIfPresent(String.self, forKey: .icon_url)
+            initial = try? c.decodeIfPresent(String.self, forKey: .initial)
+        }
+    }
     public struct Question: Codable, Sendable, Hashable {
         public struct Option: Codable, Sendable, Hashable {
             public let label: String
@@ -279,6 +295,13 @@ public struct LiveAgent: Codable, Sendable, Identifiable {
     public struct Last: Codable, Sendable { public let turn_id: Int; public let headline: String?; public let text: String?; public let question: String?; public let ended_at: String? }
 
     public let pane_id: String
+    /// Substrate: the Mac the agent runs on (its id goes in the agent's paths) and its name.
+    public let machine_id: String?
+    public let machine: String?
+    /// Substrate: the work-log repo of the agent's folder; `project` there is Substrate's own project.
+    public let repo: ProjectRef?
+    /// The work-log project to show: Substrate's `repo`, Theasa's `project`.
+    public var logProject: ProjectRef? { repo ?? project }
     public let agent: String
     public let status: String   // blocked | done | idle | working | unknown
     public let title: String?
@@ -291,7 +314,7 @@ public struct LiveAgent: Codable, Sendable, Identifiable {
     public let ask_extras: AskExtras?
     public let screen: Screen?
     public let last: Last?
-    public var id: String { pane_id }
+    public var id: String { (machine_id.map { $0 + "|" } ?? "") + pane_id }
 
     public struct AskExtras: Codable, Sendable {
         public let context: String?
@@ -311,5 +334,5 @@ public struct LiveAgent: Codable, Sendable, Identifiable {
     }
 
     /// Drafts and picks are keyed per pane and session, so a new session in the pane starts clean.
-    public func draftKey(_ k: String) -> String { "\(pane_id)|\(session_id ?? "")|\(k)" }
+    public func draftKey(_ k: String) -> String { "\(id)|\(session_id ?? "")|\(k)" }
 }

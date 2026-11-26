@@ -65,8 +65,7 @@ struct SubstrateLog: View {
             .onChange(of: nav.root) { _, r in store.section = r == .agents ? .agents : .pulse }   // ⌥⌘A, next agent, herdr's Open
         } else {
             VStack(spacing: 12) {
-                SubstrateEmpty(text: "Pulse and Agents read from your Theasa server until Substrate serves them.")
-                Button("Connect Theasa") { app.sheet = .theasa }.buttonStyle(.sidraSecondary)
+                SubstrateEmpty(text: "Sign in to Substrate to see Pulse and Agents.")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }

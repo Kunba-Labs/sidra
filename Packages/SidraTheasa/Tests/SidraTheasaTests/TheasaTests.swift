@@ -120,19 +120,38 @@ final class TheasaLogicTests: XCTestCase {
 
     func testPromptRequest() throws {
         let c = TheasaClient(base: URL(string: "http://127.0.0.1:4747/")!, token: " secret\n")
-        let r = try c.request(TheasaClient.promptPath(pane: "w4D:pQ"), post: ["text": "hi"])
+        let agent = try JSONDecoder().decode(LiveAgent.self, from: Data(#"{"pane_id":"w4D:pQ","agent":"claude","status":"blocked"}"#.utf8))
+        let r = try c.request(TheasaClient.promptPath(agent), post: ["text": "hi"])
         XCTAssertEqual(r.url?.absoluteString, "http://127.0.0.1:4747/api/agents/w4D%3ApQ/prompt")
         XCTAssertEqual(r.httpMethod, "POST")
         XCTAssertEqual(r.value(forHTTPHeaderField: "Authorization"), "Bearer secret")
         let body = try JSONSerialization.jsonObject(with: XCTUnwrap(r.httpBody)) as? [String: String]
         XCTAssertEqual(body, ["text": "hi"])
-        let k = try c.request(TheasaClient.keysPath(pane: "w4D:pQ"), post: ["keys": ["up", "enter"]])
+        let k = try c.request(TheasaClient.keysPath(agent), post: ["keys": ["up", "enter"]])
         XCTAssertEqual(k.url?.path(percentEncoded: true), "/api/agents/w4D%3ApQ/keys")
         XCTAssertThrowsError(try TheasaClient(base: c.base, token: nil).request("/api/watch/1/done", post: [:])) {
             XCTAssertEqual($0 as? TheasaError, .noToken)
         }
         XCTAssertEqual(try c.request("/api/agents").value(forHTTPHeaderField: "Authorization"), "Bearer secret", "reads send the token when there is one")
         XCTAssertNil(try TheasaClient(base: c.base, token: nil).request("/api/pulse").value(forHTTPHeaderField: "Authorization"))
+    }
+
+    /// Substrate's app API: Theasa's paths mapped, the machine in agent paths, tz on ranged reads, PATCH for a repo edit.
+    func testSubstratePaths() throws {
+        let c = TheasaClient(base: URL(string: "https://substrate.example/api/v1")!, token: "t", substrate: true)
+        let tz = TimeZone.current.secondsFromGMT() / 60
+        XCTAssertEqual(c.url("/api/pulse?range=week")?.absoluteString, "https://substrate.example/api/v1/log/pulse?range=week&tz=\(tz)")
+        XCTAssertEqual(c.url("/api/projects/48?range=today&agent=all")?.absoluteString, "https://substrate.example/api/v1/log/repos/48?range=today&tz=\(tz)")
+        XCTAssertEqual(c.url("/api/projects?range=30d")?.absoluteString, "https://substrate.example/api/v1/log/repos?range=month&tz=\(tz)")
+        XCTAssertEqual(c.url("/api/turns/9")?.absoluteString, "https://substrate.example/api/v1/log/turns/9")
+        XCTAssertEqual(c.url("/api/agents")?.absoluteString, "https://substrate.example/api/v1/agents")
+        XCTAssertEqual(c.url("/api/events")?.absoluteString, "https://substrate.example/api/v1/live")
+        let a = try JSONDecoder().decode(LiveAgent.self, from: Data(#"{"pane_id":"w1:p1","machine_id":"m-1","agent":"claude","status":"idle","project":{"id":"p_x","name":"pane"},"repo":{"id":7,"name":"sidra"}}"#.utf8))
+        XCTAssertEqual(try c.request(TheasaClient.promptPath(a), post: ["text": "hi"]).url?.absoluteString, "https://substrate.example/api/v1/agents/m-1/w1%3Ap1/prompt")
+        XCTAssertEqual(a.logProject?.id, 7)
+        XCTAssertNil(a.project?.id, "Substrate's own project id is a string")
+        XCTAssertEqual(try c.request("/api/projects/48", post: ["name": "x"]).httpMethod, "PATCH")
+        XCTAssertEqual(try c.request("/api/watch/3/done", post: [:]).httpMethod, "POST")
     }
 
     func testIconUploadRequest() throws {

@@ -27,7 +27,21 @@ final class TheasaStore {
         didSet { UserDefaults.standard.set(activeID?.uuidString, forKey: "sidra.theasaActive") }
     }
     var active: TheasaConnection? { activeID.flatMap(connection) ?? connections.first }
-    var activeLive: TheasaLive? { active.flatMap { live($0.id) } }
+    /// What the screens read: a saved Theasa server while one is left, else Substrate's work log and live agents.
+    /// ponytail: the Theasa branch goes with the Theasa connection type, once Substrate serves /log on prod.
+    var activeLive: TheasaLive? { active.flatMap { live($0.id) } ?? substrateLive }
+
+    /// Substrate's app API with the signed-in account's token (2026-11-26): the same screens, the paths mapped by TheasaClient.
+    @ObservationIgnored private var substrateCache: TheasaLive?
+    var substrateLive: TheasaLive? {
+        let hub = SubstrateHub.shared
+        guard let c = hub.connections.first(where: { hub.store($0.id)?.signedIn == true }), let base = URL(string: c.base),
+              let token = KeychainStore.string(for: c.tokenKey) else { return nil }
+        if let l = substrateCache, l.client.base == base, l.client.token == token { return l }
+        let l = TheasaLive(client: TheasaClient(base: base, token: token, substrate: true))
+        substrateCache = l
+        return l
+    }
     /// Theasa's screen stack and keyboard state; one per app, shared by the Theasa tab in every window.
     static let popoverPane = UUID(uuidString: "7EA5A000-0000-0000-0000-000000000001")!
     var popoverNav: TheasaNav { nav(in: app) }
@@ -62,7 +76,7 @@ final class TheasaStore {
     /// Selects the Theasa tab (made on first use), on a root screen if given; without a connection, the connect sheet.
     func open(_ app: AppModel, root: TheasaNav.Root? = nil) {
         self.app = app
-        guard active != nil else { app.sheet = .theasa; return }
+        guard activeLive != nil else { app.startTab(.substrate); return }   // signed out of Substrate: its sign-in
         // The Substrate tab on its Pulse or Agents section (2026-11-26).
         let hub = SubstrateHub.shared
         let c = hub.connections.first ?? hub.add()

@@ -16,6 +16,8 @@ struct TheasaTurnView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     top(d)
+                    // Substrate: the diffs, images and tool log stay on the recording Mac; why they are missing.
+                    if let e = d.local_error { Muted(e) }
                     Columns(railWidth: 300) {
                         summary(d)
                         watch(d)
@@ -24,7 +26,7 @@ struct TheasaTurnView: View {
                         shared(d)
                         reply(d)
                         steps(d)
-                        rawLog
+                        rawLog(d)
                     } rail: {
                         rail(d)
                     }
@@ -106,7 +108,7 @@ struct TheasaTurnView: View {
             s += ", \(TFormat.dur(max(0, Int(f.timeIntervalSince(e) * 1000)))) after the turn"
         }
         s += "."
-        if d.job_count > 1 { s += " Written \(d.job_count) times." }
+        if let n = d.job_count, n > 1 { s += " Written \(n) times." }
         return s
     }
 
@@ -229,10 +231,13 @@ struct TheasaTurnView: View {
         }
     }
 
-    @ViewBuilder private var rawLog: some View {
+    @ViewBuilder private func rawLog(_ d: TurnDetail) -> some View {
         Button {
             showRaw.toggle()
-            if showRaw, raw == nil { Task { raw = (try? await live.client.text("/api/turns/\(id)/digest")) ?? "The log didn't load." } }
+            if showRaw, raw == nil {
+                if live.client.substrate { raw = d.local?.log ?? d.local_error ?? "The log didn't load." }   // it came with the turn
+                else { Task { raw = (try? await live.client.text("/api/turns/\(id)/digest")) ?? "The log didn't load." } }
+            }
         } label: {
             HStack {
                 Text("Raw turn log").foregroundStyle(SidraColor.text)

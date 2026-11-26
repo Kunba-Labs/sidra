@@ -11,11 +11,11 @@ import SidraWorkspace
 enum TheasaCommands {
     /// Theasa's screens and the active connection; selects the Theasa tab if another is in front. Without a
     /// connection: the connect sheet, and nil.
-    @MainActor static func target(_ app: AppModel) -> (nav: TheasaNav, live: TheasaLive, connection: UUID)? {
+    @MainActor static func target(_ app: AppModel) -> (nav: TheasaNav, live: TheasaLive)? {
         let store = TheasaStore.shared
-        guard let c = store.active, let live = store.live(c.id) else { store.open(app); return nil }
+        guard let live = store.activeLive else { store.open(app); return nil }
         if !store.presented { store.open(app) }
-        return (store.nav(in: app), live, c.id)
+        return (store.nav(in: app), live)
     }
 
     /// The Theasa tab is in front (for the shared keys ⌘F, ⌘. and ⌘↩).
@@ -50,7 +50,7 @@ enum TheasaCommands {
             },
             .init("theasa.refresh", "Refresh and Reconnect", area: "Theasa", key: "r", modifiers: [.command, .option]) {
                 guard let t = target(app) else { return }
-                if let c = TheasaStore.shared.connection(t.connection), let client = TheasaStore.shared.client(c) { t.live.reconnect(client: client) }
+                t.live.reconnect(client: t.live.client)
                 t.live.say("Reconnecting.")
             },
             .init("theasa.connection", "Theasa Connections…", area: "Theasa", key: "k", modifiers: [.command, .option]) {

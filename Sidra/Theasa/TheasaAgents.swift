@@ -103,14 +103,14 @@ struct AgentCard: View {
     }
 
     private func head(_ a: LiveAgent) -> some View {
-        let name = a.project?.name ?? a.cwd ?? a.pane_id
+        let name = a.logProject?.name ?? a.cwd ?? a.pane_id
         let when = a.status != "blocked" && a.status != "working" && a.last != nil ? a.last?.ended_at : a.since
         return HStack(spacing: 10) {
-            ProjectIconView(iconURL: a.project?.icon_url, initial: a.project?.initial, size: 22)
-            Button { if let id = a.project?.id { open(.project(id)) } } label: {
+            ProjectIconView(iconURL: a.logProject?.icon_url, initial: a.logProject?.initial, size: 22)
+            Button { if let id = a.logProject?.id { open(.project(id)) } } label: {
                 Text(name).font(SidraFont.ui(14, weight: .bold)).foregroundStyle(SidraColor.text).lineLimit(1)
-            }.buttonStyle(.plain).disabled(a.project?.id == nil)
-            if let t = a.title, t.lowercased() != (a.project?.name ?? "").lowercased() {
+            }.buttonStyle(.plain).disabled(a.logProject?.id == nil)
+            if let t = a.title, t.lowercased() != (a.logProject?.name ?? "").lowercased() {
                 Text(t).font(SidraFont.ui(13)).foregroundStyle(SidraColor.dim).lineLimit(1)
             }
             AgentTag(agent: a.agent)
@@ -246,7 +246,7 @@ struct AgentCard: View {
             sending = true
             defer { sending = false }
             // A failure (409: the dialog did not close) keeps the picks and typed answers for a retry.
-            if await live.act(TheasaClient.promptPath(pane: a.pane_id), ["text": text], done: "Answers sent.") != nil {
+            if await live.act(TheasaClient.promptPath(a), ["text": text], done: "Answers sent.") != nil {
                 for i in ask.indices { live.picks[pickKey(a, i)] = nil; live.drafts[ownKey(a, i)] = nil }
                 page = 0
             }
@@ -281,7 +281,7 @@ struct AgentCard: View {
     }
 
     private func keys(_ a: LiveAgent, _ k: [String]) {
-        Task { await live.act(TheasaClient.keysPath(pane: a.pane_id), ["keys": k], done: "Sent.") }
+        Task { await live.act(TheasaClient.keysPath(a), ["keys": k], done: "Sent.") }
     }
 
     // MARK: done / idle: last headline, the question, a message
@@ -323,7 +323,7 @@ struct AgentCard: View {
         Task {
             sending = true
             defer { sending = false }
-            if await live.act(TheasaClient.promptPath(pane: a.pane_id), ["text": text], done: "Sent.") != nil { live.drafts[k] = nil }
+            if await live.act(TheasaClient.promptPath(a), ["text": text], done: "Sent.") != nil { live.drafts[k] = nil }
         }
     }
 }
