@@ -12,7 +12,7 @@ import SidraTheasa
 /// this checkout; a device demo build (tools/demo-ipad.sh) is always on and reads
 /// the fixtures copied into its bundle.
 /// A made-up machine "devbox" answers herdr's commands and opens canned terminal screens; Theasa
-/// (https://theasa.demo) and GitLab (https://gitlab.demo) answer from JSON files in this repo.
+/// (Substrate's work log at https://substrate.demo) and GitLab (https://gitlab.demo) answer from JSON files in this repo.
 /// Nothing here reaches a network or a real machine.
 enum DemoMode {
     static let isOn = CommandLine.arguments.contains("-sidra.demo") || bundled != nil
@@ -30,9 +30,6 @@ enum DemoMode {
         guard isOn else { return }
         URLProtocol.registerClass(DemoURLProtocol.self)
         TheasaClient.extraProtocolClasses = [DemoURLProtocol.self]
-        UserDefaults.standard.set("https://theasa.demo", forKey: "sidra.theasa")
-        UserDefaults.standard.set("demo", forKey: "sidra.theasaToken")
-        UserDefaults.standard.set(true, forKey: "sidra.theasaClosed")
         UserDefaults.standard.set("https://gitlab.demo", forKey: "pipelines.url")
         try? KeychainStore.set("demo", for: "pipelines.token")
     }
@@ -183,18 +180,18 @@ final class DemoSession: PaneSession, @unchecked Sendable {
     func close() { out.finish() }
 }
 
-/// Answers https://theasa.demo from the Theasa fixtures and https://gitlab.demo from canned GitLab JSON.
+/// Answers https://substrate.demo's work log from the fixtures and https://gitlab.demo from canned GitLab JSON.
 final class DemoURLProtocol: URLProtocol {
-    override class func canInit(with request: URLRequest) -> Bool { ["theasa.demo", "gitlab.demo"].contains(request.url?.host ?? "") }
+    override class func canInit(with request: URLRequest) -> Bool { ["substrate.demo", "gitlab.demo"].contains(request.url?.host ?? "") }
     override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
     override func stopLoading() {}
 
     override func startLoading() {
         guard let url = request.url else { return }
-        let (status, type, body) = url.host == "theasa.demo" ? Self.theasa(url.path) : Self.gitlab(url.path)
+        let (status, type, body) = url.host == "substrate.demo" ? Self.log(url.path) : Self.gitlab(url.path)
         let resp = HTTPURLResponse(url: url, statusCode: status, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": type])!
         client?.urlProtocol(self, didReceive: resp, cacheStoragePolicy: .notAllowed)
-        if url.path == "/api/events" { client?.urlProtocol(self, didLoad: Data("data: hello\n\n".utf8)); return }   // one event, then open and quiet
+        if url.path == "/api/v1/live" { client?.urlProtocol(self, didLoad: Data("data: hello\n\n".utf8)); return }   // one event, then open and quiet
         client?.urlProtocol(self, didLoad: body)
         client?.urlProtocolDidFinishLoading(self)
     }
@@ -203,18 +200,17 @@ final class DemoURLProtocol: URLProtocol {
         (try? Data(contentsOf: DemoMode.repo.appendingPathComponent("Packages/SidraTheasa/Tests/SidraTheasaTests/Fixtures/\(name).json"))) ?? Data("{}".utf8)
     }
 
-    static func theasa(_ path: String) -> (Int, String, Data) {
+    static func log(_ path: String) -> (Int, String, Data) {
         let json = "application/json"
         switch path {
-        case "/health": return (200, json, fixture("health"))
-        case "/api/events": return (200, "text/event-stream", Data())
-        case "/api/pulse": return (200, json, fixture("pulse"))
-        case "/api/agents": return (200, json, fixture("agents"))
-        case "/api/projects": return (200, json, fixture("projects"))
-        case "/api/search": return (200, json, fixture("search"))
+        case "/api/v1/live": return (200, "text/event-stream", Data())
+        case "/api/v1/log/pulse": return (200, json, fixture("pulse"))
+        case "/api/v1/agents": return (200, json, fixture("agents"))
+        case "/api/v1/log/repos": return (200, json, fixture("projects"))
+        case "/api/v1/log/search": return (200, json, fixture("search"))
         default:
-            if path.hasPrefix("/api/projects/"), !path.hasSuffix("/icon") { return (200, json, fixture("project")) }
-            if path.hasPrefix("/api/turns/") { return (200, json, fixture("turn-diff")) }
+            if path.hasPrefix("/api/v1/log/repos/"), !path.hasSuffix("/icon") { return (200, json, fixture("project")) }
+            if path.hasPrefix("/api/v1/log/turns/") { return (200, json, fixture("turn-diff")) }
             return (404, json, Data("{}".utf8))
         }
     }

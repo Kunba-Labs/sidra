@@ -81,7 +81,6 @@ struct RootView: View {
             case .settings: SettingsSheet()
             case .shortcuts: ShortcutsSheet()
             case .herdr: HerdrConnectSheet()
-            case .theasa: TheasaConnectSheet()
             case .pipelines: PipelinesConnectSheet()
             case .pipelinesEdit(let id): PipelinesConnectSheet(editing: id)
             case .newTab: NewTabSheet()

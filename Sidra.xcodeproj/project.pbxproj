@@ -34,7 +34,6 @@
 		2A0AF26EBCB074CA82E49DE1 /* HerdrPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4477F8E3EBA916104FCB99C5 /* HerdrPane.swift */; };
 		2AC0A062D98D5333EBC3598D /* herdr-attach.sh in Resources */ = {isa = PBXBuildFile; fileRef = B0DC2327B7FE042EE0FD4378 /* herdr-attach.sh */; };
 		2BB41AB19B88C4CDF73575A9 /* TheasaPulse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1480327CDF081DB259C98E5F /* TheasaPulse.swift */; };
-		2E5B5083144AEADA07FCDEEC /* TheasaKeyboardUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86C0FAC71E767169A8F6AC6F /* TheasaKeyboardUITests.swift */; };
 		2FF338997D0573AC43F0ACFF /* TheasaCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A13AED1FB2E44CBBCE48E1 /* TheasaCommands.swift */; };
 		31D101CEF60E584779B37D49 /* SidraTheasa in Frameworks */ = {isa = PBXBuildFile; productRef = F3EF95590898D79DB9BF9B06 /* SidraTheasa */; };
 		32221214BDD311092B3ECA1C /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D6450EDD9602176E4E800B6 /* AppUpdater.swift */; };
@@ -63,11 +62,8 @@
 		58F4BE7843381152B7FCEEEA /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D6450EDD9602176E4E800B6 /* AppUpdater.swift */; };
 		592658D29F343143041E23DE /* ShortcutsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DFB8E8BC09AC7775AEEF291 /* ShortcutsSheet.swift */; };
 		5A627506779E3E2F944E6BFC /* FloatingKeyboardUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800AF5E86A152DF6C1EA49A /* FloatingKeyboardUITests.swift */; };
-		5D3ADBE6C24C53DECD6EC630 /* TheasaConnectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B41E3C7C2BA941E511861CB /* TheasaConnectSheet.swift */; };
-		5D9CC4FCB755969318BDDFD8 /* TheasaUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 867174C3E73F59B207A9FDB0 /* TheasaUITests.swift */; };
 		5F7DFA0B39CD1FEDB4A93F87 /* SubstratePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7526F9C00A47BF6E5C7C03C8 /* SubstratePane.swift */; };
 		61EB8A69879C57BB3BAFB34A /* KeysSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9020BCA2AC1F7D913937CCA7 /* KeysSection.swift */; };
-		63C9254D1FA7DADE246DF8B3 /* TheasaConnectSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B41E3C7C2BA941E511861CB /* TheasaConnectSheet.swift */; };
 		65B635852204048381160C72 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F083441085B2B800071D6F /* RootView.swift */; };
 		672B64903CA115909DE2DD11 /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED6DE4A11A47F0B05DDE8BA4 /* Commands.swift */; };
 		6A074F3A40762F3A0A95AC0E /* TheasaPulse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1480327CDF081DB259C98E5F /* TheasaPulse.swift */; };
@@ -232,7 +228,6 @@
 		4D0FE091994F8AC053191522 /* SidraDesign */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraDesign; path = Packages/SidraDesign; sourceTree = SOURCE_ROOT; };
 		5878234E78CAE96CF386F927 /* HackerTabUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HackerTabUITests.swift; sourceTree = "<group>"; };
 		5A2D83C2FE1831D1C584C9D1 /* MicInputs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MicInputs.swift; sourceTree = "<group>"; };
-		5B41E3C7C2BA941E511861CB /* TheasaConnectSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaConnectSheet.swift; sourceTree = "<group>"; };
 		5F54155A3925C7B0DA184A90 /* VisionApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionApp.swift; sourceTree = "<group>"; };
 		600EBD10A930EB3B4F2C55DB /* SSHConnectionLiveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHConnectionLiveTests.swift; sourceTree = "<group>"; };
 		61631DB9FAA738AF8DC58B30 /* SidraAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidraAlert.swift; sourceTree = "<group>"; };
@@ -251,8 +246,6 @@
 		834E2A056986234964AF6506 /* SidraMac.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SidraMac.entitlements; sourceTree = "<group>"; };
 		835D989F13A564BB23920914 /* NewTabUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabUITests.swift; sourceTree = "<group>"; };
 		8601BCC791A4A353290FF9FD /* ComposeBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposeBar.swift; sourceTree = "<group>"; };
-		867174C3E73F59B207A9FDB0 /* TheasaUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaUITests.swift; sourceTree = "<group>"; };
-		86C0FAC71E767169A8F6AC6F /* TheasaKeyboardUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaKeyboardUITests.swift; sourceTree = "<group>"; };
 		898FEE6677F04B352643E7AB /* Platform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Platform.swift; sourceTree = "<group>"; };
 		8CE3882D2B474C66E4A47CC6 /* CI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CI.swift; sourceTree = "<group>"; };
 		9020BCA2AC1F7D913937CCA7 /* KeysSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeysSection.swift; sourceTree = "<group>"; };
@@ -348,8 +341,6 @@
 				2A5640D612B671DEF0516D7B /* SSHMoshUITests.swift */,
 				69A9BEE59A535B1C6F7572B3 /* StoreScreenshotsUITests.swift */,
 				13D5909535627F01D7DA7FB8 /* TabKeysUITests.swift */,
-				86C0FAC71E767169A8F6AC6F /* TheasaKeyboardUITests.swift */,
-				867174C3E73F59B207A9FDB0 /* TheasaUITests.swift */,
 			);
 			path = SidraUITests;
 			sourceTree = "<group>";
@@ -460,7 +451,6 @@
 			children = (
 				A0FA4FA59DD2513883467739 /* TheasaAgents.swift */,
 				91A13AED1FB2E44CBBCE48E1 /* TheasaCommands.swift */,
-				5B41E3C7C2BA941E511861CB /* TheasaConnectSheet.swift */,
 				24DCC141B15F493AF564C38B /* TheasaMarkdown.swift */,
 				E370EAEEFC681DB92CFBC0EF /* TheasaPane.swift */,
 				42A069A363B9F7AB51553030 /* TheasaProject.swift */,
@@ -825,8 +815,6 @@
 				BE67F73EEF04D36498A08B32 /* SSHMoshUITests.swift in Sources */,
 				52D8473D4545285327988653 /* StoreScreenshotsUITests.swift in Sources */,
 				F087FA61D38E17BABB730417 /* TabKeysUITests.swift in Sources */,
-				2E5B5083144AEADA07FCDEEC /* TheasaKeyboardUITests.swift in Sources */,
-				5D9CC4FCB755969318BDDFD8 /* TheasaUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -882,7 +870,6 @@
 				579A4EC5B15A0A5FB6C614FF /* TerminalPane.swift in Sources */,
 				022B75384875C9635EE2FCDE /* TheasaAgents.swift in Sources */,
 				6B5024C83E45197BF4473249 /* TheasaCommands.swift in Sources */,
-				63C9254D1FA7DADE246DF8B3 /* TheasaConnectSheet.swift in Sources */,
 				564B4EB9D00A64F43511CF4C /* TheasaMarkdown.swift in Sources */,
 				3EF686081D0628FEFF15C573 /* TheasaPane.swift in Sources */,
 				EE3FCFD9FCFB9F202F7D1D68 /* TheasaProject.swift in Sources */,
@@ -940,7 +927,6 @@
 				401D2572B3378D327AA460E6 /* TerminalPane.swift in Sources */,
 				ADCABBA0CE88A581FEF55939 /* TheasaAgents.swift in Sources */,
 				2FF338997D0573AC43F0ACFF /* TheasaCommands.swift in Sources */,
-				5D3ADBE6C24C53DECD6EC630 /* TheasaConnectSheet.swift in Sources */,
 				AA68CCB35DF9EB7A9A8186B4 /* TheasaMarkdown.swift in Sources */,
 				9FC7413353CFA15E48C49964 /* TheasaPane.swift in Sources */,
 				8D567A6A0AEAC60638766CBE /* TheasaProject.swift in Sources */,

@@ -154,7 +154,7 @@ struct TheasaTurnView: View {
     @ViewBuilder private func changes(_ d: TurnDetail) -> some View {
         let t = d.turn
         if let files = t.files, !files.isEmpty {
-            let diffs = t.diffs ?? [:]
+            let diffs = d.diffs
             TBox(caps: "Changes") {
                 Muted(diffs.isEmpty ? "No diffs for this turn." : "Tap a file for its diff.")
                 ForEach(FileKind.group(files, root: d.project.root), id: \.0) { kind, fs in

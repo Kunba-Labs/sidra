@@ -4,32 +4,23 @@ import SidraSSH
 import SidraTheasa
 import SidraWorkspace
 
-/// A saved Theasa server. The token lives in the Keychain under `tokenKey`, never in UserDefaults.
-struct TheasaConnection: Codable, Identifiable, Hashable {
-    var id = UUID()
-    var name: String
-    var url: String
-    var tokenKey: String { "theasa.token.\(id.uuidString)" }
-}
-
-/// Saved connections (UserDefaults, no secrets), the active one, and its live model. Theasa is a
-/// title-bar pill with a popover (changed 2026-11-14 from a tab): the live model runs app-wide,
-/// popover open or not, because the pill shows its counts.
+/// The work log and live agents (Theasa's screens, in the Substrate tab since 2026-11-26), read from Substrate's
+/// app API with the signed-in account. The live model runs app-wide: the Substrate pill shows its counts.
 @MainActor @Observable
 final class TheasaStore {
     static let shared = TheasaStore()
-    private let key = "sidra.theasaConnections"
-    private(set) var connections: [TheasaConnection] = []
-    private var lives: [UUID: TheasaLive] = [:]
     private var navs: [UUID: TheasaNav] = [:]
-    /// The one connection the pill and the Theasa tab show.
-    var activeID: UUID? = UUID(uuidString: UserDefaults.standard.string(forKey: "sidra.theasaActive") ?? "") {
-        didSet { UserDefaults.standard.set(activeID?.uuidString, forKey: "sidra.theasaActive") }
+    /// What the screens read: Substrate's work log and live agents. Nil while signed out of Substrate.
+    var activeLive: TheasaLive? {
+        #if DEBUG
+        if DemoMode.isOn { return demoLive }
+        #endif
+        return substrateLive
     }
-    var active: TheasaConnection? { activeID.flatMap(connection) ?? connections.first }
-    /// What the screens read: a saved Theasa server while one is left, else Substrate's work log and live agents.
-    /// ponytail: the Theasa branch goes with the Theasa connection type, once Substrate serves /log on prod.
-    var activeLive: TheasaLive? { active.flatMap { live($0.id) } ?? substrateLive }
+    #if DEBUG
+    /// Demo mode: a Substrate-shaped stub (DemoURLProtocol) answers from the work-log fixtures.
+    @ObservationIgnored private lazy var demoLive = TheasaLive(client: TheasaClient(base: URL(string: "https://substrate.demo/api/v1")!, token: "demo", substrate: true))
+    #endif
 
     /// Substrate's app API with the signed-in account's token (2026-11-26): the same screens, the paths mapped by TheasaClient.
     @ObservationIgnored private var substrateCache: TheasaLive?
@@ -71,8 +62,6 @@ final class TheasaStore {
     /// Esc and ⌘.: a typing field gives the keyboard up, else one screen back.
     func escape() { popoverNav.escape() }
 
-    func showConnections() { app?.sheet = .theasa }
-
     /// Selects the Theasa tab (made on first use), on a root screen if given; without a connection, the connect sheet.
     func open(_ app: AppModel, root: TheasaNav.Root? = nil) {
         self.app = app
@@ -89,13 +78,11 @@ final class TheasaStore {
         if let a = pendingAgent { pendingAgent = nil; popoverNav.show(.agents); popoverNav.highlightAgent = a }
     }
 
-    /// An agent "Open in Theasa" asked for before any connection was saved: shown once the connect sheet opens Theasa.
-    /// ponytail: a cancelled sheet keeps it until the next open, which then shows that agent.
+    /// An agent herdr's list asked to open while signed out: shown once Agents opens.
     private var pendingAgent: String?
 
-    /// herdr's "Open in Theasa": that connection becomes active, Agents opens on the agent's card.
-    func openAgent(_ agentPane: String, connection: UUID?, app: AppModel) {
-        if let connection { activeID = connection }
+    /// herdr's agent list: Agents opens on that agent's card.
+    func openAgent(_ agentPane: String, app: AppModel) {
         pendingAgent = agentPane
         open(app, root: .agents)
     }
@@ -105,8 +92,7 @@ final class TheasaStore {
         for ws in app.allWorkspaces {
             for tab in ws.tabs {
                 for p in tab.panes {
-                    guard case .theasa(let c) = p.kind else { continue }
-                    if activeID == nil || connection(activeID!) == nil { activeID = c }
+                    guard case .theasa = p.kind else { continue }
                     ws.close(pane: p.id, inTab: tab.id)
                 }
             }
@@ -122,59 +108,23 @@ final class TheasaStore {
         return n
     }
 
-    private init() {
-        if let d = UserDefaults.standard.data(forKey: key), let c = try? JSONDecoder().decode([TheasaConnection].self, from: d) { connections = c }
+    private init() { Self.forgetTheasaServers() }
+
+    /// The saved Theasa servers of older versions: their tokens leave the Keychain, the list leaves UserDefaults (2026-11-26).
+    private static func forgetTheasaServers() {
+        struct Old: Decodable { let id: UUID }
+        guard let d = UserDefaults.standard.data(forKey: "sidra.theasaConnections") else { return }
+        for c in (try? JSONDecoder().decode([Old].self, from: d)) ?? [] { KeychainStore.remove("theasa.token.\(c.id.uuidString)") }
+        UserDefaults.standard.removeObject(forKey: "sidra.theasaConnections")
+        UserDefaults.standard.removeObject(forKey: "sidra.theasaActive")
     }
 
-    func connection(_ id: UUID) -> TheasaConnection? { connections.first { $0.id == id } }
-    func token(_ c: TheasaConnection) -> String? { KeychainStore.string(for: c.tokenKey) }
-
-    func save(_ c: TheasaConnection, token: String) {
-        if let i = connections.firstIndex(where: { $0.id == c.id }) { connections[i] = c } else { connections.append(c) }
-        let t = token.trimmingCharacters(in: .whitespacesAndNewlines)
-        if t.isEmpty { KeychainStore.remove(c.tokenKey) } else { try? KeychainStore.set(t, for: c.tokenKey) }
-        persist()
-        if activeID == nil || connection(activeID!) == nil { activeID = c.id }
-        if let cl = client(c) { lives[c.id]?.reconnect(client: cl) }   // a new address or token takes effect at once
-    }
-
-    func remove(_ id: UUID) {
-        if let c = connection(id) { KeychainStore.remove(c.tokenKey) }
-        connections.removeAll { $0.id == id }
-        lives[id]?.stop(); lives[id] = nil
-        if activeID == id { activeID = connections.first?.id }
-        persist()
-    }
-
-    func client(_ c: TheasaConnection) -> TheasaClient? {
-        TheasaClient.normalize(c.url).map { TheasaClient(base: $0, token: token(c)) }
-    }
-
-    func live(_ id: UUID) -> TheasaLive? {
-        if let l = lives[id] { return l }
-        guard let c = connection(id), let client = client(c) else { return nil }
-        let l = TheasaLive(client: client)
-        lives[id] = l
-        return l
-    }
-
-    /// At launch: merges Theasa tabs in saved workspaces into one. `-sidra.theasa http://127.0.0.1:4747` (UI tests,
-    /// screenshots) saves that server once, makes it active and selects the Theasa tab (not with
-    /// `-sidra.theasaClosed YES`); `-sidra.theasaRoute agents|project:48|turn:9557|search:word` opens a screen.
+    /// At launch: closes Theasa tabs of saved workspaces. `-sidra.theasaRoute agents|project:48|turn:9557|search:word`
+    /// (UI tests, screenshots) opens the Substrate tab on that screen.
     func openFromLaunchArguments(_ app: AppModel) {
         self.app = app
         mergeTheasaTabs(app)
-        guard let raw = UserDefaults.standard.string(forKey: "sidra.theasa"), let base = TheasaClient.normalize(raw) else { return }
-        let c = connections.first { $0.url == base.absoluteString } ?? TheasaConnection(name: base.host ?? "Theasa", url: base.absoluteString)
-        #if DEBUG
-        let launchToken = UserDefaults.standard.string(forKey: "sidra.theasaToken")   // UI tests only; a real token goes through the sheet
-        #else
-        let launchToken: String? = nil
-        #endif
-        if connection(c.id) == nil || launchToken != nil { save(c, token: launchToken ?? "") }
-        activeID = c.id
-        _ = popoverNav   // applies the launch route
-        if !UserDefaults.standard.bool(forKey: "sidra.theasaClosed") { open(app) }
+        if Self.launchRoute != nil { open(app); _ = popoverNav }
     }
 
     static var launchRoute: TheasaRoute? {
@@ -187,10 +137,6 @@ final class TheasaStore {
         case "search": return parts.count > 1 ? .search(parts[1]) : nil
         default: return nil
         }
-    }
-
-    private func persist() {
-        if let d = try? JSONEncoder().encode(connections) { UserDefaults.standard.set(d, forKey: key) }
     }
 }
 

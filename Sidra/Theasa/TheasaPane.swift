@@ -38,28 +38,7 @@ extension EnvironmentValues {
     }
 }
 
-/// The pane body: a Sidra-styled nav row over a NavigationStack whose bar is hidden.
-struct TheasaPane: View {
-    let pane: Pane
-    let connectionID: UUID
-    @State private var store = TheasaStore.shared
-    @Environment(WorkspaceStore.self) private var workspace
-
-    var body: some View {
-        if let live = store.live(connectionID) {
-            let nav = store.nav(pane.id)   // one Theasa screen stack per window (each has its own Theasa pane)
-            // Hosted in a UIKit controller that owns Esc (TheasaKeyHost); the environment is passed on by hand.
-            TheasaKeyHosted(nav: nav, paneFocused: workspace.focusedPane?.id == pane.id, typing: nav.typing) {
-                TheasaRootView(live: live, nav: nav).environment(workspace)
-            }
-            .id(pane.id)   // per pane state: another tab of this view type must not inherit this one's screens or data
-            .task(id: pane.id) { nav.hostPane = pane.id }   // fields focus this pane, not the nav's key
-        } else {
-            TheasaEmpty(title: "This Theasa connection is gone", detail: "Add it again from New tab, Theasa.")
-        }
-    }
-}
-
+/// Pulse and Agents in the Substrate tab: the nav row (search, range, counts) over a NavigationStack whose bar is hidden.
 struct TheasaRootView: View {
     @Bindable var live: TheasaLive
     @Bindable var nav: TheasaNav
@@ -178,22 +157,6 @@ struct TheasaRootView: View {
             .overlay(RoundedRectangle(cornerRadius: SidraRadius.pill, style: .continuous).strokeBorder(SidraColor.hairline))
     }
 }
-
-/// Footer for the Theasa pane: server address and the live-update state.
-struct TheasaFooter: View {
-    let connectionID: UUID
-    @State private var store = TheasaStore.shared
-    var body: some View {
-        let live = store.live(connectionID)
-        FooterItem(live?.connected == true ? "●" : "○", color: live?.connected == true ? SidraColor.jade : SidraColor.dim)
-        FooterChip([.init(store.connection(connectionID)?.url ?? "no server", label: "Theasa"),
-                    .init(live?.connected == true ? "live" : "reconnecting", color: live?.connected == true ? SidraColor.jade : SidraColor.yellow)])
-        Spacer()
-        FooterItem(store.connection(connectionID).map { store.token($0) == nil ? "read only" : "token in Keychain" } ?? "")
-    }
-}
-
-// MARK: - Loading
 
 /// Fetches on appear, on every live change and on Retry. A first failure shows the error with
 /// Retry; a failed refetch keeps what is shown (the nav row says offline).

@@ -939,7 +939,6 @@ struct MuxAgentsMenu: View {
         .padding(.horizontal, 10).padding(.top, 10).padding(.bottom, 4)
         ForEach(agents) { a in
             HStack(spacing: 10) {
-                let choices = app.theasaConnections(for: src.monitor.target)
                 let row = HStack(spacing: 10) {
                     HerdrAgentMark(agent: a.agent, size: 14)
                     Text(a.terminal_title_stripped.flatMap { $0.isEmpty ? nil : $0 } ?? a.agent)
@@ -948,18 +947,9 @@ struct MuxAgentsMenu: View {
                     HerdrStatusChip(status: a.agent_status)
                 }
                 .contentShape(Rectangle())
-                Group {
-                    if choices.count > 1 {
-                        // Several Theasa servers and none is this machine's: ask which.
-                        Menu {
-                            ForEach(choices) { c in Button(c.name + (URL(string: c.url)?.host.map { ", \($0)" } ?? "")) { close(); app.openAgentInTheasa(a.pane_id, connection: c.id) } }
-                        } label: { row }
-                    } else {
-                        Button { close(); app.openAgentInTheasa(a.pane_id, connection: choices.first?.id) } label: { row }
-                    }
-                }
+                Button { close(); app.openAgentInTheasa(a.pane_id) } label: { row }
                 .buttonStyle(.plain)
-                .accessibilityLabel("\(a.terminal_title_stripped ?? a.agent), \(HerdrStatusIcon.label(a.agent_status)), open in Theasa")
+                .accessibilityLabel("\(a.terminal_title_stripped ?? a.agent), \(HerdrStatusIcon.label(a.agent_status)), open in Substrate's Agents")
                 .accessibilityIdentifier("mux-agent-\(a.pane_id)")
                 Button {
                     close()
@@ -977,22 +967,9 @@ struct MuxAgentsMenu: View {
 }
 
 extension AppModel {
-    /// Opens Theasa's Agents screen on this agent: in an open Theasa pane, else a new tab on the first
-    /// saved connection, else the connect sheet. Theasa reads the same herdr, so pane ids match.
-    /// The Theasa connections that can show this machine's agents: those whose host matches the
-    /// machine's host or alias (first label, so devbox matches devbox.tailnet.ts.net); all when none matches.
-    func theasaConnections(for target: TerminalTarget) -> [TheasaConnection] {
-        let all = TheasaStore.shared.connections
-        func label(_ s: String) -> String { String(s.lowercased().prefix { $0 != "." }) }
-        var names: Set<String> = [label(herdrMachineName(target))]
-        if case .ssh(let id) = target, let h = hosts.host(id) { names.insert(label(h.host)); names.insert(label(h.alias)) }
-        let matched = all.filter { c in URL(string: c.url)?.host.map { names.contains(label($0)) } ?? false }
-        return matched.isEmpty ? all : matched
-    }
-
-    /// Opens Theasa's popover on that connection's Agents screen at this agent; without a connection, the connect sheet.
-    func openAgentInTheasa(_ agentPane: String, connection: UUID?) {
-        TheasaStore.shared.openAgent(agentPane, connection: connection, app: self)   // Theasa's popover, on Agents at this card
+    /// Opens Substrate's Agents section at this agent (herdr pane ids are the ones Substrate's relay reports).
+    func openAgentInTheasa(_ agentPane: String) {
+        TheasaStore.shared.openAgent(agentPane, app: self)
     }
 }
 

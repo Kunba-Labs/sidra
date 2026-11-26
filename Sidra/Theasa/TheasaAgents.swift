@@ -25,11 +25,10 @@ struct TheasaAgentsView: View {
 
     @ViewBuilder private var content: some View {
         if live.needsToken {
-            TheasaEmpty(title: "Add the token to see agents", detail: "Run theasa token on the server and paste it into the connection.",
-                        action: ("Add the token", { TheasaStore.shared.showConnections() }))
+            TheasaEmpty(title: "Sign in to see agents", detail: "Your Substrate session ended. Sign in again from the account menu.")
         } else if let L = live.agents {
             if !L.available {
-                TheasaEmpty(title: "No live agents", detail: (L.error.map { $0 + ". " } ?? "") + "Run herdr on the Mac with Theasa.",
+                TheasaEmpty(title: "No live agents", detail: (L.error.map { $0 + ". " } ?? "") + "Run herdr and Substrate's relay on your Mac.",
                             retry: { Task { await live.loadAgents() } })
             } else if L.agents.isEmpty {
                 TBox { Muted("No agents open in herdr.") }
@@ -42,7 +41,7 @@ struct TheasaAgentsView: View {
                 group("Your turn", g.yourTurn, note: nil).theasaPlainCards()
             }
         } else {
-            TheasaEmpty(title: "No connection to Theasa", detail: "Check that the server runs and this iPad can reach it.",
+            TheasaEmpty(title: "No connection to Substrate", detail: "Check that this device is online.",
                         retry: { Task { await live.loadAgents() } })
         }
     }

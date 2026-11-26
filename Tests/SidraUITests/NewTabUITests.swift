@@ -6,7 +6,7 @@ final class NewTabUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-sidra.noAutoFocus", "-sidra.freshWorkspace"]
         app.launch()
-        for kind in ["herdr", "ssh", "theasa", "pipelines", "hackertab", "chess"] {
+        for kind in ["herdr", "ssh", "pipelines", "hackertab", "chess"] {
             XCTAssertTrue(app.buttons["newtab-\(kind)"].waitForExistence(timeout: 10), "empty workspace shows \(kind)")
         }
         app.buttons["newtab-chess"].tap()

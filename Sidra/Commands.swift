@@ -31,7 +31,7 @@ struct WorkspaceCommands: Commands {
         CommandMenu("Tab") { items("Tab") }
         CommandMenu("Pane") { items("Pane") }
         CommandMenu("Go") { items("Go") }
-        CommandMenu("Theasa") { items("Theasa") }
+        CommandMenu("Substrate") { items("Substrate") }
     }
 
     private func items(_ area: String) -> some View {

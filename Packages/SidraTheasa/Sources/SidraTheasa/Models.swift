@@ -235,9 +235,11 @@ public struct TurnDetail: Codable, Sendable {
     public let prev: Int?
     public let next: Int?
     public let resume: String
-    /// Substrate: what only the recording Mac holds (the tool log; diffs are merged into `turn.diffs`), or
+    /// Substrate: what only the recording Mac holds (the tool log and the diffs; the cloud stores neither), or
     /// nil with `local_error` saying why (that Mac is offline, or its relay is too old).
-    public struct Local: Codable, Sendable { public let log: String? }
+    public struct Local: Codable, Sendable { public let log: String?; public let diffs: [String: String]? }
+    /// Theasa sent them on the turn; Substrate sends them in `local`.
+    public var diffs: [String: String] { local?.diffs ?? turn.diffs ?? [:] }
     public let local: Local?
     public let local_error: String?
 }

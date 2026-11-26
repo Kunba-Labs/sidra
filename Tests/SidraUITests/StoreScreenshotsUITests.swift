@@ -15,9 +15,9 @@ final class StoreScreenshotsUITests: XCTestCase {
         sleep(6)
         shot("01-herdr")
 
-        app.buttons["theasa-pill"].firstMatch.tap()
+        app.buttons["substrate-pill"].firstMatch.tap()
         sleep(3)
-        shot("02-theasa")
+        shot("02-substrate")
         dismissPopover()
 
         tab(3)   // Pipelines
@@ -61,7 +61,7 @@ final class StoreScreenshotsUITests: XCTestCase {
     private func dismissPopover() {
         app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
         sleep(1)
-        if app.buttons["theasa-pill"].firstMatch.isHittable == false { app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.98)).tap() }
+        if app.buttons["substrate-pill"].firstMatch.isHittable == false { app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.98)).tap() }
         sleep(1)
     }
 

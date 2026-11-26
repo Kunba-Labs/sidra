@@ -10,10 +10,10 @@ public enum TheasaError: LocalizedError, Sendable, Equatable {
     public var errorDescription: String? {
         switch self {
         case .badURL: "Check the server address."
-        case .noToken: "Add the Theasa token to make changes."
-        case .unauthorized: "The token is wrong. Run theasa token on the server and paste it again."
+        case .noToken: "Sign in to Substrate to make changes."
+        case .unauthorized: "Substrate did not accept your sign-in. Sign in again."
         case .http(let code, let msg): msg.isEmpty ? "The server answered \(code)." : msg
-        case .unreachable(let why): "No connection to Theasa. \(why)"
+        case .unreachable(let why): "No connection to Substrate. \(why)"
         }
     }
 }
@@ -36,7 +36,7 @@ public struct TheasaClient: Sendable {
 
     /// Theasa's `/api/…` paths on Substrate's app API (docs/app-api.md in the substrate repo): the work log under
     /// `/log`, repos for projects, `/agents`, and `/live` for the change stream. Ranges are today|week|month|all
-    /// and days are the reader's, so `tz` (minutes east of UTC) goes along.
+    /// and days are the reader's, so `tz` (the IANA zone) goes along.
     static func substratePath(_ path: String) -> String {
         let map = [("/api/pulse", "/log/pulse"), ("/api/projects", "/log/repos"), ("/api/turns", "/log/turns"), ("/api/search", "/log/search"),
                    ("/api/watch", "/log/watch"), ("/api/decisions", "/log/decisions"), ("/api/jobs", "/log/jobs"),
@@ -45,7 +45,7 @@ public struct TheasaClient: Sendable {
         var p = to + path.dropFirst(from.count)
         p = p.replacingOccurrences(of: "range=30d", with: "range=month").replacingOccurrences(of: "&agent=all", with: "")
         if p.hasPrefix("/log/pulse") || p.hasPrefix("/log/repos") {
-            p += (p.contains("?") ? "&" : "?") + "tz=\(TimeZone.current.secondsFromGMT() / 60)"
+            p += (p.contains("?") ? "&" : "?") + "tz=" + encodeSegment(TimeZone.current.identifier)   // IANA: each date gets its own offset
         }
         return p
     }

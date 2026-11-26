@@ -10,7 +10,7 @@ import SidraSSH
 @Observable
 final class AppModel {
     enum Sheet: Identifiable, Hashable {
-        case settings, shortcuts, herdr, theasa, pipelines, newTab
+        case settings, shortcuts, herdr, pipelines, newTab
         /// One Pipelines connection's sheet: replace its token, or disconnect.
         case pipelinesEdit(UUID)
         var id: Self { self }
@@ -135,11 +135,7 @@ final class AppModel {
         switch kind {
         case .terminal(.ssh(let id)): return Pane(kind: kind, title: hosts.host(id)?.alias ?? "ssh", project: hosts.host(id).map { "\($0.user)@\($0.host)" })
         case .herdr(let target, let session): return Pane(kind: kind, title: "herdr", project: herdrMachineName(target) + (session.map { ", session \($0)" } ?? ""))
-        case .theasa(let id):
-            // The machine, not the connection's name (usually "Theasa" again): box.tailnet.ts.net shows as box.
-            let c = TheasaStore.shared.connection(id)
-            let host = c.flatMap { URL(string: $0.url)?.host }.map { $0.first?.isLetter == true ? String($0.prefix { $0 != "." }) : $0 }
-            return Pane(kind: kind, title: "Theasa", project: host ?? c?.name)
+        case .theasa: return Pane(kind: kind, title: "Theasa", project: nil)   // saved workspaces only; closed at launch
         case .hackertab: return Pane(kind: kind, title: "HackerTab", project: nil)
         case .chess: return Pane(kind: kind, title: "Chess", project: nil)
         case .pipelines(let id): return Pane(kind: kind, title: "Pipelines", project: PipelinesHub.shared.connection(id)?.title)

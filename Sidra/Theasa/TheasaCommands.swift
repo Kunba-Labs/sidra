@@ -33,28 +33,25 @@ enum TheasaCommands {
 
     @MainActor static func all(_ app: AppModel) -> [SidraCommand] {
         [
-            .init("theasa.pulse", "Theasa Pulse", area: "Theasa", key: "p", modifiers: [.command, .option]) { target(app)?.nav.show(.pulse) },
-            .init("theasa.agents", "Theasa Agents", area: "Theasa", key: "a", modifiers: [.command, .option]) {
+            .init("theasa.pulse", "Pulse", area: "Substrate", key: "p", modifiers: [.command, .option]) { target(app)?.nav.show(.pulse) },
+            .init("theasa.agents", "Agents", area: "Substrate", key: "a", modifiers: [.command, .option]) {
                 target(app)?.nav.show(.agents)
             },
-            .init("theasa.nextAgent", "Next Agent That Needs You", area: "Theasa", key: "n", modifiers: [.command, .option]) {
+            .init("theasa.nextAgent", "Next Agent That Needs You", area: "Substrate", key: "n", modifiers: [.command, .option]) {
                 guard let t = target(app) else { return }
                 if !t.nav.nextAgent(t.live) { app.toast("No agent needs you.") }
             },
-            .init("theasa.search", "Search Theasa", area: "Theasa", label: "⌘F") { search(app) },
-            .init("theasa.back", "Back", area: "Theasa", label: "⎋  ⌘.") { back(app) },
+            .init("theasa.search", "Search the Work Log", area: "Substrate", label: "⌘F") { search(app) },
+            .init("theasa.back", "Back", area: "Substrate", label: "⎋  ⌘.") { back(app) },
             // A menu key: a multi-line field's text view would take ⌘↩ as a newline before onKeyPress sees it.
-            .init("theasa.send", "Send Message", area: "Theasa", key: .return, modifiers: .command) {
+            .init("theasa.send", "Send Message", area: "Substrate", key: .return, modifiers: .command) {
                 guard focused(app), let t = target(app) else { return }   // elsewhere ⌘↩ does nothing
                 if let s = t.nav.submit { s() } else { app.toast("Tap a message field first.") }
             },
-            .init("theasa.refresh", "Refresh and Reconnect", area: "Theasa", key: "r", modifiers: [.command, .option]) {
+            .init("theasa.refresh", "Refresh and Reconnect", area: "Substrate", key: "r", modifiers: [.command, .option]) {
                 guard let t = target(app) else { return }
                 t.live.reconnect(client: t.live.client)
                 t.live.say("Reconnecting.")
-            },
-            .init("theasa.connection", "Theasa Connections…", area: "Theasa", key: "k", modifiers: [.command, .option]) {
-                app.sheet = .theasa
             },
         ]
     }
@@ -109,7 +106,7 @@ final class TheasaKeyHost<Content: View>: UIHostingController<Content> {
         let esc = UIKeyCommand(title: "Back", action: #selector(escape), input: UIKeyCommand.inputEscape, modifierFlags: [])
         esc.wantsPriorityOverSystemBehavior = true
         // While this host has the keys, UIKit's own find would take ⌘F before the menu.
-        let find = UIKeyCommand(title: "Search Theasa", action: #selector(findTheasa), input: "f", modifierFlags: .command)
+        let find = UIKeyCommand(title: "Search the Work Log", action: #selector(findTheasa), input: "f", modifierFlags: .command)
         find.wantsPriorityOverSystemBehavior = true
         // No ⌘↩ here: a host key command on Return took plain Return from the search field (its submit
         // never fired). ⌘↩ is the Theasa menu's Send Message.

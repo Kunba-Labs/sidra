@@ -139,7 +139,7 @@ final class TheasaLogicTests: XCTestCase {
     /// Substrate's app API: Theasa's paths mapped, the machine in agent paths, tz on ranged reads, PATCH for a repo edit.
     func testSubstratePaths() throws {
         let c = TheasaClient(base: URL(string: "https://substrate.example/api/v1")!, token: "t", substrate: true)
-        let tz = TimeZone.current.secondsFromGMT() / 60
+        let tz = TheasaClient.encodeSegment(TimeZone.current.identifier)
         XCTAssertEqual(c.url("/api/pulse?range=week")?.absoluteString, "https://substrate.example/api/v1/log/pulse?range=week&tz=\(tz)")
         XCTAssertEqual(c.url("/api/projects/48?range=today&agent=all")?.absoluteString, "https://substrate.example/api/v1/log/repos/48?range=today&tz=\(tz)")
         XCTAssertEqual(c.url("/api/projects?range=30d")?.absoluteString, "https://substrate.example/api/v1/log/repos?range=month&tz=\(tz)")

@@ -12,7 +12,7 @@ final class PhoneTourUITests: XCTestCase {
         app.launchArguments = ["-sidra.noAutoFocus", "-sidra.freshWorkspace"]
         app.launch()
         sleep(3); shot("a0-empty")
-        for kind in ["herdr", "ssh", "theasa", "pipelines", "substrate", "hackertab"] {
+        for kind in ["herdr", "ssh", "pipelines", "hackertab"] {
             let card = app.buttons["newtab-\(kind)"].firstMatch
             if !card.waitForExistence(timeout: 3) { app.buttons["New tab"].firstMatch.tap(); sleep(1); shot("a1-newtab") }
             guard card.waitForExistence(timeout: 3) else { continue }
@@ -45,7 +45,7 @@ final class PhoneTourUITests: XCTestCase {
             app.buttons["newtab-herdr"].firstMatch.tap(); sleep(4); shot("e-herdr-found")
             if app.buttons["Cancel"].firstMatch.exists { app.buttons["Cancel"].firstMatch.tap(); sleep(1) }
         }
-        if app.buttons["theasa-pill"].firstMatch.exists { app.buttons["theasa-pill"].firstMatch.tap(); sleep(3); shot("d-theasa-pill") }
+        if app.buttons["substrate-pill"].firstMatch.exists { app.buttons["substrate-pill"].firstMatch.tap(); sleep(3); shot("d-substrate-pill") }
     }
 
     /// The Send screenshot card and the floating keyboard with a typed line, at phone width.

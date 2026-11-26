@@ -36,8 +36,10 @@ struct SubstratePill: View {
                 HStack(spacing: 7) {
                     ProcessIcon(.substrate, size: 18)
                     Circle().fill(dot).frame(width: 7, height: 7)
-                    Text("Substrate").font(SidraFont.ui(12.5, weight: on ? .bold : .regular)).foregroundStyle(waiting == 0 || on ? SidraColor.text : SidraColor.muted)
-                    if waiting > 0 { Text("\(waiting) waiting").font(SidraFont.ui(12.5, weight: .bold)).foregroundStyle(SidraColor.text) }
+                    let nameColor: Color = waiting == 0 || on ? SidraColor.text : SidraColor.muted
+                    let nameWeight: Font.Weight = on ? .bold : .regular
+                    Text("Substrate").font(SidraFont.ui(12.5, weight: nameWeight)).foregroundStyle(nameColor)
+                    if waiting > 0 { Text(verbatim: "\(waiting) waiting").font(SidraFont.ui(12.5, weight: .bold)).foregroundStyle(SidraColor.text) }
                 }
                 .padding(.leading, 6).padding(.trailing, 12).frame(height: 28)
                 .background(on ? SidraColor.tabActive : SidraColor.raised, in: shape)
@@ -48,7 +50,7 @@ struct SubstratePill: View {
         .accessibilityIdentifier("substrate-pill")
         .accessibilityLabel("Substrate" + (waiting > 0 ? ", \(waiting) waiting" : ""))
         .accessibilityAddTraits(on ? .isSelected : [])
-        .task(id: theasa.active?.id) { await live?.loadAgents() }
+        .task(id: live == nil) { await live?.loadAgents() }
     }
 
     private func open(blocked: Int) {

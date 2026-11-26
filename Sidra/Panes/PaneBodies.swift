@@ -55,12 +55,8 @@ enum PaneBodies {
             } footer: {
                 SubstrateFooter(store: SubstrateHub.shared.store(id))
             }
-        case .theasa(let id):
-            return PaneBody {
-                TheasaPane(pane: pane, connectionID: id)
-            } footer: {
-                TheasaFooter(connectionID: id)
-            }
+        case .theasa:   // a saved workspace from before 2026-11-26; closed at launch
+            return PaneBody { PlaceholderPane(text: "Theasa moved into the Substrate tab.") } footer: { EmptyView() }
         }
     }
 }

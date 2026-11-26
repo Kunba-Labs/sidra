@@ -5,16 +5,15 @@ import SidraSSH
 
 /// What a new tab can be. Each kind runs its own setup the first time: there is no global onboarding.
 enum NewTabKind: String, CaseIterable, Identifiable {
-    case herdr, ssh, theasa, pipelines, substrate, hackertab, chess
+    case herdr, ssh, pipelines, substrate, hackertab, chess
     var id: String { rawValue }
     /// The New tab picker. Substrate (with Theasa's screens) has a fixed place: its title-bar pill (2026-11-26).
-    static var picker: [NewTabKind] { allCases.filter { $0 != .theasa && $0 != .substrate } }
+    static var picker: [NewTabKind] { allCases.filter { $0 != .substrate } }
 
     var icon: ProcessIcon.Kind {
         switch self {
         case .herdr: .herdr
         case .ssh: .ssh
-        case .theasa: .theasa
         case .pipelines: .pipelines
         case .substrate: .substrate
         case .hackertab: .hackertab
@@ -26,7 +25,6 @@ enum NewTabKind: String, CaseIterable, Identifiable {
         switch self {
         case .herdr: "herdr"
         case .ssh: "SSH host"
-        case .theasa: "Theasa"
         case .pipelines: "Pipelines"
         case .substrate: "Substrate"
         case .hackertab: "HackerTab"
@@ -38,7 +36,6 @@ enum NewTabKind: String, CaseIterable, Identifiable {
         switch self {
         case .herdr: "Your coding agents in herdr on another machine. Spaces and agents show as tabs."
         case .ssh: "A terminal on a machine you reach over SSH, with mosh when the host has it."
-        case .theasa: "The pulse of your Claude Code agents, from a Theasa server you run."
         case .pipelines: "GitLab or GitHub pipelines of your projects, with the log of each failed job."
         case .substrate: "Approve what testers send your agents, and follow each fix to deploy."
         case .hackertab: "Hacker News, comments first."
@@ -52,7 +49,6 @@ extension AppModel {
     func startTab(_ kind: NewTabKind) {
         switch kind {
         case .herdr: sheet = .herdr
-        case .theasa: sheet = .theasa
         case .pipelines: sheet = .pipelines   // the saved connections, or a form for the first
         case .substrate:
             // One account today: its tab comes to the front, or opens and signs in there.
@@ -112,7 +108,7 @@ struct NewTabSheet: View {
         }
         // A kind with its own sheet replaces this one; the rest open a tab and close it.
         switch kind {
-        case .herdr, .theasa, .pipelines: app.startTab(kind)
+        case .herdr, .pipelines: app.startTab(kind)
         default: dismiss(); app.startTab(kind)
         }
     }
