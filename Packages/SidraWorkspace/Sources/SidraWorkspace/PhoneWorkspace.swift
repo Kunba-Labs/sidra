@@ -34,7 +34,9 @@ struct PhoneWorkspace: View {
             .padding(.horizontal, 16).frame(height: 44)
 
             Group {
-                if let tab = store.activeTab, let root = tab.root {
+                if store.boardOpen, let board = store.board {
+                    board()
+                } else if let tab = store.activeTab, let root = tab.root {
                     let panes = root.panes
                     if panes.count == 1 || tab.maximizedPaneID != nil {
                         PaneCardHost(pane: tab.maximizedPaneID.flatMap(root.pane) ?? panes[0], tab: tab, store: store, provider: provider)
@@ -64,6 +66,7 @@ struct PhoneWorkspace: View {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
+                        if store.board != nil { BoardButton(store: store, size: 38) }
                         ForEach(store.visibleTabs) { tab in dockTab(tab).id(tab.id) }
                     }
                     .padding(.vertical, 2)
@@ -76,7 +79,7 @@ struct PhoneWorkspace: View {
     }
 
     private func dockTab(_ tab: WorkspaceTab) -> some View {
-        let on = tab.id == store.activeTabID
+        let on = tab.id == store.activeTabID && !store.boardOpen
         let shape = RoundedRectangle(cornerRadius: SidraRadius.pill, style: .continuous)
         return Button { store.select(tab: tab.id) } label: {
             HStack(spacing: 8) {

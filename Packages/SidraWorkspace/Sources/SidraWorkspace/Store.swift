@@ -54,6 +54,7 @@ public final class WorkspaceStore {
 
     public func select(tab id: UUID) {
         guard state.tabs.contains(where: { $0.id == id }) else { return }
+        boardOpen = false
         state.activeTabID = id
         persist()
     }
@@ -108,6 +109,10 @@ public final class WorkspaceStore {
     public var tabAccessory: ((WorkspaceTab) -> AnyView?)?
     /// A tab's activity for its long-press details on iPhone (what runs, agents, pipelines); set by the app.
     public var tabDetail: ((WorkspaceTab) -> AnyView)?
+    /// The activity board (2026-11-27): set by the app; its button is the first item before the tabs, and while
+    /// it is open it takes the panes' place. Picking a tab closes it.
+    public var board: (() -> AnyView)?
+    public var boardOpen = false
     /// How many things need the user (agents asking), for the floating orb's badge; set by the app.
     public var attention: (() -> Int)?
     public var pendingClose: PendingClose?

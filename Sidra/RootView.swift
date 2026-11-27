@@ -41,7 +41,7 @@ struct RootView: View {
         #if os(iOS) || os(visionOS)
         .overlay { FloatingKeyboardLayer() }   // under the mic, so dictation's card draws over the keys
         #endif
-        .overlay(alignment: .bottomTrailing) { FloatingMic(showMic: focusedIsTerminal && !composing) }
+        .overlay(alignment: .bottomTrailing) { FloatingMic(showMic: focusedIsTerminal && !composing && !store.boardOpen) }
         #if os(iOS)
         // iPhone: the compose bar over Apple's keyboard (ComposeBar.swift).
         .safeAreaInset(edge: .bottom, spacing: 0) { if Compose.enabled && Compose.shared.open { ComposeBar() } }
@@ -104,6 +104,10 @@ struct RootView: View {
             #endif
             TheasaStore.shared.openFromLaunchArguments(app)
             store.tabDetail = { tab in AnyView(TabActivity(tab: tab)) }
+            store.board = { [app, store] in AnyView(ActivityBoard().environment(app).environment(store)) }
+            #if DEBUG
+            if UserDefaults.standard.bool(forKey: "sidra.boardOpen") { store.boardOpen = true }   // screenshots
+            #endif
             store.tabAccessory = { tab in SubstrateTabMark.accessory(for: tab) }
             store.attention = { [app] in MuxMonitors.shared.count(.blocked, live: Set(app.allWorkspaces.flatMap { $0.tabs.flatMap { $0.panes.map(\.id) } })) }
             PipelinesHub.shared.start()

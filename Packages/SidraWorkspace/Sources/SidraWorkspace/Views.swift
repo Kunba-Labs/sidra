@@ -86,7 +86,9 @@ public struct WorkspaceView<TitleTrailing: View>: View {
                     .padding(.top, Platform.isMac ? 0 : -6)
             }
             Group {
-                if let tab = store.activeTab, let root = tab.root {
+                if store.boardOpen, let board = store.board {
+                    board()
+                } else if let tab = store.activeTab, let root = tab.root {
                     if let maxID = tab.maximizedPaneID, let pane = root.pane(maxID) {
                         paneCard(pane, in: tab)
                     } else {

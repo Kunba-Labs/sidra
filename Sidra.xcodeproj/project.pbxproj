@@ -46,6 +46,7 @@
 		401D2572B3378D327AA460E6 /* TerminalPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08DA5A482100B822AC3216BB /* TerminalPane.swift */; };
 		4902132C4FDD9804A0DFFE33 /* BusyPanes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DF9B0DE46B31B9EBB3C0BA /* BusyPanes.swift */; };
 		4CA48703B87A8CEA83D0A3E5 /* TheasaTurn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9151B661C8A5150FD6B3DD /* TheasaTurn.swift */; };
+		4CFEC5C14BC841CB091B21D7 /* ActivityBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F80F0626C218EE1A022E86 /* ActivityBoard.swift */; };
 		4EB0038BEAEBE43B236B1C7D /* ChessUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73017469F38A5080D3473461 /* ChessUITests.swift */; };
 		4ED6627132D1FEE5F59A0A7E /* SubstrateMarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10E835F25969CA3EBC4B34A /* SubstrateMarks.swift */; };
 		51DB76C7A852474C5E1F6837 /* Platform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 898FEE6677F04B352643E7AB /* Platform.swift */; };
@@ -63,6 +64,7 @@
 		592658D29F343143041E23DE /* ShortcutsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DFB8E8BC09AC7775AEEF291 /* ShortcutsSheet.swift */; };
 		5A627506779E3E2F944E6BFC /* FloatingKeyboardUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B800AF5E86A152DF6C1EA49A /* FloatingKeyboardUITests.swift */; };
 		5F7DFA0B39CD1FEDB4A93F87 /* SubstratePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7526F9C00A47BF6E5C7C03C8 /* SubstratePane.swift */; };
+		5FCC2D352328CF6F0932660D /* ActivityBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F80F0626C218EE1A022E86 /* ActivityBoard.swift */; };
 		61EB8A69879C57BB3BAFB34A /* KeysSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9020BCA2AC1F7D913937CCA7 /* KeysSection.swift */; };
 		65B635852204048381160C72 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F083441085B2B800071D6F /* RootView.swift */; };
 		672B64903CA115909DE2DD11 /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED6DE4A11A47F0B05DDE8BA4 /* Commands.swift */; };
@@ -224,6 +226,7 @@
 		4477F8E3EBA916104FCB99C5 /* HerdrPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HerdrPane.swift; sourceTree = "<group>"; };
 		44BF97F13FCCEA3B5097ACB1 /* CommandRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandRegistry.swift; sourceTree = "<group>"; };
 		46309641DF73FE9E9FFCF88B /* SSHKeyLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHKeyLifecycleTests.swift; sourceTree = "<group>"; };
+		48F80F0626C218EE1A022E86 /* ActivityBoard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityBoard.swift; sourceTree = "<group>"; };
 		4BC5697584C293B136FA2FB2 /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 		4D0FE091994F8AC053191522 /* SidraDesign */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraDesign; path = Packages/SidraDesign; sourceTree = SOURCE_ROOT; };
 		5878234E78CAE96CF386F927 /* HackerTabUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HackerTabUITests.swift; sourceTree = "<group>"; };
@@ -356,6 +359,7 @@
 		12DAAE7720D4E51D308B813B /* Panes */ = {
 			isa = PBXGroup;
 			children = (
+				48F80F0626C218EE1A022E86 /* ActivityBoard.swift */,
 				79C4F81745995413751B61AA /* HerdrConnectSheet.swift */,
 				4477F8E3EBA916104FCB99C5 /* HerdrPane.swift */,
 				9020BCA2AC1F7D913937CCA7 /* KeysSection.swift */,
@@ -830,6 +834,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4CFEC5C14BC841CB091B21D7 /* ActivityBoard.swift in Sources */,
 				CD066056B57531B33D96532D /* AppModel.swift in Sources */,
 				58F4BE7843381152B7FCEEEA /* AppUpdater.swift in Sources */,
 				4902132C4FDD9804A0DFFE33 /* BusyPanes.swift in Sources */,
@@ -887,6 +892,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5FCC2D352328CF6F0932660D /* ActivityBoard.swift in Sources */,
 				8C8A7C859F123BF6E5C4DD16 /* AppModel.swift in Sources */,
 				32221214BDD311092B3ECA1C /* AppUpdater.swift in Sources */,
 				08FBA303B4C6FFECB02BBB39 /* BusyPanes.swift in Sources */,

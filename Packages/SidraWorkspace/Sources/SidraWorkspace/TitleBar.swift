@@ -77,10 +77,11 @@ struct TitleBar<Trailing: View>: View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 4) {
+                    if store.board != nil { BoardButton(store: store, size: 30) }
                     ForEach(Array(store.visibleTabs.enumerated()), id: \.element.id) { i, tab in
                         // A subtitle that repeats the title (a Theasa connection named Theasa) says nothing.
                         PillTab(icon: tab.shownIcon, title: tab.title, subtitle: tab.subtitle == tab.title ? nil : tab.subtitle,
-                                active: tab.id == store.activeTabID, dot: store.tabDot?(tab) == true, accessory: store.tabAccessory?(tab) ?? nil,
+                                active: tab.id == store.activeTabID && !store.boardOpen, dot: store.tabDot?(tab) == true, accessory: store.tabAccessory?(tab) ?? nil,
                                 // A Pipelines tab: the provider's logo plus a pipeline symbol say it; the word took width (2026-11-26).
                                 titleSymbol: [.gitlab, .github].contains(tab.shownIcon) ? "point.3.connected.trianglepath.dotted" : nil,
                                 action: { store.select(tab: tab.id) },
@@ -107,5 +108,26 @@ struct TitleBar<Trailing: View>: View {
         .clipShape(RoundedRectangle(cornerRadius: SidraRadius.tabStrip, style: .continuous))
         .fixedSize(horizontal: false, vertical: true)
         .layoutPriority(-1)
+    }
+}
+
+/// The activity board's button: four squares, drawn as an active tab while the board is open.
+struct BoardButton: View {
+    @Bindable var store: WorkspaceStore
+    var size: CGFloat
+    var body: some View {
+        let on = store.boardOpen
+        let shape = RoundedRectangle(cornerRadius: SidraRadius.pill, style: .continuous)
+        Button { withAnimation(.easeOut(duration: 0.15)) { store.boardOpen.toggle() } } label: {
+            Image(systemName: "square.grid.2x2.fill").font(.system(size: size * 0.5)).foregroundStyle(on ? SidraColor.text : SidraColor.muted)
+                .frame(width: size + 4, height: size)
+                .background(on ? SidraColor.tabActive : .clear, in: shape)
+                .gradientBorder(radius: SidraRadius.pill, active: on, inactive: .clear)
+                .contentShape(shape)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Activity board")
+        .accessibilityIdentifier("activity-board")
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 }

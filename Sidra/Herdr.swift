@@ -179,6 +179,8 @@ struct MuxSnapshot: Decodable, Sendable {
         let pane_id: String
         let workspace_id: String
         let terminal_title_stripped: String?
+        /// herdr's count of state changes, rising: a later change has a higher number (one server's agents only).
+        var state_change_seq: Int? = nil
         var id: String { pane_id }
     }
     struct PaneInfo: Decodable, Sendable, Identifiable {
@@ -406,6 +408,7 @@ final class MuxMonitor {
         do {
             let r = try await app.herdrRun(target, adapter.snapshotCommand(session: session))
             let s = try adapter.parseSnapshot(r.stdout)
+            AgentActivity.shared.note(key, old: snapshot, new: s)
             snapshot = s
             error = nil
             if !loadingLogos { Task { await loadLogos(app) } }
