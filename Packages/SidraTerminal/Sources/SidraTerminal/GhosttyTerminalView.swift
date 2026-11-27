@@ -202,7 +202,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     }
 
     /// A finger drag scrolls unless select mode is on (Waseem, 2026-11-22: selecting by default suits a desktop,
-    /// not a phone). A long press or the footer's Select turns it on; the Done pill turns it off.
+    /// not a phone). The footer's Select turns it on, the Done pill off; a long press selects only while held.
     public var selectMode = false {
         didSet {
             guard selectMode != oldValue else { return }
@@ -230,6 +230,7 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     }()
 
     @objc private func handleDrag(_ g: UIPanGestureRecognizer) {
+        if holdAnchor != nil { return }   // a held word is being extended (handleHold)
         if dragIsTouch, !selectMode { handlePan(g); return }   // scroll: history, or wheel events for herdr
         copyGrant = Date()   // a drag-select copies on release, however long it took
         let p = g.location(in: self)
@@ -262,7 +263,8 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
         switch g.state {
         case .began:
             _ = becomeFirstResponder()
-            selectMode = true   // a long press starts select mode: drags select until Done
+            // The hold selects while the finger stays down; lifting it gives drags back to scrolling. It used to turn select
+            // mode on until Done, and a finger resting before a scroll turned every later scroll into a selection (2026-11-27).
             let c = cell(at: p)
             engine.selectWord(x: c.x, y: c.y)
             setNeedsDisplay()
