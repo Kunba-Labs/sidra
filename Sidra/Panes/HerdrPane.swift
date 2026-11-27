@@ -92,6 +92,15 @@ struct MuxSpacesBar: View {
     var body: some View {
         if let m = MuxMonitors.shared.byPane[pane.id], let s = m.snapshot {
             HStack(spacing: 0) {
+                // The activity board, first before the spaces too: where the eye looks for tabs in a herdr pane (2026-11-27).
+                if app.workspace.board != nil {
+                    Button { withAnimation(.easeOut(duration: 0.15)) { app.workspace.boardOpen = true } } label: {
+                        Image(systemName: "square.grid.2x2.fill").font(.system(size: 14)).foregroundStyle(SidraColor.muted)
+                            .frame(width: 34, height: 30).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain).padding(.leading, 6)
+                    .accessibilityLabel("Activity board").help("Activity board: every agent, the last turn to end first")
+                }
                 Group {
                 if compact { compactRow(m, s) } else {
                 ScrollView(.horizontal, showsIndicators: false) {
