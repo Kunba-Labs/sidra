@@ -106,8 +106,8 @@ enum DemoMode {
     private static func c(_ code: String, _ s: String) -> String { "\(esc)\(code)m\(s)\(esc)0m" }
 
     static let agentScreen: String = {
-        let dim = "2", bold = "1", orange = "38;5;209", green = "38;5;114", red = "38;5;203", blue = "38;5;111"
-        return [
+        let dim = "2", bold = "1", orange = "38;5;209", green = "38;5;114", red = "38;5;203", blue = "38;5;111", gold = "38;5;179"
+        return ([
             c(dim, "~/webapp") + "  " + c(blue, "main"),
             "",
             c(bold, "> ") + "Add rate limiting to the login endpoint. 5 tries a minute per IP.",
@@ -141,7 +141,13 @@ enum DemoMode {
             "│   2. Yes, don't ask again for prisma       │",
             "│   3. No, tell Claude what to do instead    │",
             "╰────────────────────────────────────────────╯",
-        ].joined(separator: "\r\n")
+        ] + (CommandLine.arguments.contains("-sidra.demoNote") ? [   // Claude Code's "Heads up" note (screenshots of its card)
+            "",
+            c(gold, "Heads up") + " · The backend now returns at most 500 pitches per list,",
+            "and the app doesn't page yet.",
+            "",
+            c(dim, "1: Learn more   2: Knew this already   0: Dismiss"),
+        ] : [])).joined(separator: "\r\n")
     }()
 
     static let shellScreen: String = {

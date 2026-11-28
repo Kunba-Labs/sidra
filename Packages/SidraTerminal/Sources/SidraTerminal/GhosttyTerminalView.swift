@@ -1,6 +1,7 @@
 #if os(iOS) || os(visionOS)   // macOS: MacTerminal.swift
 import UIKit
 import CoreText
+import SwiftUI
 import SidraDesign
 
 /// Draws a `GhosttyEngine` grid with Core Text and feeds hardware keyboard input to a `TerminalIO`.
@@ -15,6 +16,9 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
     private var frame_: TerminalFrame?
     /// Link cells of the last drawn text; the link scan reruns only when the visible text changes.
     private var linkGrid: [[Character]] = [], linkCellsCache: Set<Int> = []
+    /// A choice row on screen (Claude Code's "Heads up" notes) and the card that shows it with real buttons.
+    private var note: TerminalNote?
+    private var noteCard: UIView?
     private var cellSize = CGSize(width: 8, height: 20)
     private let font: UIFont
     private let boldFont: UIFont
@@ -552,6 +556,26 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
         setNeedsDisplay()
     }
 
+    // MARK: Notes
+
+    private func showNote(_ n: TerminalNote?) {
+        noteCard?.removeFromSuperview(); noteCard = nil
+        guard let n else { return }
+        // The digit alone, as typed: Claude Code takes it from the empty prompt without Return.
+        let card = UIHostingController(rootView: TerminalNoteCard(note: n) { [weak self] key in self?.send(.text(key)) }).view!
+        card.backgroundColor = .clear
+        card.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(card)
+        NSLayoutConstraint.activate([
+            card.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+            // At most 560 wide, from the left: the floating mic and keyboard keys sit bottom right.
+            card.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -10),
+            card.widthAnchor.constraint(lessThanOrEqualToConstant: 560),
+            card.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
+        ])
+        noteCard = card
+    }
+
     // MARK: Drawing
 
     public override func draw(_ rect: CGRect) {
@@ -571,6 +595,8 @@ public final class GhosttyTerminalView: UIView, UIKeyInput, UIEditMenuInteractio
         if grid != linkGrid {
             linkGrid = grid
             linkCellsCache = TerminalLinks.spans(in: grid).reduce(into: Set<Int>()) { $0.formUnion($1.cells) }
+            let n = TerminalNote.find(in: grid.map { String($0) })
+            if n != note { note = n; DispatchQueue.main.async { [weak self] in self?.showNote(n) } }   // not during a draw
         }
         let linkCells = linkCellsCache
 
