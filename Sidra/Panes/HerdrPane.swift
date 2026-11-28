@@ -1231,6 +1231,10 @@ struct BroadcastSheet: View {
         .padding(20)
         .frame(maxWidth: 520)
         .background(SidraColor.popup)
+        // /remote-control is Claude Code's alone (Codex answers "Unrecognized command"): it starts with the others unpicked.
+        .onChange(of: command.hasPrefix("/remote-control"), initial: true) { _, claudeOnly in
+            off = claudeOnly ? Set(agents.filter { $0.agent != "claude" }.map(\.pane_id)) : []
+        }
         .confirmationDialog("Send \(command) to \(picked.count) agent\(picked.count == 1 ? "" : "s")?", isPresented: $confirm, titleVisibility: .visible) {
             Button("Send", role: command.hasPrefix("/exit") || command.hasPrefix("/quit") ? .destructive : nil) { Task { await send() } }
         }
