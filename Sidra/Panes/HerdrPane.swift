@@ -1272,7 +1272,7 @@ struct BroadcastSheet: View {
 }
 
 /// Short prompts typed over and over ("status", "what's left"): tap one and it goes into this pane's
-/// terminal with Return. The list is kept on this device and edited here.
+/// terminal with Return. Edited here; iCloud sync carries it to your other devices.
 struct QuickPromptsSheet: View {
     let pane: UUID
     @Environment(AppModel.self) private var app
@@ -1288,7 +1288,11 @@ struct QuickPromptsSheet: View {
     private var prompts: [String] {
         get { stored.isEmpty ? Self.defaults : ((try? JSONDecoder().decode([String].self, from: Data(stored.utf8))) ?? Self.defaults) }
     }
-    private func save(_ list: [String]) { stored = String(decoding: (try? JSONEncoder().encode(list)) ?? Data("[]".utf8), as: UTF8.self) }
+    private func save(_ list: [String]) {
+        stored = String(decoding: (try? JSONEncoder().encode(list)) ?? Data("[]".utf8), as: UTF8.self)
+        UserDefaults.standard.set(Date(), forKey: "sidra.quickPromptsAt")   // the newest edit wins across devices (CloudSync)
+        CloudSync.shared.sync(force: true)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {

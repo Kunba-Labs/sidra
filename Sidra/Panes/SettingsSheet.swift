@@ -55,6 +55,7 @@ struct SettingsSheet: View {
             NotificationsSection(query: query)
             #endif
             VoiceSection(query: query)
+            SyncSection(query: query)
             #if os(iOS) || os(visionOS)
             ScreenshotSection(query: query)
             #endif
@@ -592,3 +593,20 @@ struct MacSetup: View {
     }
 }
 #endif
+
+/// iCloud sync of quick prompts and keyboard learning (CloudSync): its state, and Sync now.
+struct SyncSection: View {
+    let query: String
+    @State private var sync = CloudSync.shared
+    var body: some View {
+        if CloudSync.entitled, query.isEmpty || ["iCloud", "Sync", "prompts", "keyboard", "words"].contains(where: { $0.localizedCaseInsensitiveContains(query) }) {
+            SectionLabel("iCloud")
+            let state = !CloudSync.enabled ? "Not on the Mac yet."
+                : sync.problem ?? sync.lastSynced.map { "Last synced " + $0.formatted(.relative(presentation: .named)) + "." } ?? "Not synced yet."
+            SettingRow("Sync", detail: "Quick prompts and what the keyboard learned (your words, commands, swipes) follow you to every Sidra on your iCloud. " + state,
+                       isDefault: true, reset: {}) {
+                if CloudSync.enabled { Button("Sync now") { sync.sync(force: true) }.buttonStyle(.sidraSecondary) }
+            }
+        }
+    }
+}

@@ -304,6 +304,18 @@ public final class FloatingKeyboard {
 
     // MARK: Learning
 
+    /// What iCloud sync sends (the app's CloudSync).
+    public var learnedCounts: [String: Int] { counts }
+
+    /// Another device's learning: each count takes the larger value, so the same habit is not counted twice.
+    public func mergeSynced(learned: [String: Int], swipe: [String: Int]) {
+        var learnedChanged = false, swipeChanged = false
+        for (k, v) in learned where v > counts[k] ?? 0 { counts[k] = v; learnedChanged = true }
+        for (k, v) in swipe where v > swipeHistory[k] ?? 0 { swipeHistory[k] = v; swipeChanged = true }
+        if learnedChanged { UserDefaults.standard.set(counts, forKey: "sidra.learnedCommands"); refreshOften() }
+        if swipeChanged { UserDefaults.standard.set(swipeHistory, forKey: "sidra.swipeWords") }
+    }
+
     private func learn() {
         guard let t = target, t.learnsCommands, let typed = line?.trimmingCharacters(in: .whitespaces),
               let screen = t.cursorLineText, Self.atShellPrompt(screen, typed: typed), Self.learnable(typed, prompt: screen),

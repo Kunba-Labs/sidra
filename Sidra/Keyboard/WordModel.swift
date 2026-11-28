@@ -8,7 +8,7 @@ import UIKit
 /// Your own words: how often each comes and which word follows which, learned from your Theasa prompts
 /// and every line you send with Sidra's keyboard or voice (Waseem, 2026-11-22). Swipe typing ranks its
 /// candidates with it; voice gets your project words (the ones a dictionary lacks) as hints.
-/// Kept on this device only, in Application Support.
+/// Kept in Application Support, and merged across your devices by iCloud sync (CloudSync).
 @MainActor final class WordModel {
     static let shared = WordModel()
 
@@ -46,6 +46,16 @@ import UIKit
     }
 
     func count(_ word: String) -> Int { store.words[word] ?? 0 }
+
+    /// What iCloud sync sends (CloudSync).
+    func counts() -> (words: [String: Int], pairs: [String: [String: Int]]) { (store.words, store.pairs) }
+
+    /// Another device's words: each count takes the larger value, so the same word is not counted twice.
+    func merge(words: [String: Int], pairs: [String: [String: Int]]) {
+        CloudSync.maxMerge(&store.words, words)
+        for (w, f) in pairs { CloudSync.maxMerge(&store.pairs[w, default: [:]], f) }
+        scheduleSave()
+    }
     func follows(_ word: String, after prev: String?) -> Int { prev.flatMap { store.pairs[$0]?[word] } ?? 0 }
 
     /// Known words starting with `first` and ending in one of `ends`: swipe candidates the dictionary may lack.

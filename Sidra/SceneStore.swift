@@ -23,11 +23,12 @@ struct SceneRoot: View {
                 .onChange(of: scenePhase) { _, phase in 
                     if phase == .active {
                         app.workspace = store; DataLayout.apply(); BusyPanes.shared.endGrace()
+                        CloudSync.shared.sync()   // what your other devices learned meanwhile
                         #if os(iOS) || os(visionOS)
                         ScreenshotInbox.shared.collect()   // a screenshot the share extension left, if it could not open Sidra
                         #endif
                     }
-                    if phase == .background { BusyPanes.shared.beginGrace() }
+                    if phase == .background { BusyPanes.shared.beginGrace(); CloudSync.shared.sync(force: true) }   // hand on what this one learned
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .sidraNotificationRoute)) { _ in consumeRoute() }
                 .task {
