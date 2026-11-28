@@ -42,7 +42,7 @@
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Sidra connects to the SSH hosts, herdr machines and Theasa servers you add on your local network.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Sidra listens while you hold the mic to dictate into a terminal. Speech is turned into text on this device.</string>
+	<string>Sidra listens while you hold the mic. Dictation turns speech into text on this device. The voice assistant sends speech to OpenAI while its session runs.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Sidra turns your dictation into text on this device.</string>
 	<key>UIAppFonts</key>

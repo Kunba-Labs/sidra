@@ -11,10 +11,12 @@
 		009AD7D76614E1DC506CE721 /* CloudSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EBC8CF2D7FB6BD037AD2E4 /* CloudSync.swift */; };
 		022B75384875C9635EE2FCDE /* TheasaAgents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FA4FA59DD2513883467739 /* TheasaAgents.swift */; };
 		03866B4E9359212BE32F0289 /* PipelinesPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0D67B8A7040FD87F2598823 /* PipelinesPane.swift */; };
+		04BDEE633BAA8743DE73AFDB /* AssistantCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3FB1044BD43D806730954E /* AssistantCore.swift */; };
 		08FBA303B4C6FFECB02BBB39 /* BusyPanes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DF9B0DE46B31B9EBB3C0BA /* BusyPanes.swift */; };
 		098F1638832F56C4252C669C /* PipelinesUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7154BCD71DBCA78733D7CF59 /* PipelinesUITests.swift */; };
 		09BA2A23DFCCC4B4EE7E9C53 /* KeysSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9020BCA2AC1F7D913937CCA7 /* KeysSection.swift */; };
 		0A47E38329AB8B1E7FE10DEC /* JetBrainsMono-Variable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9FAFFC0DA4889FFFC37607E5 /* JetBrainsMono-Variable.ttf */; };
+		0AFAED055D5634D7E1DAFC63 /* AssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E070B0D5FAEB32204F9E965E /* AssistantView.swift */; };
 		0B771BBB5C32A631AE2F7F35 /* LifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A958E2D546170231CBA9D2C /* LifecycleTests.swift */; };
 		0C3B79EBE1826CD55B664720 /* SubstrateAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76C9664CC8E278BA870F7C7D /* SubstrateAPI.swift */; };
 		0CBC254F1583D63449B3519A /* SubstrateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4694552B665A83C90CCD3DF /* SubstrateTests.swift */; };
@@ -36,6 +38,7 @@
 		2A0AF26EBCB074CA82E49DE1 /* HerdrPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4477F8E3EBA916104FCB99C5 /* HerdrPane.swift */; };
 		2AC0A062D98D5333EBC3598D /* herdr-attach.sh in Resources */ = {isa = PBXBuildFile; fileRef = B0DC2327B7FE042EE0FD4378 /* herdr-attach.sh */; };
 		2BB41AB19B88C4CDF73575A9 /* TheasaPulse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1480327CDF081DB259C98E5F /* TheasaPulse.swift */; };
+		2EAB42C7921C68BCBEDE264A /* LiveSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3144161357186ABFE9C1448 /* LiveSocket.swift */; };
 		2FF338997D0573AC43F0ACFF /* TheasaCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91A13AED1FB2E44CBBCE48E1 /* TheasaCommands.swift */; };
 		31D101CEF60E584779B37D49 /* SidraTheasa in Frameworks */ = {isa = PBXBuildFile; productRef = F3EF95590898D79DB9BF9B06 /* SidraTheasa */; };
 		32221214BDD311092B3ECA1C /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D6450EDD9602176E4E800B6 /* AppUpdater.swift */; };
@@ -43,6 +46,8 @@
 		342E47E76F6FDFAD3F0260DD /* TestHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E2D24662885AE2E47DC051 /* TestHost.swift */; };
 		3497C9708B593A0F652DB6AE /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED6DE4A11A47F0B05DDE8BA4 /* Commands.swift */; };
 		35C27C0E38C27AA214903CC4 /* ShortcutsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DFB8E8BC09AC7775AEEF291 /* ShortcutsSheet.swift */; };
+		39FD55DFA2401519EB30BCD0 /* LiveSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3144161357186ABFE9C1448 /* LiveSocket.swift */; };
+		3B4B8CF02684565BB6AF760E /* Assistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E3C32DC901AFB0B0CEB160 /* Assistant.swift */; };
 		3EF686081D0628FEFF15C573 /* TheasaPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = E370EAEEFC681DB92CFBC0EF /* TheasaPane.swift */; };
 		3F1527F314D94801B159B51C /* TheasaSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444C16EC11530D11005BDA70 /* TheasaSearch.swift */; };
 		401D2572B3378D327AA460E6 /* TerminalPane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08DA5A482100B822AC3216BB /* TerminalPane.swift */; };
@@ -69,6 +74,7 @@
 		5F7DFA0B39CD1FEDB4A93F87 /* SubstratePane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7526F9C00A47BF6E5C7C03C8 /* SubstratePane.swift */; };
 		5FCC2D352328CF6F0932660D /* ActivityBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F80F0626C218EE1A022E86 /* ActivityBoard.swift */; };
 		61EB8A69879C57BB3BAFB34A /* KeysSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9020BCA2AC1F7D913937CCA7 /* KeysSection.swift */; };
+		6304F3F3F853192B7C4FE9A3 /* AssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E070B0D5FAEB32204F9E965E /* AssistantView.swift */; };
 		65B635852204048381160C72 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96F083441085B2B800071D6F /* RootView.swift */; };
 		672B64903CA115909DE2DD11 /* Commands.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED6DE4A11A47F0B05DDE8BA4 /* Commands.swift */; };
 		6A074F3A40762F3A0A95AC0E /* TheasaPulse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1480327CDF081DB259C98E5F /* TheasaPulse.swift */; };
@@ -119,6 +125,7 @@
 		AA68CCB35DF9EB7A9A8186B4 /* TheasaMarkdown.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DCC141B15F493AF564C38B /* TheasaMarkdown.swift */; };
 		ADCABBA0CE88A581FEF55939 /* TheasaAgents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0FA4FA59DD2513883467739 /* TheasaAgents.swift */; };
 		AFEAFDC623409ACE12493055 /* SidraChess in Frameworks */ = {isa = PBXBuildFile; productRef = 0CE9EE125C9A286548263F3C /* SidraChess */; };
+		B18E6FFEA6D8E77D3876FAA3 /* Assistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E3C32DC901AFB0B0CEB160 /* Assistant.swift */; };
 		B1A52E74B5957E4FAC4AD9A4 /* ScreenshotSendSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC216BD8EB62660E922097D2 /* ScreenshotSendSheet.swift */; };
 		B2639D3F1C874E40B5D05384 /* ScreenshotInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF9DBCB951A69CFF27CFD076 /* ScreenshotInbox.swift */; };
 		B5145760F4ED57BEC411375B /* GitLab.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7188AFC621B1D9E1EFB8CC4 /* GitLab.swift */; };
@@ -134,6 +141,7 @@
 		C501BD6DBADAAE8F7BE1101A /* SubstratePush.swift in Sources */ = {isa = PBXBuildFile; fileRef = 931A11231F408C9DDFBD555F /* SubstratePush.swift */; };
 		C5213763CE84F01419C2B518 /* NewTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AE28FD3AB3C35FCCD53E8FF /* NewTab.swift */; };
 		C5BC5FC24F82F516BF0FE409 /* FloatingKeyboardPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCFB137D3245A2A62F70ECB5 /* FloatingKeyboardPanel.swift */; };
+		C8A49E74256E7410B9246B97 /* AssistantCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3FB1044BD43D806730954E /* AssistantCore.swift */; };
 		CA49C1067A793EE8CDB6205D /* SidraHackerTab in Frameworks */ = {isa = PBXBuildFile; productRef = C3883D8A12FE42C5D36C1FC4 /* SidraHackerTab */; };
 		CB07DE434A51D772F1A93C88 /* CommandRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BF97F13FCCEA3B5097ACB1 /* CommandRegistry.swift */; };
 		CD066056B57531B33D96532D /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 026DB1F4BFD86A94EE83C678 /* AppModel.swift */; };
@@ -157,6 +165,7 @@
 		F3910D0B77EA4077E8699099 /* SceneStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21F90D9F3ACAEC2FB0ADCA51 /* SceneStore.swift */; };
 		F3B50A34F450608051F45D1C /* SmokeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA53C89AF6EAA63E1ABAC641 /* SmokeTests.swift */; };
 		F402F5555A9BCAFABE9759C4 /* CI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CE3882D2B474C66E4A47CC6 /* CI.swift */; };
+		F4762648DCE60454E80C3EA6 /* AssistantTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE69DB4E2096865C1A4B1EFE /* AssistantTests.swift */; };
 		F54C10CBFB1A977F03FE4746 /* NewTabUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835D989F13A564BB23920914 /* NewTabUITests.swift */; };
 		F63F05793C4504E801BC019E /* WordModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B8474AFC839AAA5FC0D6CBF /* WordModel.swift */; };
 		F6B9EC8C6A87955ED5F21628 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 64C542AF4A8DB04D5DB7B0AF /* WhisperKit */; };
@@ -230,6 +239,7 @@
 		44BF97F13FCCEA3B5097ACB1 /* CommandRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandRegistry.swift; sourceTree = "<group>"; };
 		46309641DF73FE9E9FFCF88B /* SSHKeyLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSHKeyLifecycleTests.swift; sourceTree = "<group>"; };
 		48F80F0626C218EE1A022E86 /* ActivityBoard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityBoard.swift; sourceTree = "<group>"; };
+		4A3FB1044BD43D806730954E /* AssistantCore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantCore.swift; sourceTree = "<group>"; };
 		4BC5697584C293B136FA2FB2 /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 		4D0FE091994F8AC053191522 /* SidraDesign */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraDesign; path = Packages/SidraDesign; sourceTree = SOURCE_ROOT; };
 		5878234E78CAE96CF386F927 /* HackerTabUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HackerTabUITests.swift; sourceTree = "<group>"; };
@@ -261,6 +271,7 @@
 		96F083441085B2B800071D6F /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		97262EAF9FA2E40D43AC48DD /* SidraWorkspace */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraWorkspace; path = Packages/SidraWorkspace; sourceTree = SOURCE_ROOT; };
 		97CC5ED76FF9CC29FDC7947C /* SidraSSH */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraSSH; path = Packages/SidraSSH; sourceTree = SOURCE_ROOT; };
+		98E3C32DC901AFB0B0CEB160 /* Assistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Assistant.swift; sourceTree = "<group>"; };
 		9AE28FD3AB3C35FCCD53E8FF /* NewTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTab.swift; sourceTree = "<group>"; };
 		9DFB8E8BC09AC7775AEEF291 /* ShortcutsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsSheet.swift; sourceTree = "<group>"; };
 		9FAFFC0DA4889FFFC37607E5 /* JetBrainsMono-Variable.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "JetBrainsMono-Variable.ttf"; sourceTree = "<group>"; };
@@ -275,7 +286,9 @@
 		B10E835F25969CA3EBC4B34A /* SubstrateMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubstrateMarks.swift; sourceTree = "<group>"; };
 		B1F4667A0E51BA7C24D920DD /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B2191D66F65F6BF852EB4C5F /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		B3144161357186ABFE9C1448 /* LiveSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveSocket.swift; sourceTree = "<group>"; };
 		B800AF5E86A152DF6C1EA49A /* FloatingKeyboardUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingKeyboardUITests.swift; sourceTree = "<group>"; };
+		BE69DB4E2096865C1A4B1EFE /* AssistantTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantTests.swift; sourceTree = "<group>"; };
 		C9CF5756787ED15F93F0D6C6 /* PhoneTourUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneTourUITests.swift; sourceTree = "<group>"; };
 		CCFB137D3245A2A62F70ECB5 /* FloatingKeyboardPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingKeyboardPanel.swift; sourceTree = "<group>"; };
 		D109603D341FACD0A06F2B12 /* SidraTheasa */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraTheasa; path = Packages/SidraTheasa; sourceTree = SOURCE_ROOT; };
@@ -284,6 +297,7 @@
 		DAA664C38BC9D52E3E799088 /* FloatingOrbUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingOrbUITests.swift; sourceTree = "<group>"; };
 		DC216BD8EB62660E922097D2 /* ScreenshotSendSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotSendSheet.swift; sourceTree = "<group>"; };
 		DF9DBCB951A69CFF27CFD076 /* ScreenshotInbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenshotInbox.swift; sourceTree = "<group>"; };
+		E070B0D5FAEB32204F9E965E /* AssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantView.swift; sourceTree = "<group>"; };
 		E196B90CD3E23D5A8642B9E4 /* Notifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Notifier.swift; sourceTree = "<group>"; };
 		E370EAEEFC681DB92CFBC0EF /* TheasaPane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaPane.swift; sourceTree = "<group>"; };
 		E386D698B0C73B5EFADB7F13 /* TheasaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaStore.swift; sourceTree = "<group>"; };
@@ -463,6 +477,17 @@
 			path = Substrate;
 			sourceTree = "<group>";
 		};
+		7B3B588BD9C56F317BECAC8C /* Assistant */ = {
+			isa = PBXGroup;
+			children = (
+				98E3C32DC901AFB0B0CEB160 /* Assistant.swift */,
+				4A3FB1044BD43D806730954E /* AssistantCore.swift */,
+				E070B0D5FAEB32204F9E965E /* AssistantView.swift */,
+				B3144161357186ABFE9C1448 /* LiveSocket.swift */,
+			);
+			path = Assistant;
+			sourceTree = "<group>";
+		};
 		B0F81D4521F7B38A97507F78 /* Theasa */ = {
 			isa = PBXGroup;
 			children = (
@@ -504,6 +529,7 @@
 				FC861FD0DBC61E527D1B8C68 /* FloatingMic.swift */,
 				5A2D83C2FE1831D1C584C9D1 /* MicInputs.swift */,
 				FEFA0D447FC952F4060C8301 /* VoiceInput.swift */,
+				7B3B588BD9C56F317BECAC8C /* Assistant */,
 			);
 			path = Voice;
 			sourceTree = "<group>";
@@ -531,6 +557,7 @@
 		F62A76875FAA4B4050F06D80 /* SidraTests */ = {
 			isa = PBXGroup;
 			children = (
+				BE69DB4E2096865C1A4B1EFE /* AssistantTests.swift */,
 				E9FC2049BCDAAB5FCF90CE11 /* CloudSyncTests.swift */,
 				F0C8C6F728A42C21EF094989 /* HerdrTests.swift */,
 				3A958E2D546170231CBA9D2C /* LifecycleTests.swift */,
@@ -852,6 +879,9 @@
 				4CFEC5C14BC841CB091B21D7 /* ActivityBoard.swift in Sources */,
 				CD066056B57531B33D96532D /* AppModel.swift in Sources */,
 				58F4BE7843381152B7FCEEEA /* AppUpdater.swift in Sources */,
+				B18E6FFEA6D8E77D3876FAA3 /* Assistant.swift in Sources */,
+				C8A49E74256E7410B9246B97 /* AssistantCore.swift in Sources */,
+				6304F3F3F853192B7C4FE9A3 /* AssistantView.swift in Sources */,
 				4902132C4FDD9804A0DFFE33 /* BusyPanes.swift in Sources */,
 				E1BC1D846F9F58B39C0B64CA /* CI.swift in Sources */,
 				009AD7D76614E1DC506CE721 /* CloudSync.swift in Sources */,
@@ -866,6 +896,7 @@
 				23B1D3A4F06299705064EE14 /* HerdrConnectSheet.swift in Sources */,
 				2A0AF26EBCB074CA82E49DE1 /* HerdrPane.swift in Sources */,
 				09BA2A23DFCCC4B4EE7E9C53 /* KeysSection.swift in Sources */,
+				39FD55DFA2401519EB30BCD0 /* LiveSocket.swift in Sources */,
 				0D6E679C1BEBF058AA5C70D0 /* MicInputs.swift in Sources */,
 				1C643ACAAC77FF82968BC5E9 /* NewTab.swift in Sources */,
 				B913C402DDBB59A495B59D5A /* Notifier.swift in Sources */,
@@ -911,6 +942,9 @@
 				5FCC2D352328CF6F0932660D /* ActivityBoard.swift in Sources */,
 				8C8A7C859F123BF6E5C4DD16 /* AppModel.swift in Sources */,
 				32221214BDD311092B3ECA1C /* AppUpdater.swift in Sources */,
+				3B4B8CF02684565BB6AF760E /* Assistant.swift in Sources */,
+				04BDEE633BAA8743DE73AFDB /* AssistantCore.swift in Sources */,
+				0AFAED055D5634D7E1DAFC63 /* AssistantView.swift in Sources */,
 				08FBA303B4C6FFECB02BBB39 /* BusyPanes.swift in Sources */,
 				F402F5555A9BCAFABE9759C4 /* CI.swift in Sources */,
 				1FF7816A03D1888B4016A75E /* CloudSync.swift in Sources */,
@@ -925,6 +959,7 @@
 				BE265D46DCFEE3E497F53DF0 /* HerdrConnectSheet.swift in Sources */,
 				A623DEEE53B4ACFE19518F59 /* HerdrPane.swift in Sources */,
 				61EB8A69879C57BB3BAFB34A /* KeysSection.swift in Sources */,
+				2EAB42C7921C68BCBEDE264A /* LiveSocket.swift in Sources */,
 				A660E1D5A45121EC37490B83 /* MicInputs.swift in Sources */,
 				C5213763CE84F01419C2B518 /* NewTab.swift in Sources */,
 				91BBE159888E6DC08DC564FC /* Notifier.swift in Sources */,
@@ -967,6 +1002,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F4762648DCE60454E80C3EA6 /* AssistantTests.swift in Sources */,
 				4FD67E2594B1A5F48F02AA0C /* CloudSyncTests.swift in Sources */,
 				18712C6EFB1451F3D0F8FB01 /* HerdrTests.swift in Sources */,
 				0B771BBB5C32A631AE2F7F35 /* LifecycleTests.swift in Sources */,

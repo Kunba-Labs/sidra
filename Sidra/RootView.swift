@@ -25,9 +25,9 @@ struct RootView: View {
         // Each slot carries the environment itself: on a Mac (Designed for iPad) menu contents are built for the
         // menu bar outside this view tree, and the project menu crashed at launch without AppModel.
         WorkspaceView(store: store, provider: provider, newTabMenu: slot(newTabButton), emptyHero: slot(NewTabCards()),
-                      compactTrailing: slot(HStack(spacing: 6) { SubstratePill(compact: true); HerdrTitleCounts(); commandMenu }),
+                      compactTrailing: slot(HStack(spacing: 6) { SubstratePill(compact: true); HerdrTitleCounts(); AssistantButton(); commandMenu }),
                       // Title bar design B (design/html/13-title-bar.html): what needs you as labelled pills.
-                      machine: slot(HStack(spacing: 2) { commandMenu })) {
+                      machine: slot(HStack(spacing: 2) { AssistantButton(); commandMenu })) {
             SubstratePill()
             HerdrTitleCounts()
         }
@@ -61,6 +61,8 @@ struct RootView: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: app.toastMessage)
+        // The voice assistant: its screen, and its floating blob while you look at a tab.
+        .assistantLayer(app: app)
         .sidraAlert($app.alert)
         #if DEBUG
         .modifier(SubstrateEditorDemo())

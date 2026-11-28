@@ -495,7 +495,7 @@ struct VoiceSection: View {
     private func show(_ words: String...) -> Bool { query.isEmpty || words.contains { $0.localizedCaseInsensitiveContains(query) } }
 
     var body: some View {
-        if show("Voice", "dictation", "dictate", "Whisper", "speech", "microphone", "input") {
+        if show("Voice", "dictation", "dictate", "Whisper", "speech", "microphone", "input", "assistant", "OpenAI", "key") {
             SectionLabel("Voice")
             SettingRow("Dictation", detail: Platform.isMac ? "Hold the green mic, or ⌥⌘V. Speech stays on this Mac." : "Hold the green mic. Speech stays on this \(Platform.deviceName).", isDefault: voice.engine == .apple, reset: { voice.engine = .apple }) {
                 SidraMenu([SidraMenuSection(nil, [
@@ -530,6 +530,7 @@ struct VoiceSection: View {
                 }
                 .accessibilityLabel("Microphone, \(picked?.name ?? "system default")")
             }
+            AssistantSettings()
             SettingRow("Whisper model", detail: voice.downloadError ?? "Optional. Better with code words and mixed languages. \(VoiceInput.whisperSize), downloaded once.",
                        isDefault: !voice.whisperOnDisk, reset: { voice.removeWhisper() }) {
                 if let p = voice.downloadProgress {
