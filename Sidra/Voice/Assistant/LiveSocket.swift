@@ -63,6 +63,36 @@ final class AssistantAudio {
     /// Seven bands of the voice, low to high, each 0…1: the microphone's (`mine` true) or what plays now. The orb's lobes follow them.
     var onBands: (@MainActor (_ mine: Bool, _ bands: [Double]) -> Void)?
 
+    /// The system stops the engine when the audio route or format changes, and the first session's switch to the
+    /// voice-chat category is such a change: the microphone then went silent while the screen still said it listened.
+    /// A phone call or another app's audio does the same. Start again each time.
+    init() {
+        let restart: @Sendable (Notification) -> Void = { [weak self] _ in Task { @MainActor in self?.restart() } }
+        NotificationCenter.default.addObserver(forName: .AVAudioEngineConfigurationChange, object: nil, queue: .main, using: restart)
+        #if os(iOS) || os(visionOS)
+        NotificationCenter.default.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: .main) { note in
+            let ended = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt == AVAudioSession.InterruptionType.ended.rawValue
+            if ended { restart(note) }
+        }
+        NotificationCenter.default.addObserver(forName: AVAudioSession.mediaServicesWereResetNotification, object: nil, queue: .main, using: restart)
+        #endif
+    }
+
+    private func restart() {
+        guard running, !engine.isRunning else { return }   // a change that left the engine up needs nothing, and this cannot loop
+        let open = capturing.withLock { $0 }
+        halt()
+        // ponytail: one try; if the route is still not ready the session shows no error. Retry on a timer if that shows up.
+        try? start()
+        listen(open && running)
+    }
+
+    private func halt() {
+        running = false
+        engine.inputNode.removeTap(onBus: 0); engine.mainMixerNode.removeTap(onBus: 0)
+        player.stop(); engine.stop(); engine.detach(player)
+    }
+
     func start() throws {
         guard !running else { return }
         #if os(iOS) || os(visionOS)
@@ -105,10 +135,8 @@ final class AssistantAudio {
 
     func stop() {
         guard running else { return }
-        running = false
+        halt()
         capturing.withLock { $0 = false }
-        engine.inputNode.removeTap(onBus: 0); engine.mainMixerNode.removeTap(onBus: 0)
-        player.stop(); engine.stop(); engine.detach(player)
         #if os(iOS) || os(visionOS)
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         #endif
