@@ -105,7 +105,7 @@ struct WorkspaceCommands: Commands {
             },
             .init("go.back", "Back", area: "Go", key: ".") { if TheasaCommands.focused(app) { TheasaCommands.back(app) } },
             .init("go.newWindow", "New Window", area: "Go") { app.openNewWindow?() },
-            .init("go.assistant", "Voice Assistant", area: "Go") { Assistant.shared.active ? (Assistant.shared.open = true) : Assistant.shared.start(.plan, host: HerdrHost(app: app)) },
+            .init("go.assistant", "Voice Assistant", area: "Go") { Assistant.shared.start(Assistant.shared.mode, host: HerdrHost(app: app)) },
             .init("go.settings", "Settings…", area: "Go", key: ",") { app.sheet = .settings },
         ]
         #if os(macOS)

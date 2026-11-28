@@ -93,7 +93,7 @@ struct AssistantScreen: View {
             .background(SidraColor.panel, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(SidraColor.hairline))
             Spacer()
-            square("chevron.down", "Hide the assistant") { a.open = false }
+            square("chevron.down", "Hide and end the voice session") { a.stop() }
         }
         .padding(.horizontal, 14).padding(.vertical, 8)
     }
@@ -113,7 +113,7 @@ struct AssistantScreen: View {
             Spacer()
             Text(message).font(SidraFont.ui(15)).foregroundStyle(SidraColor.text).multilineTextAlignment(.center).padding(.horizontal, 30)
             HStack(spacing: 10) {
-                Button("Open Settings") { a.open = false; app.sheet = .settings }.buttonStyle(.sidraSecondary)
+                Button("Open Settings") { a.stop(); app.sheet = .settings }.buttonStyle(.sidraSecondary)
                 Button("Close") { a.stop() }.buttonStyle(.sidraSecondary)
             }
             Spacer()
@@ -160,7 +160,7 @@ struct AssistantScreen: View {
         HStack(spacing: 26) {
             square("character.cursor.ibeam", "Text view", size: 50) { a.showThread = true }.accessibilityIdentifier("assistant-text")
             MicButton(size: 76)
-            square("xmark", "End the session", size: 50) { a.stop() }.accessibilityIdentifier("assistant-end")
+            square("xmark", "End the session and forget it", size: 50) { a.stop(forget: true) }.accessibilityIdentifier("assistant-end")
         }
         .padding(.top, 16).padding(.bottom, 28)
     }
@@ -502,13 +502,13 @@ struct AssistantCardView: View {
 
 // MARK: - Around the screen
 
-/// The title bar's way in, and the session's sign when the screen is hidden.
+/// The title bar's way in. It starts a session; hiding the screen ends it.
 struct AssistantButton: View {
     @Environment(AppModel.self) private var app
     @State private var a = Assistant.shared
     var body: some View {
         Button {
-            if a.active { a.open = true } else { a.start(.plan, host: HerdrHost(app: app)) }
+            a.start(a.mode, host: HerdrHost(app: app))
         } label: {
             VoiceBlob(size: 18, level: a.active ? a.level : 0, rings: false).frame(width: 30, height: 28).contentShape(Rectangle())
         }
@@ -516,33 +516,13 @@ struct AssistantButton: View {
     }
 }
 
-/// The session lives on while you look at a tab: the blob floats, speaks, and shows its last line.
-struct FloatingAssistant: View {
-    @State private var a = Assistant.shared
-    var body: some View {
-        if a.active, !a.open {
-            HStack(spacing: 12) {
-                if !a.said.isEmpty {
-                    Text(a.said).font(SidraFont.ui(13, weight: .medium)).foregroundStyle(SidraColor.text).lineLimit(3)
-                        .padding(.horizontal, 13).padding(.vertical, 10).frame(maxWidth: 230, alignment: .leading)
-                        .background(SidraColor.raised, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(SidraColor.hairline2))
-                }
-                Button { a.open = true } label: { VoiceBlob(size: 46, level: a.level, thinking: a.thinking) }
-                    .buttonStyle(.plain).accessibilityLabel("Open the voice assistant").accessibilityIdentifier("assistant-floating")
-            }
-            .padding(.trailing, 14).padding(.bottom, 96)
-            .transition(.opacity)
-        }
-    }
-}
-
 extension View {
     /// Presents the assistant over a window: full screen on a phone, a phone-sized sheet elsewhere.
     func assistantLayer(app: AppModel) -> some View {
         let a = Assistant.shared
-        let shown = Binding(get: { a.open }, set: { a.open = $0 })
-        return overlay(alignment: .bottomTrailing) { FloatingAssistant() }
+        // A swipe that hides the sheet ends the session, like the chevron.
+        let shown = Binding(get: { a.open }, set: { if !$0 { a.stop() } })
+        return self
             #if os(iOS)
             .fullScreenCover(isPresented: Platform.isPhone ? shown : .constant(false)) { AssistantScreen().environment(app) }
             .sheet(isPresented: Platform.isPhone ? .constant(false) : shown) {

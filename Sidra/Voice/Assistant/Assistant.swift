@@ -93,7 +93,8 @@ final class Assistant {
             phase = .failed("Add your OpenAI key in Settings › Voice."); open = true; return
         }
         self.mode = mode; self.host = host; self.link = link
-        thread = []; plan = []; card = nil; said = ""; heard = ""; seconds = 0; skills = [:]
+        // The thread and the plan stay from the session before: a hidden screen ends the voice, not the work.
+        card = nil; said = ""; heard = ""; seconds = 0; skills = [:]
         lastStatus = Dictionary(host.agents().map { ($0.pane, $0.status) }, uniquingKeysWith: { a, _ in a })
         phase = .connecting; open = true
         link.send(LiveCodec.start(mode))
@@ -108,11 +109,40 @@ final class Assistant {
         }
     }
 
-    func stop() {
+    /// Hiding the screen ends the voice session (Waseem, 2026-11-28), so nothing listens or bills while you are
+    /// away; muting does not. The next start gets a digest of where you were. `forget` drops that too.
+    func stop(forget: Bool = false) {
+        if let host, phase == .ready { defaults.set(Self.digest(plan: plan, thread: thread, spaces: host.spaces(), front: host.frontSpace()), forKey: Self.digestKey) }
         pump?.cancel(); watcher?.cancel()
         link?.close(); link = nil
         audio.stop()
         phase = .off; open = false; thinking = false; listening = false; level = 0
+        if forget { thread = []; plan = []; defaults.removeObject(forKey: Self.digestKey) }
+    }
+
+    static let digestKey = "sidra.assistant.digest"
+
+    /// What the next session is told first: the space in front, what each agent does, the plan, and the last
+    /// lines of the talk. Built on the device from what Sidra already holds; no model writes it.
+    // ponytail: a fixed digest; summarise long threads with the on-device model if eight lines prove too few
+    nonisolated static func digest(plan: [PlanLine], thread: [ThreadItem], spaces: [SpaceRow], front: String?) -> String {
+        func cut(_ s: String) -> String { s.count <= 220 ? s : String(s.prefix(220)) + "…" }
+        var parts: [String] = []
+        if let front { parts.append("Space in front: \(front).") }
+        if !spaces.isEmpty { parts.append("Spaces: " + spaces.map { "\($0.name) (\($0.agent ?? "no agent"), \($0.status))" }.joined(separator: "; ") + ".") }
+        if !plan.isEmpty { parts.append("Plan so far: " + plan.map { "\($0.label): \($0.text)" }.joined(separator: " ")) }
+        let last: [String] = thread.suffix(8).compactMap { item in
+            switch item.body {
+            case .user(let t): "User: " + cut(t)
+            case .assistant(let t): "Sidra: " + cut(t)
+            case .card(.turn(let space, let summary, _, let hint)): "Turn in \(space): " + cut(summary) + (hint.map { " Hint given: " + cut($0) } ?? "")
+            case .card(.settled(let title, let features, _, _)): "Plan settled: \(title), \(features.count) features."
+            case .card(.choice(let q, _, _)): q.isEmpty ? nil : "Sidra asked: " + cut(q)
+            case .card: nil
+            }
+        }
+        if !last.isEmpty { parts.append("Last lines:\n" + last.joined(separator: "\n")) }
+        return parts.joined(separator: "\n")
     }
 
     func setMode(_ m: AssistantMode) {
@@ -168,8 +198,15 @@ final class Assistant {
         case .started:
             phase = .ready
             if voiceOn { startAudio() }
-            self.event(mode == .plan ? "the session started in plan mode. Ask what the user wants to build, in one sentence."
-                                     : "the session started in code mode. Say in one sentence that you report each agent turn.")
+            let resumed = !thread.isEmpty || !plan.isEmpty
+            let now = host.map { Self.digest(plan: plan, thread: thread, spaces: $0.spaces(), front: $0.frontSpace()) } ?? ""
+            // After an app restart the thread is gone: the digest saved at the last stop still says where the user was.
+            let context = resumed || defaults.string(forKey: Self.digestKey) == nil ? now : (defaults.string(forKey: Self.digestKey) ?? now)
+            let known = resumed || defaults.string(forKey: Self.digestKey) != nil
+            self.event("the session started\(known ? " again" : "") in \(mode.rawValue) mode. Context:\n\(context)\n"
+                + (known ? "Say in one sentence where the user left off, then go on."
+                   : mode == .plan ? "Ask in one sentence what the user wants to build. Name the space in front if there is one."
+                                   : "Say in one sentence which space is in front and that you report each agent turn."))
         case .audio(let pcm):
             if voiceOn { audio.play(pcm) }
         case .heard(let delta):

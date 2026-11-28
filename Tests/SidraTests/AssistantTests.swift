@@ -102,6 +102,7 @@ final class AssistantTests: XCTestCase {
     // MARK: A session, end to end against the fakes
 
     private func session(_ mode: AssistantMode = .plan) async -> (Assistant, FakeLive, FakeHost) {
+        Self.defaults.removeObject(forKey: Assistant.digestKey)
         let a = Assistant(defaults: Self.defaults), live = FakeLive(), host = FakeHost()
         a.voiceOn = false   // no microphone in the tests
         a.start(mode, host: host, link: live)
@@ -208,6 +209,44 @@ final class AssistantTests: XCTestCase {
         XCTAssertEqual(Assistant.closeText("expired"), "The session reached its time limit. Start it again.")
     }
 
+    func testHidingEndsTheSessionAndTheNextOneKnowsWhereYouWere() async {
+        let (a, live, host) = await session()
+        XCTAssertTrue(live.lastMessage?.contains("Space in front: plotter.") == true, "a first session is told what is open")
+        XCTAssertFalse(live.lastMessage?.contains("started again") == true)
+        await a.handle(.call(ToolCall(id: "c1", name: "update_plan", args: ["lines": [["label": "Goal", "text": "A serial plotter for iPad."]]])))
+        a.send("Numbers first.")
+        await a.handle(.text("Version 1 plots numbers."))
+        a.stop()   // the chevron, or a swipe on the sheet
+        XCTAssertEqual(a.phase, .off); XCTAssertFalse(a.open)
+        XCTAssertEqual(a.plan.count, 1, "the plan stays for the next session")
+
+        let again = FakeLive()
+        a.start(.plan, host: host, link: again)
+        await a.handle(.started)
+        let first = again.lastMessage ?? ""
+        XCTAssertTrue(first.hasPrefix("Event: the session started again in plan mode."))
+        XCTAssertTrue(first.contains("Goal: A serial plotter for iPad."))
+        XCTAssertTrue(first.contains("User: Numbers first.") && first.contains("Sidra: Version 1 plots numbers."))
+        XCTAssertTrue(first.contains("pushleft (claude, idle)"))
+
+        a.stop(forget: true)   // the cross
+        XCTAssertTrue(a.thread.isEmpty && a.plan.isEmpty)
+        let fresh = FakeLive()
+        a.start(.code, host: host, link: fresh)
+        await a.handle(.started)
+        XCTAssertFalse(fresh.lastMessage?.contains("started again") == true, "a forgotten session starts clean")
+        a.stop(forget: true)
+    }
+
+    func testTheDigestKeepsTheLastLinesShort() {
+        let long = String(repeating: "x", count: 500)
+        let thread = (0..<12).map { ThreadItem(body: .user("line \($0) " + long)) }
+        let d = Assistant.digest(plan: [], thread: thread, spaces: [], front: nil)
+        XCTAssertFalse(d.contains("line 3 "), "only the last 8 lines go along")
+        XCTAssertTrue(d.contains("line 4 ") && d.contains("line 11 "))
+        XCTAssertLessThan(d.count, 8 * 240 + 40)
+    }
+
     // MARK: Live (needs TEST_RUNNER_OPENAI_API_KEY; costs a few cents)
 
     func testTheRealServiceAnswersAndCallsATool() async throws {
@@ -242,6 +281,7 @@ final class AssistantTests: XCTestCase {
     /// The whole loop with the real models and a fake machine: the first question, a confirm card, then the action.
     func testARealSessionMakesAProjectOnlyAfterYes() async throws {
         guard let key = ProcessInfo.processInfo.environment["OPENAI_API_KEY"], !key.isEmpty else { throw XCTSkip("no OPENAI_API_KEY") }
+        Self.defaults.removeObject(forKey: Assistant.digestKey)
         let a = Assistant(defaults: Self.defaults), host = FakeHost()
         a.voiceOn = false
         a.start(.plan, host: host, link: LiveSocket(key: key))
@@ -250,13 +290,14 @@ final class AssistantTests: XCTestCase {
             XCTAssertTrue(done(), "timed out waiting for " + what + "; phase \(a.phase), thread \(a.thread.map(\.body))")
         }
         try await wait("the first question") { a.thread.contains { if case .assistant = $0.body { true } else { false } } }
-        a.send("Start a new project called plotter.")
+        // Not "plotter": the fake machine already has that space, and the backend rightly asks for another name.
+        a.send("Start a new project called orbit.")
         try await wait("the confirm card") { if case .newProject = a.card { true } else { false } }
         XCTAssertTrue(host.made.isEmpty, "nothing is made before yes")
         try await wait("the answer after the card") { !a.thinking }
         a.send("Yes, create it.")
         try await wait("the project") { !host.made.isEmpty }
-        XCTAssertEqual(host.made, ["plotter"])
+        XCTAssertEqual(host.made, ["orbit"])
         try await wait("the last answer") { !a.thinking }
         // STE-80: the lines are short.
         for case .assistant(let t) in a.thread.map(\.body) { XCTAssertLessThan(t.split(separator: " ").count, 45, "too long for a spoken line: " + t) }
