@@ -36,6 +36,7 @@ struct ActivityBoard: View {
         let space: MuxSnapshot.Workspace?
         let machine: String
         let ended: Date?
+        @MainActor var model: String? { agent.agent_session?.value.flatMap { monitor.models[$0] }.map(MuxMonitor.modelLabel) }
     }
 
     /// One monitor per machine and session among this window's herdr tabs.
@@ -86,6 +87,14 @@ struct ActivityBoard: View {
             .padding(Platform.isPhone ? 4 : 16)
         }
         .scrollIndicators(.hidden)
+        // The model each agent runs (Waseem, 2026-11-28): read from the machines while the board is open.
+        .task(id: list.count) {   // again when agents come or go, so a new one gets its model at once
+            while !Task.isCancelled {
+                var seen = Set<String>()
+                for sq in squares where seen.insert(sq.monitor.key).inserted { await sq.monitor.loadModels(app) }
+                try? await Task.sleep(for: .seconds(15))
+            }
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(SidraColor.pane, in: RoundedRectangle(cornerRadius: SidraRadius.pane, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: SidraRadius.pane, style: .continuous).strokeBorder(SidraColor.hairline))
@@ -126,6 +135,7 @@ private struct AgentSquare: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 HStack(spacing: 6) {
                     HerdrAgentMark(agent: a.agent, size: 13)
+                    if let m = square.model { Text(m).font(SidraFont.ui(11.5, weight: .semibold)).foregroundStyle(SidraColor.muted).lineLimit(1) }
                     Spacer(minLength: 4)
                     if let e = square.ended { Text(e, style: .relative).font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim).monospacedDigit().lineLimit(1) }
                 }
@@ -138,6 +148,6 @@ private struct AgentSquare: View {
             .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(name), \(square.machine), \(HerdrStatusIcon.label(status))")
+        .accessibilityLabel("\(name), \(square.machine), \(square.model.map { $0 + ", " } ?? "")\(HerdrStatusIcon.label(status))")
     }
 }

@@ -68,4 +68,26 @@ final class HerdrTests: XCTestCase {
                        ["~/src", "/srv/x", "~/code", "~"])
         XCTAssertEqual(MuxMonitor.rankRoots(home: home, spaceFolders: [], existing: []), ["~"])
     }
+
+    /// The board's model names: labels, and only safe session ids reach the shell line.
+    func testModels() throws {
+        XCTAssertEqual(MuxMonitor.modelLabel("claude-opus-5-5"), "Opus 5.5")
+        XCTAssertEqual(MuxMonitor.modelLabel("claude-fable-5-2"), "Fable 5.2")
+        XCTAssertEqual(MuxMonitor.modelLabel("claude-haiku-4-5-20251001"), "Haiku 4.5")
+        XCTAssertEqual(MuxMonitor.modelLabel("gpt-6.1-sol"), "GPT-6.1 Sol")
+        XCTAssertEqual(MuxMonitor.modelLabel("o4-mini"), "o4-mini")
+        let json = #"""
+        {"result":{"snapshot":{"workspaces":[],"panes":[],"focused_pane_id":null,"focused_workspace_id":null,"version":null,"agents":[
+          {"agent":"claude","agent_status":"idle","pane_id":"1","workspace_id":"w","agent_session":{"value":"abc-1"}},
+          {"agent":"codex","agent_status":"done","pane_id":"2","workspace_id":"w","agent_session":{"value":"def-2"}},
+          {"agent":"claude","agent_status":"idle","pane_id":"3","workspace_id":"w","agent_session":{"value":"x; rm -rf ~"}},
+          {"agent":"pi","agent_status":"idle","pane_id":"4","workspace_id":"w","agent_session":{"value":"ghi"}}]}}}
+        """#
+        let s = try MuxSnapshot.parse(Data(json.utf8))
+        let script = try XCTUnwrap(MuxMonitor.modelScript(s.agents))
+        XCTAssertTrue(script.contains(".claude*/projects/*/abc-1.jsonl"))
+        XCTAssertTrue(script.contains("-name '*def-2.jsonl'"))
+        XCTAssertFalse(script.contains("rm -rf"))
+        XCTAssertFalse(script.contains("ghi"))
+    }
 }

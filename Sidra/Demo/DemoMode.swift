@@ -63,6 +63,10 @@ enum DemoMode {
         if command.contains("command -v herdr") { return ok("herdr 0.9.1\n{\"sessions\":[{\"name\":\"default\",\"default\":true,\"running\":true}]}\n\nSNAP\n" + snapshot()) }
         if command.contains("api snapshot") { return ok(snapshot()) }
         if command.contains("workspace focus"), let id = ["w1", "w2", "w3", "w4"].first(where: { command.contains("'\($0)'") }) { focused = id }
+        // The board's model lookup: Claude Code on Opus, Codex on GPT.
+        if command.contains(".jsonl") {
+            return ok(["w1-1", "w1-2", "w2-1", "w3-1", "w3-2", "w4-1"].map { "demo-\($0)\t" + (["w1-2", "w3-2"].contains($0) ? "gpt-6.1-sol" : $0 == "w4-1" ? "claude-fable-5-2" : "claude-opus-5-5") }.joined(separator: "\n"))
+        }
         if command.contains("uname") { return ok("Linux\n") }
         // Sidra's project-logo finder: answer with the made-up project's icon.
         if command.contains("base64 <"), let name = ["webapp", "api", "mobile", "docs"].first(where: { command.contains("/home/dev/\($0)") }),
@@ -75,7 +79,7 @@ enum DemoMode {
             #"{"workspace_id":"\#(id)","label":"\#(label)","number":\#(n),"agent_status":"\#(status)","tab_count":\#(tabs),"pane_count":\#(tabs),"focused":\#(id == focused),"active_tab_id":"\#(id):t1"}"#
         }
         func agent(_ name: String, _ status: String, _ ws: String, _ tab: String, _ title: String) -> String {
-            #"{"agent":"\#(name)","agent_status":"\#(status)","pane_id":"\#(ws):p\#(tab)","workspace_id":"\#(ws)","tab_id":"\#(ws):t\#(tab)","terminal_title_stripped":"\#(title)","cwd":"/home/dev/\#(ws)"}"#
+            #"{"agent":"\#(name)","agent_status":"\#(status)","pane_id":"\#(ws):p\#(tab)","workspace_id":"\#(ws)","tab_id":"\#(ws):t\#(tab)","terminal_title_stripped":"\#(title)","cwd":"/home/dev/\#(ws)","agent_session":{"value":"demo-\#(ws)-\#(tab)"}}"#
         }
         let spaces = [space("w1", "webapp", 1, "blocked", tabs: 2), space("w2", "api", 2, "working", tabs: 1),
                       space("w3", "mobile", 3, "working", tabs: 2), space("w4", "docs", 4, "done", tabs: 1)]

@@ -181,6 +181,9 @@ struct MuxSnapshot: Decodable, Sendable {
         let terminal_title_stripped: String?
         /// herdr's count of state changes, rising: a later change has a higher number (one server's agents only).
         var state_change_seq: Int? = nil
+        /// The agent's own session id (Claude Code's or Codex's), once it has one.
+        struct Session: Decodable, Sendable { let value: String? }
+        var agent_session: Session? = nil
         var id: String { pane_id }
     }
     struct PaneInfo: Decodable, Sendable, Identifiable {
@@ -417,6 +420,49 @@ final class MuxMonitor {
             snapshot = nil
             self.error = describeError(error)
         }
+    }
+
+    /// The model each agent runs now, by session id ("claude-opus-5-5", "gpt-6.1-sol"): the last one named in its
+    /// transcript on the machine (Claude Code: ~/.claude*/projects, Codex: ~/.codex/sessions). herdr does not report it.
+    private(set) var models: [String: String] = [:]
+
+    func loadModels(_ app: AppModel) async {
+        guard let s = snapshot, let script = Self.modelScript(s.agents) else { return }
+        guard let r = try? await app.herdrRun(target, script) else { return }
+        for line in r.stdoutText.split(separator: "\n") {
+            let parts = line.split(separator: "\t", maxSplits: 1)
+            if parts.count == 2 { models[String(parts[0])] = String(parts[1]) }
+        }
+    }
+
+    nonisolated static func modelScript(_ agents: [MuxSnapshot.Agent]) -> String? {
+        let lines: [String] = agents.compactMap { a in
+            // The id goes into a shell line: letters, digits and dashes only.
+            guard let id = a.agent_session?.value, !id.isEmpty, id.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "-" }) else { return nil }
+            let find = switch a.agent {
+            case "claude": #"f=$(ls -t "$HOME"/.claude*/projects/*/"# + id + #".jsonl 2>/dev/null | head -1)"#
+            case "codex": #"f=$(find "$HOME/.codex/sessions" -name '*"# + id + #".jsonl' 2>/dev/null | head -1)"#
+            default: ""
+            }
+            guard !find.isEmpty else { return nil }
+            // <synthetic> (Claude Code's own error lines) is not a model.
+            return find + #"; [ -n "$f" ] && m=$(tail -c 400000 "$f" | grep -o '"model":"[^"<]*"' | tail -1 | cut -d'"' -f4) && [ -n "$m" ] && printf '%s\t%s\n' "# + id + #" "$m""#
+        }
+        return lines.isEmpty ? nil : lines.joined(separator: "; ") + "; true"
+    }
+
+    /// "claude-opus-5-5" → "Opus 5.5", "claude-haiku-4-5-20251001" → "Haiku 4.5", "gpt-6.1-sol" → "GPT-6.1 Sol".
+    nonisolated static func modelLabel(_ id: String) -> String {
+        var parts = id.split(separator: "-").map(String.init).filter { !($0.count == 8 && $0.allSatisfy(\.isNumber)) }
+        if parts.first == "claude", parts.count >= 2 {
+            parts.removeFirst()
+            let family = parts.removeFirst().capitalized
+            return parts.isEmpty ? family : family + " " + parts.joined(separator: ".")
+        }
+        if parts.first == "gpt", parts.count >= 2 {
+            return (["GPT-" + parts[1]] + parts.dropFirst(2).map(\.capitalized)).joined(separator: " ")
+        }
+        return id
     }
 
     func focus(_ app: AppModel, _ ws: MuxSnapshot.Workspace) async {
