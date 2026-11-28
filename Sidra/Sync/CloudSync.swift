@@ -6,7 +6,7 @@ import SidraDesign
 /// iCloud sync of what you teach Sidra (Waseem, 2026-11-28): quick prompts and the keyboard's learning (your
 /// words and which follows which, learned commands, swipe picks), across every Sidra signed in to your iCloud.
 ///
-/// Each device keeps one record in your private CloudKit database (container iCloud.nl.sadiq.sidra, zone
+/// Each device keeps one record in your private CloudKit database (container iCloud.nl.kunba.sidra, zone
 /// "Sidra"), a JSON payload. A sync reads every device's record and merges: counts take the larger value (two
 /// devices that learned the same word do not double it), quick prompts take the newest edit, so a deleted
 /// prompt stays deleted. Then it writes this device's merged state back.
@@ -16,7 +16,7 @@ import SidraDesign
 @MainActor @Observable
 final class CloudSync {
     static let shared = CloudSync()
-    static let containerID = "iCloud.nl.sadiq.sidra"
+    static let containerID = "iCloud.nl.kunba.sidra"
 
     /// The app carries the iCloud entitlement (project.yml). Without it, touching CloudKit ends the app.
     /// ponytail: a flag, flipped once the container exists in the developer portal.

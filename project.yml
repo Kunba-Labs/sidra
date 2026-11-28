@@ -111,9 +111,9 @@ targets:
         # Substrate approval pushes (2026-11-20). Export for App Store Connect turns it into production.
         aps-environment: development
         # iCloud sync of quick prompts and keyboard learning (2026-11-28, Sidra/Sync/CloudSync.swift). Waits for the
-        # container: create iCloud.nl.sadiq.sidra in the developer portal and turn on iCloud (CloudKit) for nl.sadiq.sidra,
+        # container: create iCloud.nl.kunba.sidra in the developer portal and turn on iCloud (CloudKit) for nl.sadiq.sidra,
         # then uncomment these two lines and set CloudSync.entitled to true.
-        # com.apple.developer.icloud-container-identifiers: [iCloud.nl.sadiq.sidra]
+        # com.apple.developer.icloud-container-identifiers: [iCloud.nl.kunba.sidra]
         # com.apple.developer.icloud-services: [CloudKit]
     settings:
       groups: [iosVersion]
