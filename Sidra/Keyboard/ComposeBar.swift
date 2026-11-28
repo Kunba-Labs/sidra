@@ -148,19 +148,19 @@ private struct ComposeTextView: UIViewRepresentable {
         v.smartDashesType = .no
         v.keyboardAppearance = .dark
         v.textContainerInset = UIEdgeInsets(top: 10, left: 6, bottom: 10, right: 6)
-        v.isScrollEnabled = false
+        // Always scrollable: the height comes from sizeThatFits, and past its cap the caret is kept in view.
+        v.isScrollEnabled = true
         v.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return v
     }
 
     func updateUIView(_ v: Field, context: Context) {
-        if v.text != text { v.text = text }
+        if v.text != text { v.text = text; Self.keepCaretInView(v) }   // dictation lands here
         context.coordinator.parent = self
         if context.coordinator.focus != focus {
             context.coordinator.focus = focus
             DispatchQueue.main.async { v.becomeFirstResponder() }
         }
-        v.isScrollEnabled = v.contentSize.height > 140
     }
 
     /// Grows with the text up to about five lines, then scrolls.
@@ -168,6 +168,13 @@ private struct ComposeTextView: UIViewRepresentable {
         let w = proposal.width ?? 300
         let h = uiView.sizeThatFits(CGSize(width: w, height: .greatestFiniteMagnitude)).height
         return CGSize(width: w, height: min(max(h, 40), 140))
+    }
+
+    /// After SwiftUI has grown the field: under the cap the text sits at the top, over it the caret's line shows.
+    static func keepCaretInView(_ v: UITextView) {
+        DispatchQueue.main.async {
+            if v.contentSize.height <= v.bounds.height + 1 { v.contentOffset = .zero } else { v.scrollRangeToVisible(v.selectedRange) }
+        }
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -180,7 +187,10 @@ private struct ComposeTextView: UIViewRepresentable {
             if t == "\n" { parent.onSend(); return false }   // the return key; a pasted newline is longer than one character
             return true
         }
-        func textViewDidChange(_ v: UITextView) { parent.text = v.text }
+        func textViewDidChange(_ v: UITextView) {
+            parent.text = v.text
+            ComposeTextView.keepCaretInView(v)
+        }
     }
 
     final class Field: UITextView {
