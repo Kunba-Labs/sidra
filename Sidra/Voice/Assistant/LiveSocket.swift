@@ -58,8 +58,10 @@ final class AssistantAudio {
 
     /// Microphone frames as 16-bit PCM, on the audio thread.
     var onChunk: (@Sendable (Data) -> Void)?
-    /// Loudness 0…1 of what plays or what is said, for the blob.
+    /// Loudness 0…1 of what plays or what is said.
     var onLevel: (@MainActor (Double) -> Void)?
+    /// Seven bands of the voice, low to high, each 0…1: the microphone's (`mine` true) or what plays now. The orb's lobes follow them.
+    var onBands: (@MainActor (_ mine: Bool, _ bands: [Double]) -> Void)?
 
     func start() throws {
         guard !running else { return }
@@ -85,8 +87,15 @@ final class AssistantAudio {
             guard capturing.withLock({ $0 }), let out = VoiceInput.convertBuffer(buffer, with: converter, to: wire), let p = out.int16ChannelData?[0] else { return }
             let n = Int(out.frameLength)
             onChunk?(Data(bytes: p, count: n * 2))
-            let level = Self.level(UnsafeBufferPointer(start: p, count: n))
-            Task { @MainActor in self?.onLevel?(level) }
+            let s = UnsafeBufferPointer(start: p, count: n)
+            let level = Self.level(s), bands = Self.bands(s.suffix(VoiceInput.fftSize).map { Float($0) / 32768 })
+            Task { @MainActor in self?.onLevel?(level); self?.onBands?(true, bands) }
+        }
+        // What plays now, not what arrived: the service sends speech faster than it sounds.
+        engine.mainMixerNode.installTap(onBus: 0, bufferSize: 1024, format: nil) { [weak self] buffer, _ in
+            guard let ch = buffer.floatChannelData?[0] else { return }
+            let bands = Self.bands(Array(UnsafeBufferPointer(start: ch, count: Int(buffer.frameLength)).suffix(VoiceInput.fftSize)))
+            Task { @MainActor in self?.onBands?(false, bands) }
         }
         engine.prepare()
         try engine.start()
@@ -98,7 +107,7 @@ final class AssistantAudio {
         guard running else { return }
         running = false
         capturing.withLock { $0 = false }
-        engine.inputNode.removeTap(onBus: 0)
+        engine.inputNode.removeTap(onBus: 0); engine.mainMixerNode.removeTap(onBus: 0)
         player.stop(); engine.stop(); engine.detach(player)
         #if os(iOS) || os(visionOS)
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
@@ -125,6 +134,16 @@ final class AssistantAudio {
             for i in 0..<n { out[i] = Float(Int16(littleEndian: s[i])) / 32768 }
         }
         return buffer
+    }
+
+    /// Seven bands from dictation's 48-bin spectrum (80 Hz to 8 kHz, log spaced). Silence reads as zeros.
+    nonisolated static func bands(_ frame: [Float]) -> [Double] {
+        guard frame.count == VoiceInput.fftSize, frame.contains(where: { abs($0) > 0.004 }) else { return [Double](repeating: 0, count: 7) }
+        let bins = VoiceInput.spectrum(frame)
+        return (0..<7).map { b in
+            let part = bins[(b * bins.count / 7)..<((b + 1) * bins.count / 7)]
+            return Double(part.reduce(0, +)) / Double(max(1, part.count))
+        }
     }
 
     /// Root mean square on a scale where speech sits around 0.3 to 0.8.

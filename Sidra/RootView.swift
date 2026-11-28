@@ -38,10 +38,11 @@ struct RootView: View {
         #endif
         .overlay(alignment: .top) { PlatformBanners() }
         // The floating green mic: hold to talk into the focused terminal (iPad and Mac).
+        // Hidden during a voice session: the orb takes that corner.
         #if os(iOS) || os(visionOS)
         .overlay { FloatingKeyboardLayer() }   // under the mic, so dictation's card draws over the keys
         #endif
-        .overlay(alignment: .bottomTrailing) { FloatingMic(showMic: focusedIsTerminal && !composing && !store.boardOpen) }
+        .overlay(alignment: .bottomTrailing) { FloatingMic(showMic: focusedIsTerminal && !composing && !store.boardOpen && Assistant.shared.phase == .off) }
         #if os(iOS)
         // iPhone: the compose bar over Apple's keyboard (ComposeBar.swift).
         .safeAreaInset(edge: .bottom, spacing: 0) { if Compose.enabled && Compose.shared.open { ComposeBar() } }

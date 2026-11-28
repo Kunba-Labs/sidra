@@ -40,6 +40,10 @@ final class Assistant {
     private(set) var thinking = false
     /// Loudness 0…1 of the voice or the microphone.
     private(set) var level = 0.0
+    /// Seven bands of whoever speaks now, you or Sidra, low to high: the orb's lobes.
+    var bands: [Double] { zip(micBands, voiceBands).map(max) }
+    private var micBands = [Double](repeating: 0, count: 7)
+    private var voiceBands = [Double](repeating: 0, count: 7)
     /// The microphone is open. A tap on the mic mutes it; another opens it again.
     private(set) var listening = false
     private(set) var seconds = 0
@@ -179,7 +183,7 @@ final class Assistant {
         listening = on
         audio.listen(on)
         // The service ends a turn on silence, and a muted mic sends none: send it half a second.
-        if !on { link?.send(LiveCodec.audio(Data(count: Int(LiveCodec.rate)))) }
+        if !on { link?.send(LiveCodec.audio(Data(count: Int(LiveCodec.rate)))); micBands = [Double](repeating: 0, count: 7) }
     }
 
     func dismissCard() { card = nil }
@@ -277,6 +281,7 @@ final class Assistant {
             let link = link
             audio.onChunk = { link?.send(LiveCodec.audio($0)) }
             audio.onLevel = { [weak self] l in self?.level = l }
+            audio.onBands = { [weak self] mine, b in if mine { self?.micBands = b } else { self?.voiceBands = b } }
             do { try audio.start(); setListening(true) } catch { voiceOn = false; thread.append(ThreadItem(body: .assistant("Could not start the microphone: \(error.localizedDescription)"))) }
         }
     }
@@ -357,6 +362,10 @@ final class Assistant {
         case "show_agent_question":
             show(.question(space: call.string("space") ?? "", question: call.string("question") ?? "", options: call.strings("options")))
             return "Shown. When the user answers, call prompt_agent with the answer and confirmed true."
+        case "set_mode":
+            guard let m = call.string("mode").flatMap(AssistantMode.init(rawValue:)) else { return "The modes are plan and code." }
+            if m != mode { mode = m; card = nil; link?.send(LiveCodec.update(m)) }
+            return "Now in \(m.rawValue) mode. Follow the new mode's rules from here."
         case "turn_update":
             show(.turn(space: call.string("space") ?? "", summary: call.string("summary") ?? "", verdict: call.string("verdict") ?? "clean", didYouKnow: call.string("did_you_know")))
             return "Shown."
@@ -426,7 +435,7 @@ final class Assistant {
         switch which {
         case "code": mode = .code; said = "Turn 4 ended. One test fails."; card = turn
         case "thread": mode = .plan; said = "What does version 1 plot?"; showThread = true
-        case "talk": mode = .plan; said = "What does version 1 plot?"; heard = "numbers first, the labels can wait"; level = 0.6; listening = true
+        case "talk": mode = .plan; said = "What does version 1 plot?"; heard = "numbers first, the labels can wait"; level = 0.6; listening = true; micBands = [0.5, 0.8, 0.3, 0.7, 0.2, 0.6, 0.4]
         case "spaces": mode = .code; said = "Which one?"; card = .spaces([SpaceRow(name: "plotter", status: "working", agent: "claude"), SpaceRow(name: "pushleft", status: "blocked", agent: "claude")])
         default: mode = .plan; said = "What does version 1 plot?"; card = choice
         }

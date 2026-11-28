@@ -82,6 +82,7 @@ enum AssistantTools {
              ["space": ["type": "string", "description": "omit for the space in front"]]),
         tool("show_agent_question", "Show the question a blocked agent asks, in one line, with its options.",
              ["space": str, "question": str, "options": strs], required: ["space", "question"]),
+        tool("set_mode", "Switch between plan mode and code mode when the user asks.", ["mode": ["type": "string", "enum": ["plan", "code"]]], required: ["mode"]),
         tool("turn_update", "Code mode: show what an agent turn did. Two sentences at most. did_you_know is one thing the user may have missed (an untested path, a spec line not built, a risk), or omit it.",
              ["space": str, "summary": str, "verdict": ["type": "string", "enum": ["clean", "watch", "broken"]], "did_you_know": str],
              required: ["space", "summary", "verdict"]),

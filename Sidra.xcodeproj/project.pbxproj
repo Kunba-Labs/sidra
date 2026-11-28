@@ -20,6 +20,7 @@
 		0B771BBB5C32A631AE2F7F35 /* LifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A958E2D546170231CBA9D2C /* LifecycleTests.swift */; };
 		0C3B79EBE1826CD55B664720 /* SubstrateAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76C9664CC8E278BA870F7C7D /* SubstrateAPI.swift */; };
 		0CBC254F1583D63449B3519A /* SubstrateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4694552B665A83C90CCD3DF /* SubstrateTests.swift */; };
+		0D609BE09D488AFB395EE654 /* OrbView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60BB05ED95BA53EA70CD736 /* OrbView.swift */; };
 		0D6E679C1BEBF058AA5C70D0 /* MicInputs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A2D83C2FE1831D1C584C9D1 /* MicInputs.swift */; };
 		0F781B2E06D7BF291D71494C /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = B037505C87287B42AE7A192B /* WhisperKit */; };
 		10A62F11BFDFD7A86CAC198D /* DemoMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D40EFDF6FF49F49A56FDCE /* DemoMode.swift */; };
@@ -54,6 +55,7 @@
 		4902132C4FDD9804A0DFFE33 /* BusyPanes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DF9B0DE46B31B9EBB3C0BA /* BusyPanes.swift */; };
 		4CA48703B87A8CEA83D0A3E5 /* TheasaTurn.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B9151B661C8A5150FD6B3DD /* TheasaTurn.swift */; };
 		4CFEC5C14BC841CB091B21D7 /* ActivityBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F80F0626C218EE1A022E86 /* ActivityBoard.swift */; };
+		4DA0477AA6D4BA499F148516 /* OrbView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60BB05ED95BA53EA70CD736 /* OrbView.swift */; };
 		4EB0038BEAEBE43B236B1C7D /* ChessUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73017469F38A5080D3473461 /* ChessUITests.swift */; };
 		4ED6627132D1FEE5F59A0A7E /* SubstrateMarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10E835F25969CA3EBC4B34A /* SubstrateMarks.swift */; };
 		4FD67E2594B1A5F48F02AA0C /* CloudSyncTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9FC2049BCDAAB5FCF90CE11 /* CloudSyncTests.swift */; };
@@ -280,6 +282,7 @@
 		A0FA4FA59DD2513883467739 /* TheasaAgents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TheasaAgents.swift; sourceTree = "<group>"; };
 		A27535A94778550C0BFB0AA2 /* Sidra.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Sidra.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4694552B665A83C90CCD3DF /* SubstrateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubstrateTests.swift; sourceTree = "<group>"; };
+		A60BB05ED95BA53EA70CD736 /* OrbView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrbView.swift; sourceTree = "<group>"; };
 		AA53C89AF6EAA63E1ABAC641 /* SmokeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmokeTests.swift; sourceTree = "<group>"; };
 		AB96FDFC13D91E455A4A710C /* SidraHackerTab */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SidraHackerTab; path = Packages/SidraHackerTab; sourceTree = SOURCE_ROOT; };
 		B0DC2327B7FE042EE0FD4378 /* herdr-attach.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "herdr-attach.sh"; sourceTree = "<group>"; };
@@ -484,6 +487,7 @@
 				4A3FB1044BD43D806730954E /* AssistantCore.swift */,
 				E070B0D5FAEB32204F9E965E /* AssistantView.swift */,
 				B3144161357186ABFE9C1448 /* LiveSocket.swift */,
+				A60BB05ED95BA53EA70CD736 /* OrbView.swift */,
 			);
 			path = Assistant;
 			sourceTree = "<group>";
@@ -900,6 +904,7 @@
 				0D6E679C1BEBF058AA5C70D0 /* MicInputs.swift in Sources */,
 				1C643ACAAC77FF82968BC5E9 /* NewTab.swift in Sources */,
 				B913C402DDBB59A495B59D5A /* Notifier.swift in Sources */,
+				0D609BE09D488AFB395EE654 /* OrbView.swift in Sources */,
 				581C44F4C2A14CB879759F93 /* PaneBodies.swift in Sources */,
 				03866B4E9359212BE32F0289 /* PipelinesPane.swift in Sources */,
 				51DB76C7A852474C5E1F6837 /* Platform.swift in Sources */,
@@ -963,6 +968,7 @@
 				A660E1D5A45121EC37490B83 /* MicInputs.swift in Sources */,
 				C5213763CE84F01419C2B518 /* NewTab.swift in Sources */,
 				91BBE159888E6DC08DC564FC /* Notifier.swift in Sources */,
+				4DA0477AA6D4BA499F148516 /* OrbView.swift in Sources */,
 				E5795E4C4649FF14ADF7A896 /* PaneBodies.swift in Sources */,
 				D248D34F66A28A227C81D1EA /* PipelinesPane.swift in Sources */,
 				8B3BAB38512BEE5F05DA6D60 /* Platform.swift in Sources */,
