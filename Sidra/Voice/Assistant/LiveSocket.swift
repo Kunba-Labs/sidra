@@ -73,6 +73,8 @@ final class AssistantAudio {
         #endif
         MicInputs.apply(to: engine)
         let input = engine.inputNode
+        // The microphone stays open while the voice speaks: the system's echo canceller keeps the voice out of it.
+        try? input.setVoiceProcessingEnabled(true)
         let format = input.inputFormat(forBus: 0)
         guard let wire = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: LiveCodec.rate, channels: 1, interleaved: true),
               let converter = AVAudioConverter(from: format, to: wire) else { throw VoiceInput.VoiceError.audioFormat }
@@ -103,11 +105,10 @@ final class AssistantAudio {
         #endif
     }
 
+    func listen(_ on: Bool) { capturing.withLock { $0 = on } }
+
     /// Talking over the voice stops it: what it still had queued is dropped.
-    func listen(_ on: Bool) {
-        capturing.withLock { $0 = on }
-        if on, running { player.stop(); player.play() }
-    }
+    func interrupt() { if running { player.stop(); player.play() } }
 
     func play(_ pcm: Data) {
         guard running, let buffer = Self.buffer(pcm, format: playFormat) else { return }

@@ -33,6 +33,7 @@ final class FakeHost: AssistantHost {
 
 @MainActor
 final class AssistantTests: XCTestCase {
+    private static let defaults = UserDefaults(suiteName: "sidra.assistant.tests")!
     private func json(_ s: String) -> LiveEvent { LiveCodec.parse(Data(s.utf8)) }
 
     // MARK: Wire format (shapes copied from the real service, 2026-11-28)
@@ -101,9 +102,8 @@ final class AssistantTests: XCTestCase {
     // MARK: A session, end to end against the fakes
 
     private func session(_ mode: AssistantMode = .plan) async -> (Assistant, FakeLive, FakeHost) {
-        let a = Assistant(), live = FakeLive(), host = FakeHost()
+        let a = Assistant(defaults: Self.defaults), live = FakeLive(), host = FakeHost()
         a.voiceOn = false   // no microphone in the tests
-        addTeardownBlock { UserDefaults.standard.removeObject(forKey: "sidra.assistant.voice") }
         a.start(mode, host: host, link: live)
         await a.handle(.started)
         return (a, live, host)
@@ -242,9 +242,8 @@ final class AssistantTests: XCTestCase {
     /// The whole loop with the real models and a fake machine: the first question, a confirm card, then the action.
     func testARealSessionMakesAProjectOnlyAfterYes() async throws {
         guard let key = ProcessInfo.processInfo.environment["OPENAI_API_KEY"], !key.isEmpty else { throw XCTSkip("no OPENAI_API_KEY") }
-        let a = Assistant(), host = FakeHost()
+        let a = Assistant(defaults: Self.defaults), host = FakeHost()
         a.voiceOn = false
-        addTeardownBlock { UserDefaults.standard.removeObject(forKey: "sidra.assistant.voice") }
         a.start(.plan, host: host, link: LiveSocket(key: key))
         func wait(_ what: String, _ done: () -> Bool) async throws {
             for _ in 0..<300 where !done() { try await Task.sleep(for: .milliseconds(200)) }

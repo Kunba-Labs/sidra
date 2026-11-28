@@ -40,7 +40,11 @@ struct ActivityBoard: View {
     }
 
     /// One monitor per machine and session among this window's herdr tabs.
-    private var squares: [Square] {
+    private var squares: [Square] { Self.squares(app: app, store: store) }
+
+    /// Also the voice assistant's space picker: the same squares, so a space looks the same in both places.
+    static func squares(app: AppModel, store: WorkspaceStore) -> [Square] {
+        let activity = AgentActivity.shared
         var seen = Set<String>(), out: [Square] = []
         for tab in store.tabs {
             for pane in tab.panes {
@@ -106,7 +110,7 @@ struct ActivityBoard: View {
     }
 }
 
-private struct AgentSquare: View {
+struct AgentSquare: View {
     let square: ActivityBoard.Square
     let action: () -> Void
 

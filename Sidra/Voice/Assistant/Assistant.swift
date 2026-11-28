@@ -40,14 +40,22 @@ final class Assistant {
     private(set) var thinking = false
     /// Loudness 0…1 of the voice or the microphone.
     private(set) var level = 0.0
-    private(set) var holding = false
+    /// The microphone is open. A tap on the mic mutes it; another opens it again.
+    private(set) var listening = false
     private(set) var seconds = 0
     /// The screen is up; false with a live session shows the floating blob.
     var open = false
     var showThread = false
     /// Speak and listen. Off: the same session by text and cards only.
-    var voiceOn: Bool = UserDefaults.standard.object(forKey: "sidra.assistant.voice") as? Bool ?? true {
-        didSet { UserDefaults.standard.set(voiceOn, forKey: "sidra.assistant.voice"); if !voiceOn { audio.stop() } else if phase == .ready { startAudio() } }
+    var voiceOn: Bool {
+        didSet { defaults.set(voiceOn, forKey: "sidra.assistant.voice"); if !voiceOn { audio.stop(); listening = false } else if phase == .ready { startAudio() } }
+    }
+    private let defaults: UserDefaults
+
+    /// The tests pass their own defaults, so the app's voice setting stays as the user left it.
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        voiceOn = defaults.object(forKey: "sidra.assistant.voice") as? Bool ?? true
     }
 
     var active: Bool { phase == .ready || phase == .connecting }
@@ -104,7 +112,7 @@ final class Assistant {
         pump?.cancel(); watcher?.cancel()
         link?.close(); link = nil
         audio.stop()
-        phase = .off; open = false; thinking = false; holding = false; level = 0
+        phase = .off; open = false; thinking = false; listening = false; level = 0
     }
 
     func setMode(_ m: AssistantMode) {
@@ -132,21 +140,26 @@ final class Assistant {
         LiveCodec.message("Event: " + text, role: "developer").forEach { link?.send($0) }
     }
 
-    /// Hold to talk: frames leave the device only while the mic is held.
-    func hold(_ down: Bool) {
-        guard phase == .ready, voiceOn, holding != down else { return }
-        holding = down
-        if down { flushSaid(); heard = "" }
-        audio.listen(down)
-        // The service ends a turn on silence, and a released mic sends none: send it half a second.
-        if !down { link?.send(LiveCodec.audio(Data(count: Int(LiveCodec.rate)))) }
+    /// The mic is open from the start of a session, hands free (Waseem, 2026-11-28: "you should not have to press
+    /// the microphone to talk"). A tap mutes it; frames leave the device only while it is open.
+    func toggleMic() { setListening(!listening) }
+
+    func setListening(_ on: Bool) {
+        guard phase == .ready, voiceOn, listening != on else { return }
+        listening = on
+        audio.listen(on)
+        // The service ends a turn on silence, and a muted mic sends none: send it half a second.
+        if !on { link?.send(LiveCodec.audio(Data(count: Int(LiveCodec.rate)))) }
     }
 
     func dismissCard() { card = nil }
 
     func pick(_ row: SpaceRow) {
-        Task { if await host?.switchSpace(row.name) == true { card = nil; said = "Now showing \(row.name)." } }
+        Task { if await host?.switchSpace(row.name) == true { picked(row.name) } }
     }
+
+    /// A space picked on the card: the card goes, the line says where you are.
+    func picked(_ name: String) { card = nil; said = "Now showing \(name)." }
 
     // MARK: Events from the service
 
@@ -158,8 +171,10 @@ final class Assistant {
             self.event(mode == .plan ? "the session started in plan mode. Ask what the user wants to build, in one sentence."
                                      : "the session started in code mode. Say in one sentence that you report each agent turn.")
         case .audio(let pcm):
-            if voiceOn, !holding { audio.play(pcm) }
+            if voiceOn { audio.play(pcm) }
         case .heard(let delta):
+            // ponytail: any heard word stops the voice; if the echo canceller leaks, gate this on the microphone's level
+            if heard.isEmpty { flushSaid(); audio.interrupt() }
             heard += delta
         case .said(let delta):
             saidBuffer += delta
@@ -225,7 +240,7 @@ final class Assistant {
             let link = link
             audio.onChunk = { link?.send(LiveCodec.audio($0)) }
             audio.onLevel = { [weak self] l in self?.level = l }
-            do { try audio.start() } catch { voiceOn = false; thread.append(ThreadItem(body: .assistant("Could not start the microphone: \(error.localizedDescription)"))) }
+            do { try audio.start(); setListening(true) } catch { voiceOn = false; thread.append(ThreadItem(body: .assistant("Could not start the microphone: \(error.localizedDescription)"))) }
         }
     }
 
@@ -374,7 +389,8 @@ final class Assistant {
         switch which {
         case "code": mode = .code; said = "Turn 4 ended. One test fails."; card = turn
         case "thread": mode = .plan; said = "What does version 1 plot?"; showThread = true
-        case "talk": mode = .plan; said = "What does version 1 plot?"; heard = "numbers first, the labels can wait"; level = 0.6
+        case "talk": mode = .plan; said = "What does version 1 plot?"; heard = "numbers first, the labels can wait"; level = 0.6; listening = true
+        case "spaces": mode = .code; said = "Which one?"; card = .spaces([SpaceRow(name: "plotter", status: "working", agent: "claude"), SpaceRow(name: "pushleft", status: "blocked", agent: "claude")])
         default: mode = .plan; said = "What does version 1 plot?"; card = choice
         }
     }

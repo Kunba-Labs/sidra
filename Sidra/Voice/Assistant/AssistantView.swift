@@ -132,9 +132,9 @@ struct AssistantScreen: View {
             Spacer(minLength: 10)
             VStack(spacing: 8) {
                 HStack(spacing: 7) {
-                    Circle().fill(a.holding ? SidraColor.jade : SidraColor.dim).frame(width: 7, height: 7)
-                    Text(a.holding ? "LISTENING" : a.thinking ? "WORKING" : "HOLD THE MIC TO TALK").font(SidraFont.ui(11.5, weight: .semibold)).tracking(0.6)
-                        .foregroundStyle(a.holding ? SidraColor.jade : SidraColor.dim)
+                    Circle().fill(a.listening ? SidraColor.jade : SidraColor.dim).frame(width: 7, height: 7)
+                    Text(a.listening ? "LISTENING" : "MUTED · TAP THE MIC").font(SidraFont.ui(11.5, weight: .semibold)).tracking(0.6)
+                        .foregroundStyle(a.listening ? SidraColor.jade : SidraColor.dim)
                 }
                 Text(a.heard.isEmpty ? " " : "“" + a.heard.trimmingCharacters(in: .whitespaces) + "”").font(SidraFont.ui(16, weight: .medium)).foregroundStyle(Color(hex: 0xaab2bd))
                     .multilineTextAlignment(.center).lineLimit(3).padding(.horizontal, 26)
@@ -267,17 +267,20 @@ struct AssistantScreen: View {
     private func sendDraft() { a.send(draft); draft = "" }
 }
 
-/// Hold to talk. Jade, like dictation's mic.
+/// The mic is open from the start: a tap mutes it, another opens it. Jade while open, like dictation's mic.
 private struct MicButton: View {
     let size: CGFloat
     @State private var a = Assistant.shared
     var body: some View {
-        Image(systemName: "mic.fill").font(.system(size: size * 0.4, weight: .semibold)).foregroundStyle(Color(hex: 0x06140e))
-            .frame(width: size, height: size)
-            .background(a.holding ? Color(hex: 0x7ff0bd) : SidraColor.jade, in: RoundedRectangle(cornerRadius: size * 0.34, style: .continuous))
-            .scaleEffect(a.holding ? 1.06 : 1).animation(.easeOut(duration: 0.12), value: a.holding)
-            .gesture(DragGesture(minimumDistance: 0).onChanged { _ in a.hold(true) }.onEnded { _ in a.hold(false) })
-            .accessibilityLabel("Hold to talk").accessibilityAddTraits(.isButton).accessibilityIdentifier("assistant-mic")
+        Button { a.toggleMic() } label: {
+            Image(systemName: a.listening ? "mic.fill" : "mic.slash.fill").font(.system(size: size * 0.4, weight: .semibold))
+                .foregroundStyle(a.listening ? Color(hex: 0x06140e) : SidraColor.muted)
+                .frame(width: size, height: size)
+                .background(a.listening ? SidraColor.jade : SidraColor.raised, in: RoundedRectangle(cornerRadius: size * 0.34, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: size * 0.34, style: .continuous).strokeBorder(a.listening ? .clear : SidraColor.hairline2))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(a.listening ? "Mute the microphone" : "Open the microphone").accessibilityIdentifier("assistant-mic")
     }
 }
 
@@ -299,7 +302,9 @@ struct AssistantCardView: View {
     let card: AssistantCard
     /// Under the blob the question is already the line beside it.
     var underBlob = false
+    @Environment(AppModel.self) private var app
     private var a: Assistant { Assistant.shared }
+    private var boardSquares: [ActivityBoard.Square] { ActivityBoard.squares(app: app, store: app.workspace) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) { content }.frame(maxWidth: .infinity, alignment: .leading)
@@ -375,6 +380,22 @@ struct AssistantCardView: View {
                 Button("Change") { a.showThread = true }.buttonStyle(.sidraSecondary)
             }
             .padding(.top, 6)
+        case .spaces(let rows) where !boardSquares.isEmpty:
+            // The activity board's own squares (Waseem, 2026-11-28: "it has to look like our dashboard"): one per
+            // agent, the last turn to end first; a tap shows that agent.
+            let squares = boardSquares
+            CardLabel("Last activity", trailing: squares.count == 1 ? "1 agent" : "\(squares.count) agents")
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
+                ForEach(squares) { sq in
+                    AgentSquare(square: sq) {
+                        app.workspace.select(tab: sq.tab)
+                        Task { await sq.monitor.focusAgent(app, pane: sq.agent.pane_id) }
+                        a.picked(sq.space?.label ?? sq.agent.workspace_id)
+                    }
+                }
+            }
+            .task { var seen = Set<String>(); for sq in squares where seen.insert(sq.monitor.key).inserted { await sq.monitor.loadModels(app) } }
+            let _ = rows
         case .spaces(let rows):
             CardLabel("herdr", trailing: "\(rows.count) spaces")
             ForEach(rows) { r in
