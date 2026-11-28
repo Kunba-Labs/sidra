@@ -143,6 +143,7 @@ private struct ComposeTextView: UIViewRepresentable {
         v.tintColor = UIColor(SidraColor.jade)
         v.backgroundColor = .clear
         v.returnKeyType = .send
+        v.autocapitalizationType = .none   // commands and paths start lowercase (Waseem, 2026-11-28)
         v.smartQuotesType = .no
         v.smartDashesType = .no
         v.keyboardAppearance = .dark
