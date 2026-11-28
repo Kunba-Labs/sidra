@@ -19,16 +19,21 @@ struct SettingsSheet: View {
         @Bindable var app = app
         ScrollView {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 12) {
-                Text("Settings").font(SidraFont.ui(19, weight: .bold)).foregroundStyle(SidraColor.text)
-                Spacer()
+            // iPhone: the title and Done on one row, search across the width under them (2026-11-28).
+            let phone = Platform.isPhone
+            (phone ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12)) : AnyLayout(HStackLayout(spacing: 12))) {
+                HStack {
+                    Text("Settings").font(SidraFont.ui(19, weight: .bold)).foregroundStyle(SidraColor.text).fixedSize()
+                    Spacer()
+                    if phone { Button("Done") { dismiss() }.buttonStyle(.sidraPrimary) }
+                }
                 HStack(spacing: 6) {
                     Image(systemName: "magnifyingglass").foregroundStyle(SidraColor.dim)
                     TextField("Search settings", text: $query).textFieldStyle(.plain).font(SidraFont.ui(13)).foregroundStyle(SidraColor.text)
                         .autocorrectionDisabled().accessibilityLabel("Search settings")
                     if !query.isEmpty { Button { query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(SidraColor.dim) }.buttonStyle(.plain) }
                 }
-                .padding(.horizontal, 10).padding(.vertical, 7).frame(width: 260)
+                .padding(.horizontal, 10).padding(.vertical, phone ? 10 : 7).frame(maxWidth: phone ? .infinity : 260)
                 .background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
             }
 
@@ -89,9 +94,9 @@ struct SettingsSheet: View {
 
             HStack { Spacer(); Button("Done") { dismiss() }.buttonStyle(.sidraPrimary) }
         }
-        .padding(24)
+        .padding(Platform.isPhone ? 16 : 24)
         }
-        .frame(maxWidth: 720, maxHeight: 680)
+        .frame(maxWidth: 720, maxHeight: Platform.isPhone ? .infinity : 680)   // iPhone: the whole sheet
         .sidraSheetBackground()
         .sheet(item: $editing) { h in HostEditor(profile: h, password: $password) { saved, pw in
             app.hosts.upsert(saved, password: pw.isEmpty ? nil : pw)
@@ -355,7 +360,8 @@ struct SettingRow<Content: View>: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Text(title).font(SidraFont.ui(13, weight: .bold)).foregroundStyle(SidraColor.text)
-                Text(detail).font(SidraFont.ui(12)).foregroundStyle(SidraColor.dim).lineLimit(1)
+                // iPhone: the detail gets its own lines under the title instead of one cut-off line beside it.
+                if !Platform.isPhone { Text(detail).font(SidraFont.ui(12)).foregroundStyle(SidraColor.dim).lineLimit(1) }
                 Spacer()
                 if isDefault {
                     Text("default").font(SidraFont.ui(10.5, weight: .bold)).foregroundStyle(SidraColor.dim)
@@ -365,6 +371,7 @@ struct SettingRow<Content: View>: View {
                         .buttonStyle(.plain).foregroundStyle(SidraColor.muted).accessibilityLabel("Reset \(title) to default")
                 }
             }
+            if Platform.isPhone { Text(detail).font(SidraFont.ui(12)).foregroundStyle(SidraColor.dim).fixedSize(horizontal: false, vertical: true) }
             content()
         }
     }

@@ -107,6 +107,7 @@ struct RootView: View {
             store.board = { [app, store] in AnyView(ActivityBoard().environment(app).environment(store)) }
             #if DEBUG
             if UserDefaults.standard.bool(forKey: "sidra.boardOpen") { store.boardOpen = true }   // screenshots
+            if UserDefaults.standard.bool(forKey: "sidra.settingsOpen") { app.sheet = .settings }   // screenshots
             #endif
             store.tabAccessory = { tab in SubstrateTabMark.accessory(for: tab) }
             store.attention = { [app] in MuxMonitors.shared.count(.blocked, live: Set(app.allWorkspaces.flatMap { $0.tabs.flatMap { $0.panes.map(\.id) } })) }

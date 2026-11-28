@@ -21,7 +21,8 @@ struct KeysSection: View {
                 HStack(alignment: .top, spacing: 12) {
                     Image(systemName: "key.horizontal.fill").foregroundStyle(SidraColor.gold).frame(width: 20).padding(.top, 2)
                     VStack(alignment: .leading, spacing: 3) {
-                        HStack(spacing: 8) {
+                        // iPhone: the chips go under the name; beside it they ran off the screen.
+                        (Platform.isPhone ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4)) : AnyLayout(HStackLayout(spacing: 8))) {
                             Text(k.name).font(SidraFont.ui(13.5, weight: .bold)).foregroundStyle(SidraColor.text)
                             FooterChip([.init(k.isSecureEnclave ? "P-256, Secure Enclave" : "ed25519", color: k.isSecureEnclave ? SidraColor.jade : SidraColor.muted), .init(k.created.formatted(date: .abbreviated, time: .omitted), label: "created", color: SidraColor.muted)])
                             if usedBy(k).count > 0 { FooterChip([.init("\(usedBy(k).count)", label: "hosts", color: SidraColor.jade)]) }
