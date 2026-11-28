@@ -14,6 +14,19 @@ struct KeysSection: View {
     @State private var copiedID: UUID?
     @State private var deleting: SSHKeyRecord?
 
+    @ViewBuilder private var keyButtons: some View {
+        if SSHKeyManager.secureEnclaveAvailable {
+            Button("Secure Enclave key") {
+                do { try SSHKeyManager.generateSecureEnclave(name: ""); reload() }
+                catch { alert = SidraAlert.from(error, title: "Could not create the key") }
+            }.buttonStyle(.sidraSecondary).fixedSize()
+        } else {
+            FooterChip([.init("Secure Enclave", color: SidraColor.muted), .init("device only", color: SidraColor.muted)])
+        }
+        Button("Import key…") { importing = true }.buttonStyle(.sidraSecondary).fixedSize()
+        Button("Generate key…") { newName = ""; naming = true }.buttonStyle(.sidraSecondary).fixedSize()
+    }
+
     var body: some View {
         SectionLabel("Keys")
         VStack(spacing: 0) {
@@ -40,19 +53,14 @@ struct KeysSection: View {
                 .padding(.vertical, 8)
                 Rectangle().fill(SidraColor.hairline).frame(height: 1)
             }
-            HStack(spacing: 8) {
+            // The note on its own lines, the buttons under it: beside them it was squeezed into a narrow column.
+            VStack(alignment: .leading, spacing: 10) {
                 Text("Confirm on use asks for Face ID or the passcode before the key signs a login or a request from the VM. Agent in VM lets anything running there, the coding agent included, request signatures. A key copied into the VM for git has no confirmation there.").font(SidraFont.ui(11.5)).foregroundStyle(SidraColor.dim)
-                Spacer()
-                if SSHKeyManager.secureEnclaveAvailable {
-                    Button("Secure Enclave key") {
-                        do { try SSHKeyManager.generateSecureEnclave(name: ""); reload() }
-                        catch { alert = SidraAlert.from(error, title: "Could not create the key") }
-                    }.buttonStyle(.sidraSecondary)
-                } else {
-                    FooterChip([.init("Secure Enclave", color: SidraColor.muted), .init("device only", color: SidraColor.muted)])
+                    .fixedSize(horizontal: false, vertical: true)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) { Spacer(); keyButtons }
+                    VStack(alignment: .leading, spacing: 8) { keyButtons }
                 }
-                Button("Import key…") { importing = true }.buttonStyle(.sidraSecondary)
-                Button("Generate key…") { newName = ""; naming = true }.buttonStyle(.sidraSecondary)
             }.padding(.top, 8)
         }
         .onAppear(perform: reload)

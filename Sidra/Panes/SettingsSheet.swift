@@ -11,6 +11,10 @@ struct SettingsSheet: View {
     @State private var password = ""
     @State private var alert: SidraAlert?
     @State private var query = ""
+    /// Three tabs (Waseem, 2026-11-28: one long list was too much). A search looks through all of them.
+    enum Tab: String, CaseIterable { case general = "General", keyboard = "Keyboard", ssh = "SSH" }
+    @State private var tab = Tab(rawValue: UserDefaults.standard.string(forKey: "sidra.settingsTab") ?? "") ?? .general   // -sidra.settingsTab SSH for screenshots
+    private func on(_ t: Tab) -> Bool { !query.isEmpty || tab == t }
 
     /// Search matches a row when any of its texts contains the query.
     private func show(_ texts: String...) -> Bool { query.isEmpty || texts.contains { $0.localizedCaseInsensitiveContains(query) } }
@@ -37,6 +41,12 @@ struct SettingsSheet: View {
                 .background(Color(hex: 0x0f1216), in: RoundedRectangle(cornerRadius: 8))
             }
 
+            if query.isEmpty {
+                Picker("Section", selection: $tab) { ForEach(Tab.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
+                    .pickerStyle(.segmented).labelsHidden().accessibilityIdentifier("settings-tabs")
+            }
+
+            if on(.general) {
             // The Mac always runs libghostty-vt: SwiftTerm is the iPad's fallback only.
             if !Platform.isMac, show("Terminal", "engine", "libghostty", "SwiftTerm") { SectionLabel("Terminal") }
             if !Platform.isMac, show("Terminal engine", "libghostty", "SwiftTerm", "terminal") {
@@ -59,9 +69,11 @@ struct SettingsSheet: View {
             #if os(iOS) || os(visionOS)
             ScreenshotSection(query: query)
             #endif
+            }
 
-            TerminalKeysSection(query: query)
+            if on(.keyboard) { TerminalKeysSection(query: query) }
 
+            if on(.ssh) {
             if show("Keys", "SSH", "key", "identity", "fingerprint") || SSHKeyManager.keys().contains(where: { show($0.name) }) {
                 KeysSection(alert: $alert, query: query)
             }
@@ -92,12 +104,13 @@ struct SettingsSheet: View {
                     .padding(.top, 8)
             }
             }
+            }
 
             HStack { Spacer(); Button("Done") { dismiss() }.buttonStyle(.sidraPrimary) }
         }
         .padding(Platform.isPhone ? 16 : 24)
         }
-        .frame(maxWidth: 720, maxHeight: Platform.isPhone ? .infinity : 680)   // iPhone: the whole sheet
+        .frame(maxWidth: 720, minHeight: Platform.isPhone ? nil : 680, maxHeight: Platform.isPhone ? .infinity : 680)   // iPhone: the whole sheet; elsewhere one height for every tab
         .sidraSheetBackground()
         .sheet(item: $editing) { h in HostEditor(profile: h, password: $password) { saved, pw in
             app.hosts.upsert(saved, password: pw.isEmpty ? nil : pw)
