@@ -805,10 +805,11 @@ struct MuxAgentsMenu: View {
                 }
             }
         }
-        .frame(maxHeight: 560)
+        // With both sections, one size for the two (Waseem, 2026-11-28: switching made the popover jump).
+        .frame(minHeight: pipes.connected ? 560 : nil, maxHeight: 560, alignment: .top)
         .fixedSize(horizontal: false, vertical: true)
         .padding(8)
-        .frame(maxWidth: 420)
+        .frame(minWidth: pipes.connected ? 420 : nil, maxWidth: 420)
         .background(SidraColor.popup)
     }
 
